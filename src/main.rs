@@ -5,6 +5,7 @@ use std::process;
 
 use clap::{Parser, Subcommand};
 
+use specval::graph::{self, GraphCache};
 use specval::model::Spec;
 use specval::parser;
 use specval::semantic;
@@ -18,15 +19,21 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Validate one or more .spec files
+    /// Validate one or more .spec files or directories
     Validate {
-        /// Spec files to validate
+        /// Spec files or directories to validate
         #[arg(required = true)]
         files: Vec<PathBuf>,
 
         /// Also resolve and validate dependencies
         #[arg(long)]
         deps: bool,
+    },
+    /// Watch a directory for spec file changes and validate incrementally
+    Watch {
+        /// Directory to watch
+        #[arg(required = true)]
+        dir: PathBuf,
     },
 }
 
@@ -37,8 +44,10 @@ fn main() {
         Some(Commands::Validate { files, deps }) => {
             process::exit(run_validate(&files, deps));
         }
+        Some(Commands::Watch { dir }) => {
+            process::exit(specval::watch::run_watch(&dir));
+        }
         None => {
-            // Print help when no subcommand given
             use clap::CommandFactory;
             Cli::command().print_help().ok();
             println!();
@@ -46,22 +55,170 @@ fn main() {
     }
 }
 
-/// Validate files and return exit code (0 = success, 1 = failure).
+/// Validate files/directories and return exit code (0 = success, 1 = failure).
 fn run_validate(files: &[PathBuf], check_deps: bool) -> i32 {
     let mut any_failed = false;
+    let mut seen = HashSet::new();
 
     for file in files {
-        if !validate_one(file, check_deps) {
-            any_failed = true;
+        if file.is_dir() {
+            if !validate_directory(file, check_deps, &mut seen) {
+                any_failed = true;
+            }
+        } else {
+            // For single files with --deps, manage graph at CWD
+            let mut graph_state: Option<GraphState> = None;
+            if check_deps {
+                graph_state = Some(load_or_build_graph());
+            }
+
+            if !validate_one(file, check_deps, &mut seen, graph_state.as_mut()) {
+                any_failed = true;
+            }
+
+            // Save graph if modified
+            if let Some(state) = graph_state {
+                if state.dirty {
+                    let graph_path = graph::graph_json_path_cwd();
+                    if let Err(e) = state.cache.save(&graph_path) {
+                        eprintln!("warning: failed to save graph cache: {}", e);
+                    }
+                }
+            }
         }
     }
 
     if any_failed { 1 } else { 0 }
 }
 
+/// Validate all .spec files in a directory.
+fn validate_directory(dir: &Path, check_deps: bool, seen: &mut HashSet<String>) -> bool {
+    if !dir.exists() {
+        eprintln!("error: directory not found: {}", dir.display());
+        return false;
+    }
+
+    let entries = match fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("error: cannot read directory {}: {}", dir.display(), e);
+            return false;
+        }
+    };
+
+    let mut spec_files: Vec<PathBuf> = entries
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) == Some("spec") {
+                Some(path)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    if spec_files.is_empty() {
+        eprintln!("error: no .spec files found in {}", dir.display());
+        return false;
+    }
+
+    spec_files.sort();
+
+    // Load or build graph cache when --deps is used
+    let mut graph_state: Option<GraphState> = None;
+    if check_deps {
+        graph_state = Some(load_or_build_graph());
+    }
+
+    let mut any_failed = false;
+    for file in &spec_files {
+        if !validate_one(file, check_deps, seen, graph_state.as_mut()) {
+            any_failed = true;
+        }
+    }
+
+    // Prune stale entries from graph (specs that no longer exist on disk)
+    if let Some(ref mut state) = graph_state {
+        let on_disk: HashSet<String> = spec_files
+            .iter()
+            .filter_map(|p| p.file_stem().and_then(|s| s.to_str()).map(String::from))
+            .collect();
+        let stale: Vec<String> = state
+            .cache
+            .specs
+            .keys()
+            .filter(|name| !on_disk.contains(name.as_str()))
+            .cloned()
+            .collect();
+        for name in stale {
+            state.cache.specs.remove(&name);
+            state.dirty = true;
+        }
+    }
+
+    // Save graph if it was modified
+    if let Some(state) = graph_state {
+        if state.dirty {
+            let graph_path = graph::graph_json_path_cwd();
+            if let Err(e) = state.cache.save(&graph_path) {
+                eprintln!("warning: failed to save graph cache: {}", e);
+            }
+        }
+    }
+
+    !any_failed
+}
+
+struct GraphState {
+    cache: GraphCache,
+    dirty: bool,
+}
+
+fn load_or_build_graph() -> GraphState {
+    let graph_path = graph::graph_json_path_cwd();
+    if graph_path.exists() {
+        match GraphCache::load(&graph_path) {
+            Ok(cache) => {
+                return GraphState {
+                    cache,
+                    dirty: false,
+                };
+            }
+            Err(graph::GraphError::Corrupted(msg)) => {
+                eprintln!(
+                    "warning: cached graph is corrupt ({}), rebuilding from scratch",
+                    msg
+                );
+            }
+            Err(graph::GraphError::SchemaMismatch) => {
+                eprintln!(
+                    "warning: cached graph has incompatible format, rebuilding from scratch"
+                );
+            }
+            Err(graph::GraphError::Io(_)) => {}
+        }
+    }
+    GraphState {
+        cache: GraphCache::new(),
+        dirty: true, // new graph needs saving
+    }
+}
+
 /// Validate a single file. Returns true if valid, false if invalid.
-fn validate_one(path: &Path, check_deps: bool) -> bool {
+fn validate_one(
+    path: &Path,
+    check_deps: bool,
+    seen: &mut HashSet<String>,
+    graph_state: Option<&mut GraphState>,
+) -> bool {
     let filename = path.display();
+
+    // Check if path exists
+    if !path.exists() {
+        eprintln!("error: cannot read {}: No such file or directory", filename);
+        return false;
+    }
 
     // Check extension
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
@@ -97,6 +254,7 @@ fn validate_one(path: &Path, check_deps: bool) -> bool {
 
     // Semantic validation
     if let Err(errors) = semantic::validate(&spec) {
+        print_failure(&spec);
         for e in &errors {
             eprintln!("{}: {}", filename, e);
         }
@@ -105,83 +263,131 @@ fn validate_one(path: &Path, check_deps: bool) -> bool {
 
     // Dependency resolution
     if check_deps {
-        if !resolve_deps(path, &spec) {
+        let dir = path.parent().unwrap_or(Path::new("."));
+        let siblings = discover_siblings(dir, path);
+        let mut resolved: HashMap<String, ResolvedDep> = HashMap::new();
+        let mut errors = Vec::new();
+        let mut stack: Vec<String> = vec![spec.name.clone()];
+
+        resolve_and_collect(
+            &spec.dependencies,
+            dir,
+            &siblings,
+            &mut resolved,
+            &mut stack,
+            &mut errors,
+        );
+
+        // Update graph cache with this spec and its resolved deps
+        if let Some(state) = graph_state {
+            let hash = graph::content_hash(&source);
+            let dep_names: Vec<String> = spec
+                .dependencies
+                .iter()
+                .map(|d| d.spec_name.clone())
+                .collect();
+
+            if state.cache.is_changed(&spec.name, &hash) {
+                state.cache.upsert(
+                    spec.name.clone(),
+                    hash,
+                    spec.version.clone(),
+                    spec.behaviors.len(),
+                    errors.is_empty(),
+                    dep_names,
+                );
+                state.dirty = true;
+            }
+
+            // Also cache resolved deps
+            for (dep_name, rd) in &resolved {
+                if let Some(dep_path) = siblings.get(dep_name) {
+                    if let Ok(dep_source) = fs::read_to_string(dep_path) {
+                        let dep_hash = graph::content_hash(&dep_source);
+                        if state.cache.is_changed(dep_name, &dep_hash) {
+                            let dep_dep_names: Vec<String> = rd
+                                .spec
+                                .dependencies
+                                .iter()
+                                .map(|d| d.spec_name.clone())
+                                .collect();
+                            state.cache.upsert(
+                                dep_name.clone(),
+                                dep_hash,
+                                rd.spec.version.clone(),
+                                rd.spec.behaviors.len(),
+                                rd.valid,
+                                dep_dep_names,
+                            );
+                            state.dirty = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Skip entirely if already shown in another spec's tree
+        if !seen.contains(&spec.name) {
+            print_success(&spec);
+            seen.insert(spec.name.clone());
+            let shallowest = compute_shallowest_depths(&spec.dependencies, &resolved);
+            print_dep_tree(&spec.dependencies, &resolved, seen, "", 1, &shallowest);
+        }
+
+        if !errors.is_empty() {
+            for e in &errors {
+                eprintln!("{}", e);
+            }
             return false;
         }
-    }
 
-    // Success — print summary
-    print_summary(&spec);
-    true
-}
-
-fn print_summary(spec: &Spec) {
-    println!(
-        "{} v{} — valid ({} behaviors, {} dependencies)",
-        spec.name,
-        spec.version,
-        spec.behaviors.len(),
-        spec.dependencies.len(),
-    );
-    if spec.dependencies.is_empty() {
-        println!("  no dependencies");
-    }
-}
-
-/// Resolve dependencies for a spec by looking for sibling .spec files.
-fn resolve_deps(spec_path: &Path, spec: &Spec) -> bool {
-    if spec.dependencies.is_empty() {
         return true;
     }
 
-    let dir = spec_path.parent().unwrap_or(Path::new("."));
+    // Success — print result line
+    print_success(&spec);
+    true
+}
 
-    // Build map of available sibling specs (name → path)
-    let siblings = discover_siblings(dir, spec_path);
-
-    let mut errors = Vec::new();
-    let mut resolved: HashMap<String, Spec> = HashMap::new();
-    let mut visited: HashSet<String> = HashSet::new();
-    let mut stack: Vec<String> = Vec::new();
-
-    visited.insert(spec.name.clone());
-    stack.push(spec.name.clone());
-    resolved.insert(spec.name.clone(), spec.clone());
-
-    resolve_recursive(
-        &spec.dependencies,
-        dir,
-        &siblings,
-        &mut resolved,
-        &mut visited,
-        &mut stack,
-        &mut errors,
-    );
-
-    stack.pop();
-
-    if errors.is_empty() {
-        println!("  all dependencies resolved");
-        true
+fn behavior_count_label(count: usize) -> String {
+    if count == 1 {
+        "1 behavior".to_string()
     } else {
-        for e in &errors {
-            eprintln!("{}", e);
-        }
-        false
+        format!("{} behaviors", count)
     }
 }
 
-fn resolve_recursive(
+fn print_success(spec: &Spec) {
+    println!(
+        "✓ {} v{} ({})",
+        spec.name,
+        spec.version,
+        behavior_count_label(spec.behaviors.len()),
+    );
+}
+
+fn print_failure(spec: &Spec) {
+    println!("✗ {} v{}", spec.name, spec.version);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Dependency tree resolution and display
+// ═══════════════════════════════════════════════════════════════
+
+struct ResolvedDep {
+    spec: Spec,
+    valid: bool,
+}
+
+fn resolve_and_collect(
     deps: &[specval::model::Dependency],
     dir: &Path,
     siblings: &HashMap<String, PathBuf>,
-    resolved: &mut HashMap<String, Spec>,
-    visited: &mut HashSet<String>,
+    resolved: &mut HashMap<String, ResolvedDep>,
     stack: &mut Vec<String>,
     errors: &mut Vec<String>,
 ) {
     for dep in deps {
-        // Check for cycle
         if stack.contains(&dep.spec_name) {
             errors.push(format!(
                 "dependency cycle detected: {} → {}",
@@ -191,14 +397,11 @@ fn resolve_recursive(
             continue;
         }
 
-        // Already resolved successfully
         if resolved.contains_key(&dep.spec_name) {
-            // Still check version
-            check_version_constraint(dep, &resolved[&dep.spec_name], errors);
+            check_version_constraint(dep, &resolved[&dep.spec_name].spec, errors);
             continue;
         }
 
-        // Find the sibling file
         let sibling_path = match siblings.get(&dep.spec_name) {
             Some(p) => p.clone(),
             None => {
@@ -210,7 +413,6 @@ fn resolve_recursive(
             }
         };
 
-        // Parse + validate the dependency
         let source = match fs::read_to_string(&sibling_path) {
             Ok(s) => s,
             Err(e) => {
@@ -233,26 +435,111 @@ fn resolve_recursive(
             }
         };
 
-        if let Err(_) = semantic::validate(&dep_spec) {
+        let valid = semantic::validate(&dep_spec).is_ok();
+        if !valid {
             errors.push(format!(
                 "dependency '{}' has validation errors",
                 dep.spec_name
             ));
-            continue;
         }
 
-        // Check version constraint
         check_version_constraint(dep, &dep_spec, errors);
 
-        // Record and recurse
         let sub_deps = dep_spec.dependencies.clone();
-        resolved.insert(dep.spec_name.clone(), dep_spec);
-        visited.insert(dep.spec_name.clone());
+        resolved.insert(dep.spec_name.clone(), ResolvedDep { spec: dep_spec, valid });
         stack.push(dep.spec_name.clone());
 
-        resolve_recursive(&sub_deps, dir, siblings, resolved, visited, stack, errors);
+        resolve_and_collect(&sub_deps, dir, siblings, resolved, stack, errors);
 
         stack.pop();
+    }
+}
+
+/// Compute the shallowest depth at which each dependency name appears in the tree.
+fn compute_shallowest_depths(
+    deps: &[specval::model::Dependency],
+    resolved: &HashMap<String, ResolvedDep>,
+) -> HashMap<String, usize> {
+    let mut depths: HashMap<String, usize> = HashMap::new();
+    let mut visited = HashSet::new();
+    compute_depths_recursive(deps, resolved, 1, &mut depths, &mut visited);
+    depths
+}
+
+fn compute_depths_recursive(
+    deps: &[specval::model::Dependency],
+    resolved: &HashMap<String, ResolvedDep>,
+    depth: usize,
+    depths: &mut HashMap<String, usize>,
+    visited: &mut HashSet<String>,
+) {
+    for dep in deps {
+        let entry = depths.entry(dep.spec_name.clone()).or_insert(depth);
+        if depth < *entry {
+            *entry = depth;
+        }
+        if visited.contains(&dep.spec_name) {
+            continue;
+        }
+        visited.insert(dep.spec_name.clone());
+        if let Some(rd) = resolved.get(&dep.spec_name) {
+            if !rd.spec.dependencies.is_empty() {
+                compute_depths_recursive(
+                    &rd.spec.dependencies,
+                    resolved,
+                    depth + 1,
+                    depths,
+                    visited,
+                );
+            }
+        }
+    }
+}
+
+fn print_dep_tree(
+    deps: &[specval::model::Dependency],
+    resolved: &HashMap<String, ResolvedDep>,
+    seen: &mut HashSet<String>,
+    prefix: &str,
+    depth: usize,
+    shallowest: &HashMap<String, usize>,
+) {
+    for (i, dep) in deps.iter().enumerate() {
+        let is_last = i == deps.len() - 1;
+        let connector = if is_last { "└── " } else { "├── " };
+        let child_prefix = if is_last {
+            format!("{}    ", prefix)
+        } else {
+            format!("{}│   ", prefix)
+        };
+
+        if let Some(rd) = resolved.get(&dep.spec_name) {
+            let mark = if rd.valid { "✓" } else { "✗" };
+            let is_shallowest = shallowest.get(&dep.spec_name).copied().unwrap_or(depth) == depth;
+
+            if is_shallowest && !seen.contains(&dep.spec_name) {
+                seen.insert(dep.spec_name.clone());
+                println!(
+                    "{}{}{} {} v{} ({})",
+                    prefix,
+                    connector,
+                    mark,
+                    rd.spec.name,
+                    rd.spec.version,
+                    behavior_count_label(rd.spec.behaviors.len()),
+                );
+                if !rd.spec.dependencies.is_empty() {
+                    print_dep_tree(&rd.spec.dependencies, resolved, seen, &child_prefix, depth + 1, shallowest);
+                }
+            } else {
+                println!(
+                    "{}{}{} \x1b[2m{} v{}\x1b[0m",
+                    prefix, connector, mark, rd.spec.name, rd.spec.version
+                );
+            }
+        } else {
+            println!("{}{}✗ {} (unresolved)", prefix, connector, dep.spec_name);
+        }
     }
 }
 
@@ -261,13 +548,12 @@ fn check_version_constraint(
     dep_spec: &Spec,
     errors: &mut Vec<String>,
 ) {
-    // Parse the constraint ">=X.Y.Z" — extract version from constraint string
     let constraint = &dep.version_constraint;
     let required = constraint.trim_start_matches(">=").trim();
 
     let req = match semver::Version::parse(required) {
         Ok(v) => v,
-        Err(_) => return, // Can't check, skip
+        Err(_) => return,
     };
 
     let actual = match semver::Version::parse(&dep_spec.version) {

@@ -1,6 +1,6 @@
 mod common;
 
-use common::{specval, temp_spec, temp_specs, VALID_SPEC};
+use common::{specval, temp_dir_with_specs, temp_spec, temp_specs, VALID_SPEC};
 use predicates::prelude::*;
 
 // ═══════════════════════════════════════════════════════════════
@@ -16,8 +16,7 @@ fn validate_valid_spec() {
         .arg(&path)
         .assert()
         .success()
-        .stdout(predicate::str::contains("test-spec"))
-        .stdout(predicate::str::contains("valid"));
+        .stdout(predicate::str::contains("✓ test-spec"));
 }
 
 /// validate-command.spec: validate-prints-summary
@@ -495,4 +494,115 @@ behavior fail-thing [error_case]
         combined.contains("invalid") && combined.contains("valid"),
         "Both files should be reported, got stdout: {stdout}\nstderr: {stderr}"
     );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Directory validation (validate-command.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// validate-command.spec: validate-directory
+#[test]
+fn validate_directory() {
+    let second_spec = "\
+spec other-spec v2.0.0
+title \"Other Spec\"
+
+description
+  Another valid spec.
+
+motivation
+  Testing directory validation.
+
+behavior other-thing [happy_path]
+  \"Do another thing\"
+
+  given
+    The system is ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, dir_path) = temp_dir_with_specs(&[("test-spec", VALID_SPEC), ("other-spec", second_spec)]);
+    let output = specval()
+        .arg("validate")
+        .arg(&dir_path)
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+    // Both specs should appear in results
+    assert!(
+        stdout.contains("test-spec") && stdout.contains("other-spec"),
+        "Expected results for both specs, got: {stdout}"
+    );
+}
+
+/// validate-command.spec: validate-directory-with-invalid
+#[test]
+fn validate_directory_with_invalid() {
+    let invalid_spec = "\
+spec invalid v1.0.0
+title \"Invalid\"
+
+description
+  Invalid spec.
+
+motivation
+  Test.
+
+behavior fail-thing [error_case]
+  \"No happy path\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stderr
+    assert output contains \"error\"
+";
+    let (_dir, dir_path) = temp_dir_with_specs(&[("valid", VALID_SPEC), ("invalid", invalid_spec)]);
+    let output = specval()
+        .arg("validate")
+        .arg(&dir_path)
+        .assert()
+        .failure();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+    let stderr = String::from_utf8_lossy(&output.get_output().stderr);
+    let combined = format!("{stdout}{stderr}");
+
+    // Both files should have results
+    assert!(
+        combined.contains("valid") && combined.contains("invalid"),
+        "Expected results for both files, got stdout: {stdout}\nstderr: {stderr}"
+    );
+}
+
+/// validate-command.spec: handle-empty-directory
+#[test]
+fn handle_empty_directory() {
+    let dir = tempfile::TempDir::new().expect("create temp dir");
+    let dir_path = dir.path().to_path_buf();
+    specval()
+        .arg("validate")
+        .arg(&dir_path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("no spec files")
+            .or(predicate::str::contains("no .spec files")));
+}
+
+/// validate-command.spec: handle-nonexistent-directory
+#[test]
+fn handle_nonexistent_directory() {
+    let nonexistent = "/tmp/specval_nonexistent_dir_test";
+    specval()
+        .arg("validate")
+        .arg(nonexistent)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(nonexistent));
 }

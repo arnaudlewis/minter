@@ -21,25 +21,10 @@ behavior validate-valid-spec [happy_path]
   when validate
 
   then emits stdout
-    assert output contains spec name
-    assert output contains "valid"
+    assert output contains the result line for the spec
 
   then emits process_exit
     assert code == 0
-
-
-behavior validate-prints-summary [happy_path]
-  "Print spec metadata summary to stdout on successful validation"
-
-  given
-    A .spec file that passes all validation
-
-  when validate
-
-  then emits stdout
-    assert output contains spec name
-    assert output contains spec version
-    assert output contains behavior count
 
 
 behavior validate-multiple-files-all-valid [happy_path]
@@ -57,8 +42,43 @@ behavior validate-multiple-files-all-valid [happy_path]
     assert code == 0
 
 
+behavior validate-directory [happy_path]
+  "Discover and validate all .spec files when given a directory path"
+
+  given
+    A directory containing one or more .spec files
+
+  when validate specs/
+
+  then
+    assert all .spec files in the directory are discovered
+    assert each discovered file is parsed and validated
+
+  then emits stdout
+    assert output contains result for each discovered file
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior validate-directory-with-invalid [happy_path]
+  "Exit 1 when a directory contains at least one invalid spec"
+
+  given
+    A directory containing multiple .spec files
+    At least one .spec file in the directory has validation errors
+
+  when validate specs/
+
+  then emits stdout
+    assert output contains result for every discovered file
+
+  then emits process_exit
+    assert code == 1
+
+
 behavior reject-duplicate-behavior-names [error_case]
-  "Print error identifying the duplicate name and exit 1"
+  "Reject specs with duplicate behavior names"
 
   given
     A .spec file containing two or more behaviors with identical names
@@ -73,7 +93,7 @@ behavior reject-duplicate-behavior-names [error_case]
 
 
 behavior reject-unresolved-alias [error_case]
-  "Print error identifying the unresolved alias and exit 1"
+  "Reject specs with unresolved alias references"
 
   given
     A .spec file where a behavior input uses a from reference that
@@ -89,7 +109,7 @@ behavior reject-unresolved-alias [error_case]
 
 
 behavior reject-duplicate-aliases [error_case]
-  "Print error identifying the duplicate alias and exit 1"
+  "Reject specs with duplicate alias names in a behavior"
 
   given
     A .spec file where a single behavior has two preconditions
@@ -105,7 +125,7 @@ behavior reject-duplicate-aliases [error_case]
 
 
 behavior reject-invalid-identity-name [error_case]
-  "Print error showing the invalid name and expected format, exit 1"
+  "Reject specs with non-kebab-case names"
 
   given
     A .spec file where the spec name does not match the kebab-case
@@ -122,7 +142,7 @@ behavior reject-invalid-identity-name [error_case]
 
 
 behavior reject-invalid-semver [error_case]
-  "Print error showing the invalid version and expected format, exit 1"
+  "Reject specs with invalid semantic version strings"
 
   given
     A .spec file where the spec version is not a valid semantic
@@ -139,7 +159,7 @@ behavior reject-invalid-semver [error_case]
 
 
 behavior reject-no-happy-path [error_case]
-  "Print error stating at least one happy_path is required, exit 1"
+  "Reject specs with no happy_path behavior"
 
   given
     A .spec file where no behavior has category happy_path
@@ -163,6 +183,37 @@ behavior handle-nonexistent-file [edge_case]
 
   then emits stderr
     assert output contains the file path
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior handle-empty-directory [edge_case]
+  "Print error when directory contains no .spec files"
+
+  given
+    A directory that exists but contains no .spec files
+
+  when validate empty-dir/
+
+  then emits stderr
+    assert output mentions no spec files found
+    assert output contains the directory path
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior handle-nonexistent-directory [edge_case]
+  "Print error when directory does not exist"
+
+  given
+    The specified directory path does not exist on disk
+
+  when validate nonexistent-dir/
+
+  then emits stderr
+    assert output contains the directory path
 
   then emits process_exit
     assert code == 1
@@ -259,3 +310,4 @@ behavior validate-all-files-independently [edge_case]
 
 
 depends on dsl-format >= 1.0.0
+depends on validate-display >= 1.0.0

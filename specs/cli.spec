@@ -150,3 +150,4 @@ behavior handle-mixed-valid-invalid-files [edge_case]
 
 depends on validate-command >= 1.0.0
 depends on validate-dependencies >= 1.0.0
+depends on watch-mode >= 1.0.0

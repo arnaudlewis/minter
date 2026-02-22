@@ -76,7 +76,8 @@ fn validate_spec_then_resolve_deps() {
         .arg(&paths[0])
         .assert()
         .success()
-        .stdout(predicate::str::contains("dependencies").or(predicate::str::contains("resolved")));
+        .stdout(predicate::str::contains("✓ consumer"))
+        .stdout(predicate::str::contains("provider"));
 }
 
 /// validate-dependencies.spec: resolve-by-sibling-name
@@ -380,7 +381,7 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .success()
-        .stdout(predicate::str::contains("no dependencies").or(predicate::str::contains("0 dependencies")));
+        .stdout(predicate::str::contains("✓ test-spec v1.0.0 (1 behavior)"));
 }
 
 /// validate-dependencies.spec: report-all-resolution-errors
