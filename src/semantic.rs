@@ -1,0 +1,144 @@
+use crate::model::*;
+use std::collections::HashSet;
+use std::fmt;
+
+#[derive(Debug, Clone)]
+pub struct SemanticError {
+    pub rule: &'static str,
+    pub message: String,
+}
+
+impl fmt::Display for SemanticError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{}] {}", self.rule, self.message)
+    }
+}
+
+/// Run all semantic validation rules on a parsed Spec.
+/// Returns Ok(()) if valid, Err with all violations if invalid.
+pub fn validate(spec: &Spec) -> Result<(), Vec<SemanticError>> {
+    let mut errors = Vec::new();
+
+    check_kebab_case_name(spec, &mut errors);
+    check_valid_semver(spec, &mut errors);
+    check_unique_behavior_names(spec, &mut errors);
+    check_at_least_one_happy_path(spec, &mut errors);
+
+    for behavior in &spec.behaviors {
+        check_unique_aliases(behavior, &mut errors);
+        check_alias_refs_resolve(behavior, &mut errors);
+    }
+
+    if errors.is_empty() { Ok(()) } else { Err(errors) }
+}
+
+fn check_kebab_case_name(spec: &Spec, errors: &mut Vec<SemanticError>) {
+    let name = &spec.name;
+    let is_kebab = !name.is_empty()
+        && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        && !name.starts_with('-')
+        && !name.ends_with('-')
+        && !name.contains("--");
+
+    if !is_kebab {
+        errors.push(SemanticError {
+            rule: "kebab-case-name",
+            message: format!("Spec name '{}' is not valid kebab-case", name),
+        });
+    }
+}
+
+fn check_valid_semver(spec: &Spec, errors: &mut Vec<SemanticError>) {
+    if semver::Version::parse(&spec.version).is_err() {
+        errors.push(SemanticError {
+            rule: "valid-semver",
+            message: format!("Version '{}' is not valid semver", spec.version),
+        });
+    }
+}
+
+fn check_unique_behavior_names(spec: &Spec, errors: &mut Vec<SemanticError>) {
+    let mut seen = HashSet::new();
+    for b in &spec.behaviors {
+        if !seen.insert(&b.name) {
+            errors.push(SemanticError {
+                rule: "unique-behavior-names",
+                message: format!("Duplicate behavior name '{}'", b.name),
+            });
+        }
+    }
+}
+
+fn check_at_least_one_happy_path(spec: &Spec, errors: &mut Vec<SemanticError>) {
+    let has_happy = spec.behaviors.iter().any(|b| b.category == BehaviorCategory::HappyPath);
+    if !has_happy {
+        errors.push(SemanticError {
+            rule: "at-least-one-happy-path",
+            message: "Spec must have at least one happy_path behavior".to_string(),
+        });
+    }
+}
+
+fn check_unique_aliases(behavior: &Behavior, errors: &mut Vec<SemanticError>) {
+    let mut seen = HashSet::new();
+    for pre in &behavior.preconditions {
+        if let Precondition::Alias { name, .. } = pre {
+            if !seen.insert(name) {
+                errors.push(SemanticError {
+                    rule: "unique-aliases",
+                    message: format!(
+                        "Duplicate alias '{}' in behavior '{}'",
+                        name, behavior.name
+                    ),
+                });
+            }
+        }
+    }
+}
+
+fn check_alias_refs_resolve(behavior: &Behavior, errors: &mut Vec<SemanticError>) {
+    let declared: HashSet<&str> = behavior
+        .preconditions
+        .iter()
+        .filter_map(|p| match p {
+            Precondition::Alias { name, .. } => Some(name.as_str()),
+            _ => None,
+        })
+        .collect();
+
+    // Check when-section alias refs
+    for input in &behavior.action.inputs {
+        if let ActionInput::AliasRef { alias, .. } = input {
+            if !declared.contains(alias.as_str()) {
+                errors.push(SemanticError {
+                    rule: "alias-refs-resolve",
+                    message: format!(
+                        "Alias '{}' referenced in when of '{}' is not declared in given",
+                        alias, behavior.name
+                    ),
+                });
+            }
+        }
+    }
+
+    // Check then-section alias refs
+    for post in &behavior.postconditions {
+        for assertion in &post.assertions {
+            if let Assertion::EqualsRef { alias, .. } = assertion {
+                if !declared.contains(alias.as_str()) {
+                    errors.push(SemanticError {
+                        rule: "alias-refs-resolve",
+                        message: format!(
+                            "Alias '{}' referenced in then of '{}' is not declared in given",
+                            alias, behavior.name
+                        ),
+                    });
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+#[path = "semantic.test.rs"]
+mod tests;

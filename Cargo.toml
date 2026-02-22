@@ -1,0 +1,17 @@
+[package]
+name = "specval"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+pest = "2"
+pest_derive = "2"
+miette = { version = "7", features = ["fancy"] }
+thiserror = "2"
+semver = "1"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
