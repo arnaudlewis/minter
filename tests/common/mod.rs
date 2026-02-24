@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -6,7 +8,7 @@ use tempfile::TempDir;
 
 /// Create a Command for the minter binary.
 pub fn minter() -> Command {
-    Command::cargo_bin("minter").expect("minter binary should exist")
+    assert_cmd::cargo::cargo_bin_cmd!("minter")
 }
 
 /// Write a single .spec file to a temp directory.

@@ -43,7 +43,7 @@ behavior do-thing [happy_path]
 
 /// Get the path to the minter binary.
 fn minter_bin() -> std::path::PathBuf {
-    assert_cmd::cargo::cargo_bin("minter")
+    assert_cmd::cargo::cargo_bin!("minter").to_path_buf()
 }
 
 /// A non-blocking line receiver backed by a background reader thread.
@@ -477,7 +477,6 @@ fn watch_revalidate_after_fix() {
 }
 
 // ANSI escape code constants for test assertions
-const ANSI_GREEN: &str = "\x1b[32m";
 const ANSI_RED: &str = "\x1b[31m";
 const ANSI_YELLOW: &str = "\x1b[33m";
 const ANSI_CYAN: &str = "\x1b[36m";

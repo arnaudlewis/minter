@@ -10,7 +10,7 @@ use predicates::prelude::*;
 
 /// Get the path to the minter binary.
 fn minter_bin() -> std::path::PathBuf {
-    assert_cmd::cargo::cargo_bin("minter")
+    assert_cmd::cargo::cargo_bin!("minter").to_path_buf()
 }
 
 /// Wait for a line matching a predicate from a background reader, with timeout.
