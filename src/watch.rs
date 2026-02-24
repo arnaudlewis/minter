@@ -289,7 +289,6 @@ fn validate_and_cache_spec(
     };
 
     let hash = graph::content_hash(&source);
-
     if !cache.is_changed(name, &hash) {
         return;
     }
@@ -297,33 +296,54 @@ fn validate_and_cache_spec(
     let spec = match parser::parse(&source) {
         Ok(s) => s,
         Err(errors) => {
-            println!("{}\u{2717}{} {}", RED, RESET, name);
-            let _ = std::io::stdout().flush();
-            for e in &errors {
-                eprintln!("{}: {}", path.display(), e);
-            }
-            cache.upsert(
-                name.to_string(),
-                CachedEntry {
-                    content_hash: hash,
-                    version: String::new(),
-                    behavior_count: 0,
-                    valid: false,
-                    dependencies: vec![],
-                    path: path.display().to_string(),
-                },
-            );
+            cache_parse_failure(path, name, hash, &errors, cache);
             return;
         }
     };
 
     let valid = semantic::validate(&spec).is_ok();
-    if !valid {
-        display::print_failure(&spec);
-    } else {
+    if valid {
         print_success_with_deps(&spec, dir);
+    } else {
+        display::print_failure(&spec);
     }
 
+    cache_validated_spec(path, name, hash, &spec, valid, cache);
+}
+
+fn cache_parse_failure(
+    path: &Path,
+    name: &str,
+    hash: String,
+    errors: &[impl std::fmt::Display],
+    cache: &mut GraphCache,
+) {
+    println!("{}\u{2717}{} {}", RED, RESET, name);
+    let _ = std::io::stdout().flush();
+    for e in errors {
+        eprintln!("{}: {}", path.display(), e);
+    }
+    cache.upsert(
+        name.to_string(),
+        CachedEntry {
+            content_hash: hash,
+            version: String::new(),
+            behavior_count: 0,
+            valid: false,
+            dependencies: vec![],
+            path: path.display().to_string(),
+        },
+    );
+}
+
+fn cache_validated_spec(
+    path: &Path,
+    name: &str,
+    hash: String,
+    spec: &Spec,
+    valid: bool,
+    cache: &mut GraphCache,
+) {
     cache.upsert(
         name.to_string(),
         CachedEntry {
@@ -338,7 +358,7 @@ fn validate_and_cache_spec(
 }
 
 /// Print success with colored output and shallow 1-level dep tree (watch-specific).
-fn print_success_with_deps(spec: &crate::model::Spec, dir: &Path) {
+fn print_success_with_deps(spec: &Spec, dir: &Path) {
     display::print_success(spec);
 
     if !spec.dependencies.is_empty() {
