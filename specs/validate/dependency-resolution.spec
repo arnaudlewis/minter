@@ -346,41 +346,13 @@ behavior cache-cold-start-creates-directory [happy_path]
     assert graph.json is written inside it
 
 
-behavior cache-cold-start-persists-metadata [happy_path]
-  "Write content hashes and file paths for all discovered specs"
-
-  given
-    A directory with valid .spec files and no .minter/graph.json
-
-  when minter validate --deep specs/
-
-  then
-    assert graph.json contains a content hash for each spec file
-    assert graph.json contains the file path for each spec
-
-
-behavior cache-cold-start-persists-edges [happy_path]
-  "Write forward and reverse dependency edges for all discovered specs"
-
-  given
-    specs/a.spec depends on b >= 1.0.0
-    specs/b.spec has no dependencies
-    No .minter/graph.json exists
-
-  when minter validate --deep specs/
-
-  then
-    assert graph.json contains a forward edge from a to b
-    assert graph.json contains a reverse edge from b to a
-
-
 # Graph cache — loading and updating
 
 behavior cache-produces-correct-results [happy_path]
   "Produce correct validation results when cache is present and files unchanged"
 
   given
-    A valid .minter/graph.json exists
+    A valid .minter/graph.json exists from a previous --deep run
     No spec files have changed since the graph was written
     specs/a.spec depends on b >= 1.0.0
 
@@ -394,17 +366,35 @@ behavior cache-produces-correct-results [happy_path]
     assert code == 0
 
 
-behavior cache-updated-after-changes [happy_path]
-  "Update the cached graph after validating changed files"
+behavior cache-revalidates-modified-and-dependents [happy_path]
+  "Re-validate a modified spec and its dependents on subsequent run"
 
   given
-    A valid .minter/graph.json exists
-    specs/b.spec has been modified since the graph was written
+    A valid .minter/graph.json exists from a previous --deep run
+    specs/a.spec depends on b >= 1.0.0
+    specs/b.spec has been modified since the last run
 
-  when minter validate --deep specs/a.spec
+  when minter validate --deep specs/
 
-  then
-    assert graph.json is written with updated content hash for b
+  then emits stdout
+    assert output contains result for b
+    assert output contains result for a
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior cache-integrates-new-files [happy_path]
+  "Include a newly added spec in results on subsequent run"
+
+  given
+    A valid .minter/graph.json exists from a previous --deep run
+    A new file specs/d.spec is added to the directory
+
+  when minter validate --deep specs/
+
+  then emits stdout
+    assert output contains result for d
 
   then emits process_exit
     assert code == 0

@@ -276,5 +276,69 @@ behavior watch-nonexistent-path [error_case]
     assert code == 1
 
 
+behavior watch-permission-denied-on-directory [error_case]
+  "Print error when the watched directory is not readable"
+
+  given
+    The specified directory exists but the user lacks read permission
+
+  when minter watch restricted/
+
+  then emits stderr
+    assert output contains "permission"
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior watch-empty-directory [error_case]
+  "Print error when the watched directory contains no spec files"
+
+  given
+    The specified directory exists but contains no .spec files
+
+  when minter watch empty-dir/
+
+  then emits stderr
+    assert output contains "no spec files"
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior watch-file-becomes-unreadable [error_case]
+  "Report error for a file that becomes unreadable mid-watch"
+
+  given
+    Watch mode is running
+    specs/a.spec was readable on startup
+
+  when specs/a.spec permissions change to remove read access
+
+  then emits stderr
+    assert output contains "a.spec"
+    assert output contains "permission" or "read"
+
+  then
+    assert the watch process continues running
+
+
+behavior watch-graph-persist-failure-on-shutdown [error_case]
+  "Warn when graph cannot be persisted on shutdown"
+
+  given
+    Watch mode is running
+    .minter/ directory is not writable
+
+  when SIGINT received
+
+  then emits stderr
+    assert output contains "graph" or ".minter"
+    assert output contains "write" or "persist"
+
+  then emits process_exit
+    assert code == 0
+
+
 depends on dependency-resolution >= 2.0.0
 depends on validate-display >= 2.0.0
