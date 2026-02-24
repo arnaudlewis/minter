@@ -293,11 +293,38 @@ fn validate_and_cache_spec(
         return;
     }
 
-    let spec = match parser::parse(&source) {
+    let entry = match parse_and_validate(path, &source, dir) {
+        Some((spec, valid)) => CachedEntry {
+            content_hash: hash,
+            version: spec.version.clone(),
+            behavior_count: spec.behaviors.len(),
+            valid,
+            dependencies: spec.dep_names(),
+            path: path.display().to_string(),
+        },
+        None => CachedEntry {
+            content_hash: hash,
+            version: String::new(),
+            behavior_count: 0,
+            valid: false,
+            dependencies: vec![],
+            path: path.display().to_string(),
+        },
+    };
+    cache.upsert(name.to_string(), entry);
+}
+
+/// Parse and validate a spec file. Returns (spec, valid) or None on parse failure.
+fn parse_and_validate(path: &Path, source: &str, dir: &Path) -> Option<(Spec, bool)> {
+    let spec = match parser::parse(source) {
         Ok(s) => s,
         Err(errors) => {
-            cache_parse_failure(path, name, hash, &errors, cache);
-            return;
+            println!("{}\u{2717}{} {}", RED, RESET, path.display());
+            let _ = std::io::stdout().flush();
+            for e in &errors {
+                eprintln!("{}: {}", path.display(), e);
+            }
+            return None;
         }
     };
 
@@ -307,54 +334,7 @@ fn validate_and_cache_spec(
     } else {
         display::print_failure(&spec);
     }
-
-    cache_validated_spec(path, name, hash, &spec, valid, cache);
-}
-
-fn cache_parse_failure(
-    path: &Path,
-    name: &str,
-    hash: String,
-    errors: &[impl std::fmt::Display],
-    cache: &mut GraphCache,
-) {
-    println!("{}\u{2717}{} {}", RED, RESET, name);
-    let _ = std::io::stdout().flush();
-    for e in errors {
-        eprintln!("{}: {}", path.display(), e);
-    }
-    cache.upsert(
-        name.to_string(),
-        CachedEntry {
-            content_hash: hash,
-            version: String::new(),
-            behavior_count: 0,
-            valid: false,
-            dependencies: vec![],
-            path: path.display().to_string(),
-        },
-    );
-}
-
-fn cache_validated_spec(
-    path: &Path,
-    name: &str,
-    hash: String,
-    spec: &Spec,
-    valid: bool,
-    cache: &mut GraphCache,
-) {
-    cache.upsert(
-        name.to_string(),
-        CachedEntry {
-            content_hash: hash,
-            version: spec.version.clone(),
-            behavior_count: spec.behaviors.len(),
-            valid,
-            dependencies: spec.dep_names(),
-            path: path.display().to_string(),
-        },
-    );
+    Some((spec, valid))
 }
 
 /// Print success with colored output and shallow 1-level dep tree (watch-specific).
