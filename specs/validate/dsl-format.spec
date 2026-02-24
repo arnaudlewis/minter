@@ -1,4 +1,4 @@
-spec dsl-format v1.0.0
+spec dsl-format v1.1.0
 title "DSL Format"
 
 description
@@ -43,24 +43,45 @@ behavior parse-description-block [happy_path]
   "Parse a multiline indented description block"
 
   given
-    A .spec file with a description keyword followed by indented lines
+    A .spec file with:
+    description
+      This is line one.
+      This is line two.
 
   when parse
 
   then
-    assert description contains all indented lines joined as text
+    assert description == "This is line one. This is line two."
 
 
 behavior parse-motivation-block [happy_path]
   "Parse a multiline indented motivation block"
 
   given
-    A .spec file with a motivation keyword followed by indented lines
+    A .spec file with:
+    motivation
+      Reason line one.
+      Reason line two.
 
   when parse
 
   then
-    assert motivation contains all indented lines joined as text
+    assert motivation == "Reason line one. Reason line two."
+
+
+behavior parse-empty-description [edge_case]
+  "Parse a description block with an empty string"
+
+  given
+    A .spec file with:
+    description
+      (a single blank indented line)
+
+  when parse
+
+  then
+    assert description == ""
+
 
 # Behavior blocks
 
@@ -68,8 +89,9 @@ behavior parse-behavior-declaration [happy_path]
   "Parse a behavior with name, category, and quoted description"
 
   given
-    A .spec file with: behavior do-thing [happy_path]
-    Followed by: "A description of this behavior"
+    A .spec file with:
+    behavior do-thing [happy_path]
+      "A description of this behavior"
 
   when parse
 
@@ -114,14 +136,16 @@ behavior parse-category-edge-case [happy_path]
   then
     assert category == "edge_case"
 
+
 # Given section
 
 behavior parse-given-prose [happy_path]
   "Parse a prose precondition in the given section"
 
   given
-    A behavior with: given
-    Followed by indented text: The system is ready
+    A behavior with:
+    given
+      The system is ready
 
   when parse
 
@@ -141,19 +165,56 @@ behavior parse-given-alias-declaration [happy_path]
   then
     assert alias name == "the_user"
     assert alias entity == "User"
-    assert alias properties contain id and name
+    assert alias property id == "550e8400"
+    assert alias property name == "Alice"
+
+
+behavior parse-given-alias-single-property [edge_case]
+  "Parse an alias with exactly one property"
+
+  given
+    A behavior with given containing:
+    @token = Token { value: "abc123" }
+
+  when parse
+
+  then
+    assert alias name == "token"
+    assert alias entity == "Token"
+    assert alias property value == "abc123"
+
+
+behavior parse-given-alias-zero-properties [edge_case]
+  "Parse an alias with no properties"
+
+  given
+    A behavior with given containing:
+    @empty = EmptyEntity {}
+
+  when parse
+
+  then
+    assert alias name == "empty"
+    assert alias entity == "EmptyEntity"
 
 
 behavior parse-given-multiple-preconditions [happy_path]
   "Parse multiple preconditions in a single given block"
 
   given
-    A behavior with given containing both prose and alias declarations
+    A behavior with given containing:
+    The database is seeded
+    @the_user = User { id: "1", name: "Alice" }
+    The user is logged in
 
   when parse
 
   then
-    assert all preconditions are captured in order
+    assert preconditions count == 3
+    assert precondition 1 is prose "The database is seeded"
+    assert precondition 2 is alias "the_user"
+    assert precondition 3 is prose "The user is logged in"
+
 
 # When section
 
@@ -180,8 +241,8 @@ behavior parse-when-inputs [happy_path]
   when parse
 
   then
-    assert inputs contain name with example "test"
-    assert inputs contain count with example 42
+    assert input name == "test"
+    assert input count == 42
 
 
 behavior parse-when-alias-reference [happy_path]
@@ -195,6 +256,7 @@ behavior parse-when-alias-reference [happy_path]
 
   then
     assert input user_id references alias "the_user" field "id"
+
 
 # Then section — postcondition kinds
 
@@ -212,7 +274,7 @@ behavior parse-then-returns [happy_path]
   then
     assert postcondition kind == "returns"
     assert postcondition description == "created item"
-    assert assertions are captured
+    assert assertion count == 2
 
 
 behavior parse-then-emits [happy_path]
@@ -228,7 +290,7 @@ behavior parse-then-emits [happy_path]
   then
     assert postcondition kind == "emits"
     assert postcondition target == "stdout"
-    assert assertions are captured
+    assert assertion count == 1
 
 
 behavior parse-then-emits-process-exit [happy_path]
@@ -244,6 +306,7 @@ behavior parse-then-emits-process-exit [happy_path]
   then
     assert postcondition kind == "emits"
     assert postcondition target == "process_exit"
+    assert assertion count == 1
 
 
 behavior parse-then-side-effect [happy_path]
@@ -258,19 +321,44 @@ behavior parse-then-side-effect [happy_path]
 
   then
     assert postcondition kind == "side_effect"
-    assert assertions are captured
+    assert assertion count == 1
+
+
+behavior parse-then-plain [happy_path]
+  "Parse a then block with no kind qualifier"
+
+  given
+    A behavior with then containing:
+    then
+      assert name == "test"
+      assert count >= 1
+
+  when parse
+
+  then
+    assert postcondition kind == "plain"
+    assert assertion count == 2
 
 
 behavior parse-multiple-then-blocks [happy_path]
   "Parse multiple postconditions in a single behavior"
 
   given
-    A behavior with multiple then blocks (e.g. emits stdout + emits process_exit)
+    A behavior with:
+    then emits stdout
+      assert output contains "done"
+    then emits process_exit
+      assert code == 0
 
   when parse
 
   then
-    assert all postconditions are captured in order
+    assert postcondition count == 2
+    assert postcondition 1 kind == "emits"
+    assert postcondition 1 target == "stdout"
+    assert postcondition 2 kind == "emits"
+    assert postcondition 2 target == "process_exit"
+
 
 # Assertions
 
@@ -377,14 +465,89 @@ behavior parse-assert-prose [happy_path]
   "Parse a prose assertion with no known operator"
 
   given
-    A then block containing assertions with no known operator:
-    assert assertions are captured
+    A then block containing:
     assert all preconditions are captured in order
 
   when parse
 
   then
-    assert both assertions are parsed as prose type
+    assert kind == "prose"
+    assert text == "all preconditions are captured in order"
+
+
+# Unicode and special characters
+
+behavior parse-unicode-in-quoted-strings [edge_case]
+  "Parse quoted strings containing unicode characters"
+
+  given
+    A .spec file with: title "Spécification — Feature"
+
+  when parse
+
+  then
+    assert title == "Spécification — Feature"
+
+
+behavior parse-trailing-whitespace [edge_case]
+  "Ignore trailing whitespace on indented lines"
+
+  given
+    A .spec file where indented description lines end with trailing spaces
+
+  when parse
+
+  then
+    assert description does not contain trailing spaces
+
+
+# Indentation rules
+
+behavior accept-two-space-indentation [happy_path]
+  "Accept indentation of two or more spaces for indented blocks"
+
+  given
+    A .spec file with:
+    description
+      Two-space indented content.
+
+  when parse
+
+  then
+    assert description == "Two-space indented content."
+
+
+behavior reject-tab-indentation [error_case]
+  "Reject tabs as indentation characters"
+
+  given
+    A .spec file where a description line is indented with a tab character
+
+  when parse
+
+  then emits stderr
+    assert output contains line number
+    assert output mentions invalid indentation
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior reject-zero-indent-in-block [error_case]
+  "Reject lines with no indentation inside an indented block"
+
+  given
+    A .spec file where a description block contains a line with zero indentation
+    that is not a keyword or blank line
+
+  when parse
+
+  then emits stderr
+    assert output contains line number
+
+  then emits process_exit
+    assert code == 1
+
 
 # Dependencies
 
@@ -405,12 +568,17 @@ behavior parse-multiple-dependencies [happy_path]
   "Parse multiple depends on lines"
 
   given
-    A .spec file with multiple depends on declarations
+    A .spec file with:
+    depends on user-auth >= 1.0.0
+    depends on billing >= 2.0.0
 
   when parse
 
   then
-    assert all dependencies are captured
+    assert dependency count == 2
+    assert dependency 1 spec == "user-auth"
+    assert dependency 2 spec == "billing"
+
 
 # Comments and structure
 
@@ -418,26 +586,116 @@ behavior ignore-comments [happy_path]
   "Lines starting with # are treated as comments and ignored"
 
   given
-    A .spec file with # comment lines between sections and behaviors
+    A .spec file with:
+    spec my-feature v1.0.0
+    # This is a comment
+    title "My Feature"
 
   when parse
 
   then
-    assert comments are ignored and parsing succeeds
+    assert name == "my-feature"
+    assert title == "My Feature"
 
 
 behavior ignore-blank-lines [happy_path]
   "Blank lines between sections and behaviors are ignored"
 
   given
-    A .spec file with varying numbers of blank lines between elements
+    A .spec file with three blank lines between the title and description
 
   when parse
 
   then
-    assert parsing succeeds regardless of blank line count
+    assert title is_present
+    assert description is_present
 
-# Format errors
+
+# Format errors — structural
+
+behavior reject-missing-spec-declaration [error_case]
+  "Reject a file that does not start with a spec declaration"
+
+  given
+    A .spec file that begins with: title "My Feature"
+    without a preceding spec declaration line
+
+  when parse
+
+  then emits stderr
+    assert output contains line number
+    assert output mentions missing spec declaration
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior reject-missing-title [error_case]
+  "Reject a spec that has no title line"
+
+  given
+    A .spec file with a spec declaration and description but no title line
+
+  when parse
+
+  then emits stderr
+    assert output mentions missing title
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior reject-missing-description [error_case]
+  "Reject a spec that has no description block"
+
+  given
+    A .spec file with a spec declaration and title but no description block
+
+  when parse
+
+  then emits stderr
+    assert output mentions missing description
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior reject-missing-motivation [error_case]
+  "Reject a spec that has no motivation block"
+
+  given
+    A .spec file with a spec declaration, title, and description but no
+    motivation block
+
+  when parse
+
+  then emits stderr
+    assert output mentions missing motivation
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior reject-behavior-without-description [error_case]
+  "Reject a behavior that has no quoted description string"
+
+  given
+    A .spec file with:
+    behavior do-thing [happy_path]
+    given
+      Some condition
+
+  when parse
+
+  then emits stderr
+    assert output contains line number
+    assert output mentions missing behavior description
+
+  then emits process_exit
+    assert code == 1
+
+
+# Format errors — behavior sections
 
 behavior reject-behavior-without-given [error_case]
   "Reject a behavior that has when and then but no given"
@@ -503,6 +761,8 @@ behavior reject-wrong-section-order [error_case]
     assert code == 1
 
 
+# Format errors — assertions and aliases
+
 behavior reject-assert-without-field [error_case]
   "Reject an assertion with no field name"
 
@@ -566,6 +826,8 @@ behavior reject-malformed-alias-reference [error_case]
   then emits process_exit
     assert code == 1
 
+
+# Format errors — dependencies
 
 behavior reject-depends-on-without-version [error_case]
   "Reject a dependency declaration with no version constraint"
