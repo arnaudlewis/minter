@@ -2,7 +2,7 @@ mod common;
 
 use std::fs;
 
-use common::{read_graph_json, specval, temp_dir_with_specs};
+use common::{read_graph_json, minter, temp_dir_with_specs};
 use predicates::prelude::*;
 
 /// Helper: a valid spec with a given name, version, and optional dependency.
@@ -51,7 +51,7 @@ fn detect_changed_file() {
     ]);
 
     // First run — build the graph
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -77,7 +77,7 @@ fn detect_changed_file() {
     .unwrap();
 
     // Second run — should detect change and update graph
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -104,7 +104,7 @@ fn integrate_new_spec_file() {
     ]);
 
     // First run — build initial graph
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -124,7 +124,7 @@ fn integrate_new_spec_file() {
     .unwrap();
 
     // Second run
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -149,7 +149,7 @@ fn reject_broken_deps_after_deletion() {
     ]);
 
     // First run — build graph
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -164,7 +164,7 @@ fn reject_broken_deps_after_deletion() {
     fs::remove_file(dir.path().join("b.spec")).unwrap();
 
     // Second run — should fail and report missing dep
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -190,7 +190,7 @@ fn rebuild_when_files_moved() {
     ]);
 
     // First run — build graph
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -199,7 +199,7 @@ fn rebuild_when_files_moved() {
         .success();
 
     // Manually inject a stale entry into the graph
-    let graph_path = dir.path().join(".specval").join("graph.json");
+    let graph_path = dir.path().join(".minter").join("graph.json");
     let mut graph: serde_json::Value =
         serde_json::from_str(&fs::read_to_string(&graph_path).unwrap()).unwrap();
     // Add a fake stale entry that references a file that doesn't exist
@@ -213,7 +213,7 @@ fn rebuild_when_files_moved() {
     fs::write(&graph_path, serde_json::to_string_pretty(&graph).unwrap()).unwrap();
 
     // Run again — should rebuild and remove stale entry
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")

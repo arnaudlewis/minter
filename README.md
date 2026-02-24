@@ -1,4 +1,4 @@
-# specval
+# minter
 
 A CLI tool for validating structured specification files. Parses a custom `.spec` DSL that defines behavioral contracts (given/when/then), enforces semantic rules, resolves dependency graphs across specs, and provides a watch mode for instant feedback during authoring.
 
@@ -7,15 +7,15 @@ A CLI tool for validating structured specification files. Parses a custom `.spec
 **Requirements:** Rust 1.85+
 
 ```bash
-git clone git@github.com:arnaudlewis/specval.git
-cd specval
+git clone git@github.com:arnaudlewis/minter.git
+cd minter
 cargo install --path .
 ```
 
 Verify the installation:
 
 ```bash
-specval --version
+minter --version
 ```
 
 ## Commands
@@ -23,20 +23,20 @@ specval --version
 ### `validate` — Validate spec files
 
 ```
-specval validate [OPTIONS] <FILES>...
+minter validate [OPTIONS] <FILES>...
 ```
 
-Validate one or more `.spec` files or entire directories.
+Validate one or more `.spec` files or entire directories. Directories are scanned recursively — specs organized in subdirectories are automatically discovered.
 
 ```bash
 # Single file
-specval validate specs/user-auth.spec
+minter validate specs/validation/user-auth.spec
 
 # Multiple files
-specval validate specs/auth.spec specs/payment.spec
+minter validate specs/validation/auth.spec specs/caching/cache.spec
 
-# Entire directory
-specval validate specs/
+# Entire directory (recursive)
+minter validate specs/
 ```
 
 **Output:**
@@ -54,10 +54,10 @@ specs/broken.spec: line 12: Expected 'when' section before 'then'
 
 #### `--deps` — Resolve and validate dependencies
 
-When a spec declares `depends on`, use `--deps` to resolve the full dependency tree from sibling `.spec` files in the same directory.
+When a spec declares `depends on`, use `--deps` to resolve the full dependency tree. Dependencies are resolved by name from any `.spec` file in the directory tree — specs in different subdirectories can depend on each other.
 
 ```bash
-specval validate --deps specs/payment.spec
+minter validate --deps specs/payment.spec
 ```
 
 ```
@@ -67,7 +67,7 @@ specval validate --deps specs/payment.spec
     └── user-auth v1.0.0 (already shown)
 ```
 
-With `--deps`, specval also maintains a graph cache in `.specval/graph.json` at your working directory. On subsequent runs, unchanged specs are skipped based on content hashing — only modified files and their dependents are re-validated.
+With `--deps`, minter also maintains a graph cache in `.minter/graph.json` at your working directory. On subsequent runs, unchanged specs are skipped based on content hashing — only modified files and their dependents are re-validated.
 
 **Exit codes:**
 
@@ -79,13 +79,13 @@ With `--deps`, specval also maintains a graph cache in `.specval/graph.json` at 
 ### `watch` — Live validation on file changes
 
 ```
-specval watch <DIR>
+minter watch <DIR>
 ```
 
-Starts a long-running process that monitors a directory and re-validates on every file change.
+Starts a long-running process that monitors a directory (including subdirectories) and re-validates on every file change.
 
 ```bash
-specval watch specs/
+minter watch specs/
 ```
 
 ```
@@ -118,7 +118,7 @@ Watch mode uses colored output to help you scan results at a glance:
 | Yellow | Changed file events |
 | Cyan   | Watching banner, new file events |
 
-The dependency graph is kept hot in memory. Rapid successive saves are debounced into a single validation cycle. Press `Ctrl+C` to stop — the graph is saved to `.specval/graph.json` before exit.
+The dependency graph is kept hot in memory. Rapid successive saves are debounced into a single validation cycle. Press `Ctrl+C` to stop — the graph is saved to `.minter/graph.json` before exit.
 
 ## The `.spec` format
 
@@ -268,11 +268,32 @@ depends on user-auth >= 1.0.0
 depends on session-store >= 2.0.0
 ```
 
-Dependencies are resolved from sibling `.spec` files in the same directory when using `--deps`.
+Dependencies are resolved by name from any `.spec` file in the directory tree when using `--deps`. Spec names must be globally unique across the tree.
+
+## Directory layout
+
+Specs can be organized into subdirectories. All commands (`validate`, `validate --deps`, `watch`) scan recursively.
+
+```
+specs/
+  cli.spec
+  validation/
+    validate-spec.spec
+    validate-dependencies.spec
+    validate-display.spec
+    dsl-format.spec
+  caching/
+    graph-cache.spec
+    incremental-validation.spec
+  watch/
+    watch-mode.spec
+```
+
+Spec names must be globally unique across the entire tree. If two `.spec` files in different subdirectories share the same stem name, minter reports an error with both file paths.
 
 ## Semantic rules
 
-Beyond syntax, specval enforces:
+Beyond syntax, minter enforces:
 
 | Rule | Description |
 |------|-------------|
@@ -285,14 +306,14 @@ Beyond syntax, specval enforces:
 
 ## Graph cache
 
-When using `--deps` or `watch`, specval maintains a `.specval/graph.json` file at your current working directory (not inside the specs directory). This cache stores content hashes and dependency edges so that unchanged specs can be skipped on subsequent runs.
+When using `--deps` or `watch`, minter maintains a `.minter/graph.json` file at your current working directory (not inside the specs directory). This cache stores content hashes and dependency edges so that unchanged specs can be skipped on subsequent runs.
 
 - Created automatically on first `--deps` run
 - Updated when spec files change
 - Auto-rebuilt if corrupted or schema-incompatible
 - Ignored when running `validate` without `--deps`
 
-Add `.specval` to your `.gitignore`.
+Add `.minter` to your `.gitignore`.
 
 ## Running tests
 

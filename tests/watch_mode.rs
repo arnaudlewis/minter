@@ -39,9 +39,9 @@ behavior do-thing [happy_path]
     )
 }
 
-/// Get the path to the specval binary.
-fn specval_bin() -> std::path::PathBuf {
-    assert_cmd::cargo::cargo_bin("specval")
+/// Get the path to the minter binary.
+fn minter_bin() -> std::path::PathBuf {
+    assert_cmd::cargo::cargo_bin("minter")
 }
 
 /// A non-blocking line receiver backed by a background reader thread.
@@ -121,14 +121,14 @@ fn watch_start() {
     let dir = tempfile::TempDir::new().unwrap();
     fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
 
-    let mut child = Command::new(specval_bin())
+    let mut child = Command::new(minter_bin())
         .current_dir(dir.path())
         .arg("watch")
         .arg(dir.path())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("failed to spawn specval watch");
+        .expect("failed to spawn minter watch");
 
     let stdout = child.stdout.take().unwrap();
     let receiver = LineReceiver::new(stdout);
@@ -171,14 +171,14 @@ fn watch_incremental_revalidation() {
     .unwrap();
     fs::write(dir.path().join("b.spec"), valid_spec("b", "1.0.0", None)).unwrap();
 
-    let mut child = Command::new(specval_bin())
+    let mut child = Command::new(minter_bin())
         .current_dir(dir.path())
         .arg("watch")
         .arg(dir.path())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("failed to spawn specval watch");
+        .expect("failed to spawn minter watch");
 
     let stdout = child.stdout.take().unwrap();
     let receiver = LineReceiver::new(stdout);
@@ -217,14 +217,14 @@ fn watch_graceful_shutdown() {
     let dir = tempfile::TempDir::new().unwrap();
     fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
 
-    let mut child = Command::new(specval_bin())
+    let mut child = Command::new(minter_bin())
         .current_dir(dir.path())
         .arg("watch")
         .arg(dir.path())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("failed to spawn specval watch");
+        .expect("failed to spawn minter watch");
 
     let stdout = child.stdout.take().unwrap();
     let receiver = LineReceiver::new(stdout);
@@ -264,14 +264,14 @@ fn watch_detect_new_file() {
     let dir = tempfile::TempDir::new().unwrap();
     fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
 
-    let mut child = Command::new(specval_bin())
+    let mut child = Command::new(minter_bin())
         .current_dir(dir.path())
         .arg("watch")
         .arg(dir.path())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("failed to spawn specval watch");
+        .expect("failed to spawn minter watch");
 
     let stdout = child.stdout.take().unwrap();
     let receiver = LineReceiver::new(stdout);
@@ -312,14 +312,14 @@ fn watch_report_broken_deps_on_delete() {
     .unwrap();
     fs::write(dir.path().join("b.spec"), valid_spec("b", "1.0.0", None)).unwrap();
 
-    let mut child = Command::new(specval_bin())
+    let mut child = Command::new(minter_bin())
         .current_dir(dir.path())
         .arg("watch")
         .arg(dir.path())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("failed to spawn specval watch");
+        .expect("failed to spawn minter watch");
 
     let stdout = child.stdout.take().unwrap();
     let stderr = child.stderr.take().unwrap();
@@ -368,14 +368,14 @@ fn watch_debounce() {
     let dir = tempfile::TempDir::new().unwrap();
     fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
 
-    let mut child = Command::new(specval_bin())
+    let mut child = Command::new(minter_bin())
         .current_dir(dir.path())
         .arg("watch")
         .arg(dir.path())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("failed to spawn specval watch");
+        .expect("failed to spawn minter watch");
 
     let stdout = child.stdout.take().unwrap();
     let receiver = LineReceiver::new(stdout);
@@ -431,14 +431,14 @@ fn watch_revalidate_after_fix() {
     let dir = tempfile::TempDir::new().unwrap();
     fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
 
-    let mut child = Command::new(specval_bin())
+    let mut child = Command::new(minter_bin())
         .current_dir(dir.path())
         .arg("watch")
         .arg(dir.path())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("failed to spawn specval watch");
+        .expect("failed to spawn minter watch");
 
     let stdout = child.stdout.take().unwrap();
     let receiver = LineReceiver::new(stdout);
@@ -494,14 +494,14 @@ fn watch_colored_output() {
     let dir = tempfile::TempDir::new().unwrap();
     fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
 
-    let mut child = Command::new(specval_bin())
+    let mut child = Command::new(minter_bin())
         .current_dir(dir.path())
         .arg("watch")
         .arg(dir.path())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("failed to spawn specval watch");
+        .expect("failed to spawn minter watch");
 
     let stdout = child.stdout.take().unwrap();
     let receiver = LineReceiver::new(stdout);
@@ -595,6 +595,54 @@ fn watch_colored_output() {
     assert!(
         deleted_line.contains(ANSI_RED),
         "deleted event should use red: {deleted_line}"
+    );
+
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
+/// watch-mode.spec: watch-subdirectory-changes
+/// Modify a file in a subdirectory → stdout shows changed + result.
+#[test]
+fn watch_subdirectory_changes() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let sub_dir = dir.path().join("validation");
+    fs::create_dir(&sub_dir).unwrap();
+    fs::write(sub_dir.join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
+
+    let mut child = Command::new(minter_bin())
+        .current_dir(dir.path())
+        .arg("watch")
+        .arg(dir.path())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn minter watch");
+
+    let stdout = child.stdout.take().unwrap();
+    let receiver = LineReceiver::new(stdout);
+
+    // Wait for initial watch message
+    receiver
+        .wait_for(
+            |l| l.to_lowercase().contains("watch"),
+            Duration::from_secs(10),
+        )
+        .expect("should see initial watch message");
+
+    // Wait for watcher setup, then modify the file in the subdirectory
+    std::thread::sleep(Duration::from_millis(500));
+    fs::write(sub_dir.join("a.spec"), valid_spec("a", "1.1.0", None)).unwrap();
+
+    // Should see output about the changed file
+    let line = receiver.wait_for(
+        |l| l.contains("a") || l.contains("changed") || l.contains("modified"),
+        Duration::from_secs(10),
+    );
+
+    assert!(
+        line.is_some(),
+        "should detect and report file change in subdirectory"
     );
 
     let _ = child.kill();

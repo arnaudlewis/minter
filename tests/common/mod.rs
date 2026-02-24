@@ -4,9 +4,9 @@ use std::path::{Path, PathBuf};
 use assert_cmd::Command;
 use tempfile::TempDir;
 
-/// Create a Command for the specval binary.
-pub fn specval() -> Command {
-    Command::cargo_bin("specval").expect("specval binary should exist")
+/// Create a Command for the minter binary.
+pub fn minter() -> Command {
+    Command::cargo_bin("minter").expect("minter binary should exist")
 }
 
 /// Write a single .spec file to a temp directory.
@@ -40,7 +40,7 @@ pub fn temp_file(name: &str, content: &str) -> (TempDir, PathBuf) {
 }
 
 /// Write multiple .spec files to a temp directory and return the directory path.
-/// Useful for testing directory validation (where specval receives a dir, not files).
+/// Useful for testing directory validation (where minter receives a dir, not files).
 pub fn temp_dir_with_specs(specs: &[(&str, &str)]) -> (TempDir, PathBuf) {
     let dir = TempDir::new().expect("create temp dir");
     for (name, content) in specs {
@@ -51,20 +51,35 @@ pub fn temp_dir_with_specs(specs: &[(&str, &str)]) -> (TempDir, PathBuf) {
     (dir, dir_path)
 }
 
-/// Read and parse .specval/graph.json from a directory.
+/// Read and parse .minter/graph.json from a directory.
 pub fn read_graph_json(dir: &Path) -> serde_json::Value {
-    let path = dir.join(".specval").join("graph.json");
+    let path = dir.join(".minter").join("graph.json");
     let content = fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("Failed to read {}: {}", path.display(), e));
     serde_json::from_str(&content)
         .unwrap_or_else(|e| panic!("Failed to parse {}: {}", path.display(), e))
 }
 
-/// Write arbitrary content to .specval/graph.json in a directory.
+/// Write arbitrary content to .minter/graph.json in a directory.
 pub fn write_graph_json(dir: &Path, content: &str) {
-    let specval_dir = dir.join(".specval");
-    fs::create_dir_all(&specval_dir).expect("create .specval dir");
-    fs::write(specval_dir.join("graph.json"), content).expect("write graph.json");
+    let minter_dir = dir.join(".minter");
+    fs::create_dir_all(&minter_dir).expect("create .minter dir");
+    fs::write(minter_dir.join("graph.json"), content).expect("write graph.json");
+}
+
+/// Create a temp directory with specs in subdirectories.
+/// Accepts ("subdir/name", content) pairs where the subdir path can be nested.
+pub fn temp_dir_with_nested_specs(specs: &[(&str, &str)]) -> (TempDir, PathBuf) {
+    let dir = TempDir::new().expect("create temp dir");
+    for (relative_path, content) in specs {
+        let path = dir.path().join(format!("{}.spec", relative_path));
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).expect("create subdirectory");
+        }
+        fs::write(&path, content).expect("write spec file");
+    }
+    let dir_path = dir.path().to_path_buf();
+    (dir, dir_path)
 }
 
 /// A minimal valid spec that exercises the core structure.
@@ -76,7 +91,7 @@ description
   A test spec for validation.
 
 motivation
-  Testing specval.
+  Testing minter.
 
 behavior do-thing [happy_path]
   \"Do the thing\"

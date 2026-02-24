@@ -1,4 +1,4 @@
-# specval — Spec Validator CLI
+# minter — Spec Validator CLI
 
 Validates .spec files — parses the DSL, runs semantic rules, reports pass/fail. The deterministic gate in a spec-driven development pipeline.
 
@@ -6,10 +6,10 @@ Validates .spec files — parses the DSL, runs semantic rules, reports pass/fail
 
 Specs are the source of truth in spec-driven development. Code is compiled output. But specs are written by LLMs (non-deterministic), and consumed by LLMs (non-deterministic). The only way to guarantee consistency is a deterministic validation gate between spec-writer and downstream agents.
 
-`specval` is that gate.
+`minter` is that gate.
 
 ```
-Human intent → .spec (DSL) → specval validate (deterministic) → downstream agents read .spec
+Human intent → .spec (DSL) → minter validate (deterministic) → downstream agents read .spec
 ```
 
 There is no intermediate JSON. The .spec DSL file is the artifact that flows through the entire pipeline. LLMs read it natively — it's concise and human-friendly by design. Validation happens on the parsed model internally; the output is pass/fail, not a second file format.
@@ -25,8 +25,8 @@ Everything is given/when/then. One concept to learn, one concept to validate, on
 ## Usage
 
 ```bash
-specval validate feature.spec             # validate one spec
-specval validate specs/*.spec             # validate multiple specs
+minter validate feature.spec             # validate one spec
+minter validate specs/*.spec             # validate multiple specs
 ```
 
 Exit code 0 = valid. Exit code 1 = invalid with clear error messages including line numbers.
@@ -150,7 +150,7 @@ Parse errors stop validation — semantic rules only run on successfully parsed 
 ## Project Structure
 
 ```
-specval/
+minter/
 ├── Cargo.toml
 ├── src/
 │   ├── main.rs                  # CLI entry point
@@ -174,7 +174,7 @@ specval/
 │       ├── mod.rs
 │       └── reporter.rs          # Text output with line numbers
 ├── specs/
-│   └── validate-command.spec    # The spec for specval itself (dogfood)
+│   └── validate-command.spec    # The spec for minter itself (dogfood)
 └── tests/
     ├── valid_specs/
     ├── invalid_specs/
@@ -184,7 +184,7 @@ specval/
 ## Implementation Order
 
 1. Install Rust via rustup
-2. Scaffold project with `cargo new specval`
+2. Scaffold project with `cargo new minter`
 3. Model layer (behavior.rs → simple modules → spec.rs)
 4. PEG grammar + parser (grammar.pest → AST → Spec model)
 5. Semantic validation (7 rules)
@@ -196,7 +196,7 @@ specval/
 
 This tool is the first primitive of the v3.0 agent team. Once it exists:
 
-- The **spec-writer agent** writes .spec files → `specval validate` gates them
+- The **spec-writer agent** writes .spec files → `minter validate` gates them
 - The **test-generator agent** reads validated .spec files → consistent input = consistent tests
 - The **implementer agent** receives .spec + tests → builds code that passes tests
 - The **benchmark system** measures spec conformance via test pass rates

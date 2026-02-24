@@ -1,6 +1,6 @@
 mod common;
 
-use common::{specval, temp_dir_with_specs, temp_spec, temp_specs, VALID_SPEC};
+use common::{minter, temp_dir_with_specs, temp_spec, temp_specs, VALID_SPEC};
 use predicates::prelude::*;
 
 /// Helper: a valid spec with a given name, version, and number of behaviors.
@@ -84,7 +84,7 @@ fn spec_with_dep(name: &str, version: &str, deps: &[(&str, &str)]) -> String {
 fn display_success_line() {
     let spec = spec_with_behaviors("my-feature", "1.2.0", 12);
     let (_dir, path) = temp_spec("my-feature", &spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -97,7 +97,7 @@ fn display_success_line() {
 fn display_singular_behavior_count() {
     let spec = spec_with_behaviors("single-case", "1.0.0", 1);
     let (_dir, path) = temp_spec("single-case", &spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -114,7 +114,7 @@ fn display_singular_behavior_count() {
 fn display_failure_line() {
     let spec = failing_spec("broken-feature", "2.0.0");
     let (_dir, path) = temp_spec("broken-feature", &spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -127,7 +127,7 @@ fn display_failure_line() {
 fn display_errors_on_stderr() {
     let spec = failing_spec("broken-feature", "2.0.0");
     let (_dir, path) = temp_spec("broken-feature", &spec);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -161,7 +161,7 @@ fn display_dependency_tree() {
     let c = spec_with_behaviors("c", "1.0.0", 1);
 
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b), ("c", &c)]);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -190,7 +190,7 @@ fn display_first_occurrence_expanded() {
     let b = spec_with_behaviors("b", "2.0.0", 3);
 
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b)]);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -219,7 +219,7 @@ fn display_repeated_dep_dimmed() {
     let c = spec_with_dep("c", "1.0.0", &[("b", "1.0.0")]);
 
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b), ("c", &c)]);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -264,7 +264,7 @@ fn display_repeated_dep_preserves_status() {
     let c = spec_with_dep("c", "1.0.0", &[("b", "1.0.0")]);
 
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b), ("c", &c)]);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -294,7 +294,7 @@ fn display_tree_error_on_stderr() {
     let b = failing_spec("b", "1.0.0");
 
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b)]);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -322,7 +322,7 @@ fn display_tree_error_on_stderr() {
 #[test]
 fn separate_result_and_errors() {
     let (_dir, path) = temp_spec("test-spec", VALID_SPEC);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -356,7 +356,7 @@ fn skip_already_shown_root() {
     let b = spec_with_behaviors("b", "1.0.0", 1);
 
     let (_dir, dir_path) = temp_dir_with_specs(&[("a", &a), ("b", &b)]);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg("--deps")
         .arg(&dir_path)

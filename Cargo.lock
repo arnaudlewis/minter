@@ -557,6 +557,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "minter"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "clap",
+ "ctrlc",
+ "libc",
+ "miette",
+ "notify",
+ "notify-debouncer-mini",
+ "pest",
+ "pest_derive",
+ "predicates",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+ "walkdir",
+]
+
+[[package]]
 name = "mio"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -908,28 +931,6 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
-]
-
-[[package]]
-name = "specval"
-version = "0.1.0"
-dependencies = [
- "assert_cmd",
- "clap",
- "ctrlc",
- "libc",
- "miette",
- "notify",
- "notify-debouncer-mini",
- "pest",
- "pest_derive",
- "predicates",
- "semver",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "thiserror",
 ]
 
 [[package]]

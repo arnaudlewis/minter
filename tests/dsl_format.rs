@@ -1,6 +1,6 @@
 mod common;
 
-use common::{specval, temp_spec, VALID_SPEC};
+use common::{minter, temp_spec, VALID_SPEC};
 use predicates::prelude::*;
 
 // ═══════════════════════════════════════════════════════════════
@@ -11,7 +11,7 @@ use predicates::prelude::*;
 #[test]
 fn parse_spec_declaration() {
     let (_dir, path) = temp_spec("my-feature", VALID_SPEC);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -43,7 +43,7 @@ behavior do-thing [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("title-test", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -77,7 +77,7 @@ behavior do-thing [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("desc-test", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -111,7 +111,7 @@ behavior do-thing [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("motiv-test", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -126,7 +126,7 @@ behavior do-thing [happy_path]
 #[test]
 fn parse_behavior_declaration() {
     let (_dir, path) = temp_spec("behavior-test", VALID_SPEC);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -137,7 +137,7 @@ fn parse_behavior_declaration() {
 #[test]
 fn parse_category_happy_path() {
     let (_dir, path) = temp_spec("cat-happy", VALID_SPEC);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -180,7 +180,7 @@ behavior fail-thing [error_case]
     assert output contains \"error\"
 ";
     let (_dir, path) = temp_spec("cat-error", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -223,7 +223,7 @@ behavior weird-thing [edge_case]
     assert output contains \"handled\"
 ";
     let (_dir, path) = temp_spec("cat-edge", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -238,7 +238,7 @@ behavior weird-thing [edge_case]
 #[test]
 fn parse_given_prose() {
     let (_dir, path) = temp_spec("given-prose", VALID_SPEC);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -270,7 +270,7 @@ behavior with-alias [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("alias-decl", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -303,7 +303,7 @@ behavior with-multi-given [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("multi-given", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -339,7 +339,7 @@ behavior with-action [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("when-action", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -373,7 +373,7 @@ behavior with-inputs [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("when-inputs", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -406,7 +406,7 @@ behavior with-alias-ref [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("when-alias-ref", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -443,7 +443,7 @@ behavior with-returns [happy_path]
     assert name == \"test\"
 ";
     let (_dir, path) = temp_spec("then-returns", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -454,7 +454,7 @@ behavior with-returns [happy_path]
 #[test]
 fn parse_then_emits() {
     let (_dir, path) = temp_spec("then-emits", VALID_SPEC);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -486,7 +486,7 @@ behavior with-exit [happy_path]
     assert code == 0
 ";
     let (_dir, path) = temp_spec("then-exit", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -518,7 +518,7 @@ behavior with-side-effect [happy_path]
     assert Note entity created with title == \"test\"
 ";
     let (_dir, path) = temp_spec("then-side-effect", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -553,7 +553,7 @@ behavior with-multi-then [happy_path]
     assert code == 0
 ";
     let (_dir, path) = temp_spec("multi-then", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -589,7 +589,7 @@ behavior with-equals [happy_path]
     assert name == \"test\"
 ";
     let (_dir, path) = temp_spec("assert-equals", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -621,7 +621,7 @@ behavior with-is-present [happy_path]
     assert id is_present
 ";
     let (_dir, path) = temp_spec("assert-is-present", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -632,7 +632,7 @@ behavior with-is-present [happy_path]
 #[test]
 fn parse_assert_contains() {
     let (_dir, path) = temp_spec("assert-contains", VALID_SPEC);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -664,7 +664,7 @@ behavior with-range [happy_path]
     assert count in_range 1..100
 ";
     let (_dir, path) = temp_spec("assert-range", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -696,7 +696,7 @@ behavior with-pattern [happy_path]
     assert email matches_pattern \"^.+@.+$\"
 ";
     let (_dir, path) = temp_spec("assert-pattern", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -728,7 +728,7 @@ behavior with-ref-assert [happy_path]
     assert created_by == @the_user.id
 ";
     let (_dir, path) = temp_spec("assert-ref", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -760,7 +760,7 @@ behavior with-gte [happy_path]
     assert count >= 2
 ";
     let (_dir, path) = temp_spec("assert-gte", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -798,7 +798,7 @@ behavior do-thing [happy_path]
 depends on user-auth >= 1.0.0
 ";
     let (_dir, path) = temp_spec("with-dep", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -833,7 +833,7 @@ depends on user-auth >= 1.0.0
 depends on billing >= 2.0.0
 ";
     let (_dir, path) = temp_spec("multi-deps", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -870,7 +870,7 @@ behavior do-thing [happy_path]
     assert all preconditions are captured in order
 ";
     let (_dir, path) = temp_spec("prose-assert", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -921,7 +921,7 @@ behavior another-thing [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("comments", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -958,7 +958,7 @@ behavior do-thing [happy_path]
 
 ";
     let (_dir, path) = temp_spec("blank-lines", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -991,7 +991,7 @@ behavior bad [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("no-given", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -1022,7 +1022,7 @@ behavior bad [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("no-when", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -1052,7 +1052,7 @@ behavior bad [happy_path]
   when act
 ";
     let (_dir, path) = temp_spec("no-then", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -1085,7 +1085,7 @@ behavior bad [happy_path]
   when act
 ";
     let (_dir, path) = temp_spec("wrong-order", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -1118,7 +1118,7 @@ behavior bad [happy_path]
     assert == \"test\"
 ";
     let (_dir, path) = temp_spec("no-field", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -1151,7 +1151,7 @@ behavior bad [happy_path]
     assert name frobnicates \"test\"
 ";
     let (_dir, path) = temp_spec("bad-operator", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -1184,7 +1184,7 @@ behavior bad [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("no-entity", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -1218,7 +1218,7 @@ behavior bad [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("bad-ref", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -1253,7 +1253,7 @@ behavior do-thing [happy_path]
 depends on user-auth
 ";
     let (_dir, path) = temp_spec("dep-no-version", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()

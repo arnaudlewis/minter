@@ -2,7 +2,7 @@ mod common;
 
 use std::fs;
 
-use common::{read_graph_json, specval, temp_dir_with_specs, write_graph_json};
+use common::{read_graph_json, minter, temp_dir_with_nested_specs, temp_dir_with_specs, write_graph_json};
 use predicates::prelude::*;
 
 /// Helper: a valid spec with a given name, version, and optional dependency.
@@ -40,10 +40,10 @@ behavior do-thing [happy_path]
 // graph-cache.spec behaviors
 // ═══════════════════════════════════════════════════════════════
 
-/// graph-cache.spec: specval-directory-at-cwd
-/// .specval/ is created at CWD (project root), not inside the specs directory.
+/// graph-cache.spec: minter-directory-at-cwd
+/// .minter/ is created at CWD (project root), not inside the specs directory.
 #[test]
-fn specval_directory_at_cwd() {
+fn minter_directory_at_cwd() {
     // Create a project structure: project_root/specs/a.spec
     let project_root = tempfile::TempDir::new().unwrap();
     let specs_dir = project_root.path().join("specs");
@@ -55,7 +55,7 @@ fn specval_directory_at_cwd() {
     .unwrap();
 
     // Run from project_root, pointing to specs/ subdirectory
-    specval()
+    minter()
         .current_dir(project_root.path())
         .arg("validate")
         .arg("--deps")
@@ -63,19 +63,19 @@ fn specval_directory_at_cwd() {
         .assert()
         .success();
 
-    // .specval should be at project_root, NOT inside specs/
+    // .minter should be at project_root, NOT inside specs/
     assert!(
-        project_root.path().join(".specval").join("graph.json").exists(),
-        ".specval/graph.json should be at the project root (CWD)"
+        project_root.path().join(".minter").join("graph.json").exists(),
+        ".minter/graph.json should be at the project root (CWD)"
     );
     assert!(
-        !specs_dir.join(".specval").exists(),
-        ".specval should NOT be created inside the specs directory"
+        !specs_dir.join(".minter").exists(),
+        ".minter should NOT be created inside the specs directory"
     );
 }
 
 /// graph-cache.spec: build-graph-cold-start
-/// .specval/graph.json created on first --deps run, contains spec names + hashes + edges, exit 0.
+/// .minter/graph.json created on first --deps run, contains spec names + hashes + edges, exit 0.
 #[test]
 fn build_graph_cold_start() {
     let (dir, dir_path) = temp_dir_with_specs(&[
@@ -83,7 +83,7 @@ fn build_graph_cold_start() {
         ("b", &valid_spec("b", "1.0.0", None)),
     ]);
 
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -91,7 +91,7 @@ fn build_graph_cold_start() {
         .assert()
         .success();
 
-    // .specval/graph.json should exist at CWD
+    // .minter/graph.json should exist at CWD
     let graph = read_graph_json(dir.path());
 
     // Should contain spec entries
@@ -113,18 +113,18 @@ fn build_graph_cold_start() {
     );
 }
 
-/// graph-cache.spec: empty-specval-directory
-/// .specval/ dir created when absent.
+/// graph-cache.spec: empty-minter-directory
+/// .minter/ dir created when absent.
 #[test]
-fn create_specval_directory() {
+fn create_minter_directory() {
     let (dir, dir_path) = temp_dir_with_specs(&[
         ("a", &valid_spec("a", "1.0.0", None)),
     ]);
 
-    // Ensure no .specval dir exists
-    assert!(!dir.path().join(".specval").exists());
+    // Ensure no .minter dir exists
+    assert!(!dir.path().join(".minter").exists());
 
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -133,12 +133,12 @@ fn create_specval_directory() {
         .success();
 
     assert!(
-        dir.path().join(".specval").exists(),
-        ".specval directory should be created"
+        dir.path().join(".minter").exists(),
+        ".minter directory should be created"
     );
     assert!(
-        dir.path().join(".specval").join("graph.json").exists(),
-        ".specval/graph.json should be created"
+        dir.path().join(".minter").join("graph.json").exists(),
+        ".minter/graph.json should be created"
     );
 }
 
@@ -151,7 +151,7 @@ fn load_cached_graph() {
     ]);
 
     // First run — creates graph.json
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -159,7 +159,7 @@ fn load_cached_graph() {
         .assert()
         .success();
 
-    let graph_path = dir.path().join(".specval").join("graph.json");
+    let graph_path = dir.path().join(".minter").join("graph.json");
     let mtime1 = fs::metadata(&graph_path)
         .expect("graph.json should exist")
         .modified()
@@ -169,7 +169,7 @@ fn load_cached_graph() {
     std::thread::sleep(std::time::Duration::from_millis(50));
 
     // Second run — should not rewrite graph.json
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -197,7 +197,7 @@ fn write_updated_graph() {
     ]);
 
     // First run — creates graph.json
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -220,7 +220,7 @@ fn write_updated_graph() {
     .expect("write modified spec");
 
     // Second run — should update graph.json
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -245,7 +245,7 @@ fn validate_without_deps_ignores_graph() {
     ]);
 
     // Run without --deps
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg(&dir_path)
@@ -253,27 +253,27 @@ fn validate_without_deps_ignores_graph() {
         .success();
 
     assert!(
-        !dir.path().join(".specval").exists(),
-        ".specval should not be created without --deps"
+        !dir.path().join(".minter").exists(),
+        ".minter should not be created without --deps"
     );
 
     // Now create a graph.json manually, run without --deps, check it's untouched
     write_graph_json(dir.path(), r#"{"schema_version": 1, "specs": {}}"#);
-    let mtime1 = fs::metadata(dir.path().join(".specval").join("graph.json"))
+    let mtime1 = fs::metadata(dir.path().join(".minter").join("graph.json"))
         .unwrap()
         .modified()
         .unwrap();
 
     std::thread::sleep(std::time::Duration::from_millis(50));
 
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg(&dir_path)
         .assert()
         .success();
 
-    let mtime2 = fs::metadata(dir.path().join(".specval").join("graph.json"))
+    let mtime2 = fs::metadata(dir.path().join(".minter").join("graph.json"))
         .unwrap()
         .modified()
         .unwrap();
@@ -295,7 +295,7 @@ fn rebuild_on_corrupted_graph() {
     // Write corrupted graph.json
     write_graph_json(dir.path(), "this is not valid json {{{");
 
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -321,7 +321,7 @@ fn rebuild_on_schema_mismatch() {
     // Write valid JSON but wrong schema
     write_graph_json(dir.path(), r#"{"wrong_field": true}"#);
 
-    specval()
+    minter()
         .current_dir(dir.path())
         .arg("validate")
         .arg("--deps")
@@ -340,5 +340,47 @@ fn rebuild_on_schema_mismatch() {
     assert!(
         graph.get("schema_version").is_some(),
         "rebuilt graph should have schema_version"
+    );
+}
+
+/// graph-cache.spec: build-graph-cold-start (updated)
+/// graph.json entries include a `path` field with subdirectory info.
+#[test]
+fn graph_stores_file_paths() {
+    let (_dir, dir_path) = temp_dir_with_nested_specs(&[
+        ("validation/a", &valid_spec("a", "1.0.0", Some(("b", "1.0.0")))),
+        ("caching/b", &valid_spec("b", "1.0.0", None)),
+    ]);
+
+    minter()
+        .current_dir(_dir.path())
+        .arg("validate")
+        .arg("--deps")
+        .arg(&dir_path)
+        .assert()
+        .success();
+
+    let graph = read_graph_json(_dir.path());
+    let specs = graph.get("specs").expect("graph should have specs");
+
+    // Each entry should have a path field
+    let a_entry = &specs["a"];
+    let a_path = a_entry
+        .get("path")
+        .and_then(|p| p.as_str())
+        .expect("spec entry should have a path field");
+    assert!(
+        a_path.contains("validation"),
+        "path for 'a' should contain subdirectory info, got: {a_path}"
+    );
+
+    let b_entry = &specs["b"];
+    let b_path = b_entry
+        .get("path")
+        .and_then(|p| p.as_str())
+        .expect("spec entry should have a path field");
+    assert!(
+        b_path.contains("caching"),
+        "path for 'b' should contain subdirectory info, got: {b_path}"
     );
 }

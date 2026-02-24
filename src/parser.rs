@@ -457,98 +457,85 @@ impl<'a> Parser<'a> {
         self.advance();
 
         if rest.is_empty() || rest.starts_with("==") || rest.starts_with(">=") {
-            return Err(vec![ParseError {
-                line: self.line_num() - 1,
-                message: "Malformed assertion — expected 'assert <field> <operator> [<value>]'"
-                    .to_string(),
-            }]);
+            return Err(malformed_assertion_error(self.line_num() - 1));
         }
 
-        // Find the operator position in the tokens.
-        // Field can be multi-word (e.g. "behavior name == ..."), so scan for known operators.
         let tokens: Vec<&str> = rest.split_whitespace().collect();
-
         let op_idx = tokens.iter().position(|t| {
             matches!(*t, "==" | "is_present" | "contains" | "in_range" | "matches_pattern" | ">=")
         });
 
         match op_idx {
-            Some(idx) if idx == 0 => {
-                return Err(vec![ParseError {
-                    line: self.line_num() - 1,
-                    message: "Malformed assertion — expected 'assert <field> <operator> [<value>]'"
-                        .to_string(),
-                }]);
-            }
+            Some(0) => Err(malformed_assertion_error(self.line_num() - 1)),
             Some(idx) => {
                 let field = tokens[..idx].join(" ");
-                let operator = tokens[idx];
                 let remainder = if idx + 1 < tokens.len() {
                     tokens[idx + 1..].join(" ")
                 } else {
                     String::new()
                 };
-
-                match operator {
-                    "==" => {
-                        if remainder.starts_with('@') {
-                            let ref_str = remainder.strip_prefix('@').unwrap();
-                            let (alias, alias_field) =
-                                ref_str.split_once('.').unwrap_or((ref_str, ""));
-                            Ok(Assertion::EqualsRef {
-                                field,
-                                alias: alias.to_string(),
-                                alias_field: alias_field.to_string(),
-                            })
-                        } else {
-                            Ok(Assertion::Equals {
-                                field,
-                                value: unquote(&remainder),
-                            })
-                        }
-                    }
-                    "is_present" => Ok(Assertion::IsPresent { field }),
-                    "contains" => Ok(Assertion::Contains {
-                        field,
-                        value: unquote(&remainder),
-                    }),
-                    "in_range" => {
-                        let (min, max) = remainder.split_once("..").unwrap_or((&remainder, ""));
-                        Ok(Assertion::InRange {
-                            field,
-                            min: min.to_string(),
-                            max: max.to_string(),
-                        })
-                    }
-                    "matches_pattern" => Ok(Assertion::MatchesPattern {
-                        field,
-                        pattern: unquote(&remainder),
-                    }),
-                    ">=" => Ok(Assertion::GreaterOrEqual {
-                        field,
-                        value: unquote(&remainder),
-                    }),
-                    _ => unreachable!(),
-                }
+                parse_typed_assertion(field, tokens[idx], &remainder)
             }
-            None => {
-                // No known operator found — check for `field unknown_op "value"` pattern
-                // (exactly 3 tokens, last token is a quoted string)
-                if tokens.len() == 3
-                    && tokens[2].starts_with('"')
-                {
-                    return Err(vec![ParseError {
-                        line: self.line_num() - 1,
-                        message: format!(
-                            "Unknown assertion operator '{}' — expected ==, is_present, contains, in_range, matches_pattern, or >=",
-                            tokens[1]
-                        ),
-                    }]);
-                }
-                Ok(Assertion::Prose(rest.to_string()))
-            }
+            None => parse_prose_or_unknown(rest, &tokens, self.line_num() - 1),
         }
     }
+}
+
+// ── Assertion helpers ───────────────────────────────────
+
+fn malformed_assertion_error(line: usize) -> Vec<ParseError> {
+    vec![ParseError {
+        line,
+        message: "Malformed assertion — expected 'assert <field> <operator> [<value>]'".to_string(),
+    }]
+}
+
+fn parse_typed_assertion(field: String, operator: &str, remainder: &str) -> Result<Assertion, Vec<ParseError>> {
+    match operator {
+        "==" => parse_equals_assertion(field, remainder),
+        "is_present" => Ok(Assertion::IsPresent { field }),
+        "contains" => Ok(Assertion::Contains { field, value: unquote(remainder) }),
+        "in_range" => parse_range_assertion(field, remainder),
+        "matches_pattern" => Ok(Assertion::MatchesPattern { field, pattern: unquote(remainder) }),
+        ">=" => Ok(Assertion::GreaterOrEqual { field, value: unquote(remainder) }),
+        _ => unreachable!(),
+    }
+}
+
+fn parse_equals_assertion(field: String, remainder: &str) -> Result<Assertion, Vec<ParseError>> {
+    if remainder.starts_with('@') {
+        let ref_str = remainder.strip_prefix('@').unwrap();
+        let (alias, alias_field) = ref_str.split_once('.').unwrap_or((ref_str, ""));
+        Ok(Assertion::EqualsRef {
+            field,
+            alias: alias.to_string(),
+            alias_field: alias_field.to_string(),
+        })
+    } else {
+        Ok(Assertion::Equals { field, value: unquote(remainder) })
+    }
+}
+
+fn parse_range_assertion(field: String, remainder: &str) -> Result<Assertion, Vec<ParseError>> {
+    let (min, max) = remainder.split_once("..").unwrap_or((remainder, ""));
+    Ok(Assertion::InRange {
+        field,
+        min: min.to_string(),
+        max: max.to_string(),
+    })
+}
+
+fn parse_prose_or_unknown(rest: &str, tokens: &[&str], line: usize) -> Result<Assertion, Vec<ParseError>> {
+    if tokens.len() == 3 && tokens[2].starts_with('"') {
+        return Err(vec![ParseError {
+            line,
+            message: format!(
+                "Unknown assertion operator '{}' — expected ==, is_present, contains, in_range, matches_pattern, or >=",
+                tokens[1]
+            ),
+        }]);
+    }
+    Ok(Assertion::Prose(rest.to_string()))
 }
 
 // ── Dependency parsing ──────────────────────────────────

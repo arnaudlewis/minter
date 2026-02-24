@@ -82,8 +82,8 @@ fn check_at_least_one_happy_path(spec: &Spec, errors: &mut Vec<SemanticError>) {
 fn check_unique_aliases(behavior: &Behavior, errors: &mut Vec<SemanticError>) {
     let mut seen = HashSet::new();
     for pre in &behavior.preconditions {
-        if let Precondition::Alias { name, .. } = pre {
-            if !seen.insert(name) {
+        if let Precondition::Alias { name, .. } = pre
+            && !seen.insert(name) {
                 errors.push(SemanticError {
                     rule: "unique-aliases",
                     message: format!(
@@ -92,7 +92,6 @@ fn check_unique_aliases(behavior: &Behavior, errors: &mut Vec<SemanticError>) {
                     ),
                 });
             }
-        }
     }
 }
 
@@ -108,8 +107,8 @@ fn check_alias_refs_resolve(behavior: &Behavior, errors: &mut Vec<SemanticError>
 
     // Check when-section alias refs
     for input in &behavior.action.inputs {
-        if let ActionInput::AliasRef { alias, .. } = input {
-            if !declared.contains(alias.as_str()) {
+        if let ActionInput::AliasRef { alias, .. } = input
+            && !declared.contains(alias.as_str()) {
                 errors.push(SemanticError {
                     rule: "alias-refs-resolve",
                     message: format!(
@@ -118,14 +117,13 @@ fn check_alias_refs_resolve(behavior: &Behavior, errors: &mut Vec<SemanticError>
                     ),
                 });
             }
-        }
     }
 
     // Check then-section alias refs
     for post in &behavior.postconditions {
         for assertion in &post.assertions {
-            if let Assertion::EqualsRef { alias, .. } = assertion {
-                if !declared.contains(alias.as_str()) {
+            if let Assertion::EqualsRef { alias, .. } = assertion
+                && !declared.contains(alias.as_str()) {
                     errors.push(SemanticError {
                         rule: "alias-refs-resolve",
                         message: format!(
@@ -134,7 +132,6 @@ fn check_alias_refs_resolve(behavior: &Behavior, errors: &mut Vec<SemanticError>
                         ),
                     });
                 }
-            }
         }
     }
 }

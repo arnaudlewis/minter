@@ -1,6 +1,6 @@
 mod common;
 
-use common::{specval, temp_spec, VALID_SPEC};
+use common::{minter, temp_spec, VALID_SPEC};
 use predicates::prelude::*;
 
 // ═══════════════════════════════════════════════════════════════
@@ -10,28 +10,28 @@ use predicates::prelude::*;
 /// cli.spec: show-help — --help flag prints usage
 #[test]
 fn show_help_flag() {
-    specval()
+    minter()
         .arg("--help")
         .assert()
         .success()
-        .stdout(predicate::str::contains("specval"))
+        .stdout(predicate::str::contains("minter"))
         .stdout(predicate::str::contains("validate"));
 }
 
 /// cli.spec: show-help — no arguments prints usage
 #[test]
 fn show_help_no_args() {
-    specval()
+    minter()
         .assert()
         .success()
-        .stdout(predicate::str::contains("specval"))
+        .stdout(predicate::str::contains("minter"))
         .stdout(predicate::str::contains("validate"));
 }
 
 /// cli.spec: show-version
 #[test]
 fn show_version() {
-    specval()
+    minter()
         .arg("--version")
         .assert()
         .success()
@@ -42,7 +42,7 @@ fn show_version() {
 #[test]
 fn validate_command_routing() {
     let (_dir, path) = temp_spec("valid", VALID_SPEC);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -53,7 +53,7 @@ fn validate_command_routing() {
 #[test]
 fn validate_deps_flag_routing() {
     let (_dir, path) = temp_spec("valid", VALID_SPEC);
-    specval()
+    minter()
         .arg("validate")
         .arg("--deps")
         .arg(&path)
@@ -68,7 +68,7 @@ fn validate_deps_flag_routing() {
 /// cli.spec: reject-unknown-command
 #[test]
 fn reject_unknown_command() {
-    specval()
+    minter()
         .arg("frobnicate")
         .assert()
         .failure()
@@ -78,7 +78,7 @@ fn reject_unknown_command() {
 /// cli.spec: reject-no-files
 #[test]
 fn reject_no_files() {
-    specval()
+    minter()
         .arg("validate")
         .assert()
         .failure()
@@ -89,7 +89,7 @@ fn reject_no_files() {
 #[test]
 fn reject_non_spec_extension() {
     let (_dir, path) = common::temp_file("readme.md", "not a spec");
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .assert()
@@ -100,7 +100,7 @@ fn reject_non_spec_extension() {
 /// cli.spec: reject-unknown-flag
 #[test]
 fn reject_unknown_flag() {
-    specval()
+    minter()
         .arg("validate")
         .arg("--frobnicate")
         .arg("file.spec")
@@ -117,7 +117,7 @@ fn reject_unknown_flag() {
 #[test]
 fn handle_mixed_valid_invalid_files() {
     let (_dir, path) = temp_spec("valid", VALID_SPEC);
-    specval()
+    minter()
         .arg("validate")
         .arg(&path)
         .arg("nonexistent.spec")

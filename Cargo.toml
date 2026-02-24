@@ -1,5 +1,5 @@
 [package]
-name = "specval"
+name = "minter"
 version = "0.1.0"
 edition = "2024"
 
@@ -16,6 +16,7 @@ sha2 = "0.10"
 notify = "7"
 notify-debouncer-mini = "0.5"
 ctrlc = "3"
+walkdir = "2"
 
 [dev-dependencies]
 assert_cmd = "2"

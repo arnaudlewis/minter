@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -6,7 +6,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-const SCHEMA_VERSION: u32 = 1;
+const SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GraphCache {
@@ -21,6 +21,8 @@ pub struct CachedEntry {
     pub behavior_count: usize,
     pub valid: bool,
     pub dependencies: Vec<String>,
+    #[serde(default)]
+    pub path: String,
 }
 
 #[derive(Debug)]
@@ -28,6 +30,12 @@ pub enum GraphError {
     Corrupted(String),
     SchemaMismatch,
     Io(io::Error),
+}
+
+impl Default for GraphCache {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl GraphCache {
@@ -68,30 +76,13 @@ impl GraphCache {
             fs::create_dir_all(parent)?;
         }
         let json = serde_json::to_string_pretty(self)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            .map_err(io::Error::other)?;
         fs::write(path, json)
     }
 
     /// Insert or update a spec entry in the graph.
-    pub fn upsert(
-        &mut self,
-        name: String,
-        content_hash: String,
-        version: String,
-        behavior_count: usize,
-        valid: bool,
-        dependencies: Vec<String>,
-    ) {
-        self.specs.insert(
-            name,
-            CachedEntry {
-                content_hash,
-                version,
-                behavior_count,
-                valid,
-                dependencies,
-            },
-        );
+    pub fn upsert(&mut self, name: String, entry: CachedEntry) {
+        self.specs.insert(name, entry);
     }
 
     /// Check if a spec's content has changed compared to the cached hash.
@@ -114,6 +105,66 @@ pub fn content_hash(source: &str) -> String {
 pub fn graph_json_path_cwd() -> std::path::PathBuf {
     std::env::current_dir()
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
-        .join(".specval")
+        .join(".minter")
         .join("graph.json")
+}
+
+pub struct GraphState {
+    pub cache: GraphCache,
+    pub dirty: bool,
+}
+
+impl GraphState {
+    pub fn load_or_build() -> Self {
+        let graph_path = graph_json_path_cwd();
+        if graph_path.exists() {
+            match GraphCache::load(&graph_path) {
+                Ok(cache) => {
+                    return GraphState {
+                        cache,
+                        dirty: false,
+                    };
+                }
+                Err(GraphError::Corrupted(msg)) => {
+                    eprintln!(
+                        "warning: cached graph is corrupt ({}), rebuilding from scratch",
+                        msg
+                    );
+                }
+                Err(GraphError::SchemaMismatch) => {
+                    eprintln!(
+                        "warning: cached graph has incompatible format, rebuilding from scratch"
+                    );
+                }
+                Err(GraphError::Io(_)) => {}
+            }
+        }
+        GraphState {
+            cache: GraphCache::new(),
+            dirty: true,
+        }
+    }
+
+    pub fn save_if_dirty(&self) {
+        if self.dirty {
+            let graph_path = graph_json_path_cwd();
+            if let Err(e) = self.cache.save(&graph_path) {
+                eprintln!("warning: failed to save graph cache: {}", e);
+            }
+        }
+    }
+
+    pub fn prune_stale(&mut self, on_disk: &HashSet<String>) {
+        let stale: Vec<String> = self
+            .cache
+            .specs
+            .keys()
+            .filter(|name| !on_disk.contains(name.as_str()))
+            .cloned()
+            .collect();
+        for name in stale {
+            self.cache.specs.remove(&name);
+            self.dirty = true;
+        }
+    }
 }

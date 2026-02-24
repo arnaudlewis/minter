@@ -1,6 +1,6 @@
 mod common;
 
-use common::{specval, temp_spec, temp_specs};
+use common::{minter, temp_dir_with_nested_specs, temp_spec, temp_specs};
 use predicates::prelude::*;
 
 /// Helper: a valid spec that depends on another spec.
@@ -70,7 +70,7 @@ fn validate_spec_then_resolve_deps() {
         ("consumer", &consumer_spec("provider", "1.0.0")),
         ("provider", &provider_spec("provider", "1.0.0")),
     ]);
-    specval()
+    minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -80,14 +80,14 @@ fn validate_spec_then_resolve_deps() {
         .stdout(predicate::str::contains("provider"));
 }
 
-/// validate-dependencies.spec: resolve-by-sibling-name
+/// validate-dependencies.spec: resolve-by-name-in-tree
 #[test]
-fn resolve_by_sibling_name() {
+fn resolve_by_name_in_tree() {
     let (_dir, paths) = temp_specs(&[
         ("consumer", &consumer_spec("provider", "1.0.0")),
         ("provider", &provider_spec("provider", "1.2.0")),
     ]);
-    specval()
+    minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -166,7 +166,7 @@ behavior do-thing [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, paths) = temp_specs(&[("a", a_spec), ("b", b_spec), ("c", c_spec)]);
-    specval()
+    minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -182,7 +182,7 @@ behavior do-thing [happy_path]
 #[test]
 fn reject_missing_dependency() {
     let (_dir, path) = temp_spec("consumer", &consumer_spec("nonexistent", "1.0.0"));
-    specval()
+    minter()
         .arg("validate")
         .arg("--deps")
         .arg(&path)
@@ -198,7 +198,7 @@ fn reject_incompatible_version() {
         ("consumer", &consumer_spec("provider", "2.0.0")),
         ("provider", &provider_spec("provider", "1.5.0")),
     ]);
-    specval()
+    minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -258,7 +258,7 @@ behavior do-thing [happy_path]
 depends on a >= 1.0.0
 ";
     let (_dir, paths) = temp_specs(&[("a", a_spec), ("b", b_spec)]);
-    specval()
+    minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -296,7 +296,7 @@ behavior fail-thing [error_case]
         ("consumer", &consumer_spec("broken", "1.0.0")),
         ("broken", broken),
     ]);
-    specval()
+    minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -329,7 +329,7 @@ frobnicate something
         ("consumer", bad_spec),
         ("provider", &provider_spec("provider", "1.0.0")),
     ]);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg("--deps")
         .arg(&paths[0])
@@ -375,7 +375,7 @@ behavior do-thing [happy_path]
     assert output contains \"done\"
 ";
     let (_dir, path) = temp_spec("no-deps", spec);
-    specval()
+    minter()
         .arg("validate")
         .arg("--deps")
         .arg(&path)
@@ -413,7 +413,7 @@ depends on missing-two >= 1.0.0
 depends on missing-three >= 1.0.0
 ";
     let (_dir, path) = temp_spec("consumer", spec);
-    let output = specval()
+    let output = minter()
         .arg("validate")
         .arg("--deps")
         .arg(&path)
@@ -425,5 +425,117 @@ depends on missing-three >= 1.0.0
     assert!(
         stderr.contains("missing-one") && stderr.contains("missing-two") && stderr.contains("missing-three"),
         "All unresolved deps should be reported, got: {stderr}"
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Cross-directory and duplicate name tests (validate-dependencies.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// validate-dependencies.spec: resolve-cross-directory-dependency
+#[test]
+fn resolve_cross_directory_dependency() {
+    let a_spec = "\
+spec a v1.0.0
+title \"A\"
+
+description
+  Spec A in validation subdir.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+depends on b >= 1.0.0
+";
+    let b_spec = "\
+spec b v1.0.0
+title \"B\"
+
+description
+  Spec B in caching subdir.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, dir_path) = temp_dir_with_nested_specs(&[
+        ("validation/a", a_spec),
+        ("caching/b", b_spec),
+    ]);
+    // Validate the whole directory tree — cross-directory deps resolve when
+    // the tree root encompasses both subdirectories
+    minter()
+        .arg("validate")
+        .arg("--deps")
+        .arg(&dir_path)
+        .assert()
+        .success();
+}
+
+/// validate-dependencies.spec: reject-duplicate-spec-names
+#[test]
+fn reject_duplicate_spec_names() {
+    let spec_content = "\
+spec my-feature v1.0.0
+title \"My Feature\"
+
+description
+  A feature spec.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, dir_path) = temp_dir_with_nested_specs(&[
+        ("sub1/my-feature", spec_content),
+        ("sub2/my-feature", spec_content),
+    ]);
+    let output = minter()
+        .arg("validate")
+        .arg("--deps")
+        .arg(&dir_path)
+        .assert()
+        .failure();
+
+    let stderr = String::from_utf8_lossy(&output.get_output().stderr);
+    // Should mention the duplicate name and both paths
+    assert!(
+        stderr.contains("my-feature"),
+        "stderr should mention the duplicate spec name, got: {stderr}"
+    );
+    assert!(
+        stderr.contains("sub1") && stderr.contains("sub2"),
+        "stderr should mention both file paths, got: {stderr}"
     );
 }
