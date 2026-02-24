@@ -52,12 +52,12 @@ Errors are printed to stderr with line numbers:
 specs/broken.spec: line 12: Expected 'when' section before 'then'
 ```
 
-#### `--deps` — Resolve and validate dependencies
+#### `--deep` — Resolve and validate dependencies
 
-When a spec declares `depends on`, use `--deps` to resolve the full dependency tree. Dependencies are resolved by name from any `.spec` file in the directory tree — specs in different subdirectories can depend on each other.
+When a spec declares `depends on`, use `--deep` to resolve the full dependency tree. Dependencies are resolved by name from any `.spec` file in the directory tree — specs in different subdirectories can depend on each other.
 
 ```bash
-minter validate --deps specs/payment.spec
+minter validate --deep specs/payment.spec
 ```
 
 ```
@@ -67,7 +67,7 @@ minter validate --deps specs/payment.spec
     └── user-auth v1.0.0 (already shown)
 ```
 
-With `--deps`, minter also maintains a graph cache in `.minter/graph.json` at your working directory. On subsequent runs, unchanged specs are skipped based on content hashing — only modified files and their dependents are re-validated.
+With `--deep`, minter also maintains a graph cache in `.minter/graph.json` at your working directory. On subsequent runs, unchanged specs are skipped based on content hashing — only modified files and their dependents are re-validated.
 
 **Exit codes:**
 
@@ -268,11 +268,11 @@ depends on user-auth >= 1.0.0
 depends on session-store >= 2.0.0
 ```
 
-Dependencies are resolved by name from any `.spec` file in the directory tree when using `--deps`. Spec names must be globally unique across the tree.
+Dependencies are resolved by name from any `.spec` file in the directory tree when using `--deep`. Spec names must be globally unique across the tree.
 
 ## Directory layout
 
-Specs can be organized into subdirectories. All commands (`validate`, `validate --deps`, `watch`) scan recursively.
+Specs can be organized into subdirectories. All commands (`validate`, `validate --deep`, `watch`) scan recursively.
 
 ```
 specs/
@@ -306,12 +306,12 @@ Beyond syntax, minter enforces:
 
 ## Graph cache
 
-When using `--deps` or `watch`, minter maintains a `.minter/graph.json` file at your current working directory (not inside the specs directory). This cache stores content hashes and dependency edges so that unchanged specs can be skipped on subsequent runs.
+When using `--deep` or `watch`, minter maintains a `.minter/graph.json` file at your current working directory (not inside the specs directory). This cache stores content hashes and dependency edges so that unchanged specs can be skipped on subsequent runs.
 
-- Created automatically on first `--deps` run
+- Created automatically on first `--deep` run
 - Updated when spec files change
 - Auto-rebuilt if corrupted or schema-incompatible
-- Ignored when running `validate` without `--deps`
+- Ignored when running `validate` without `--deep`
 
 Add `.minter` to your `.gitignore`.
 

@@ -5,33 +5,40 @@ use std::path::Path;
 use crate::deps::{self, ResolutionContext};
 use crate::display::{self, TreeContext};
 use crate::graph::{self, CachedEntry, GraphState};
+use crate::model::Spec;
 use crate::{discover, parser, semantic};
 
 pub struct ValidationContext<'a> {
-    pub check_deps: bool,
+    pub check_deep: bool,
     pub seen: &'a mut HashSet<String>,
     pub graph_state: Option<&'a mut GraphState>,
 }
 
+struct ParsedFile {
+    path: std::path::PathBuf,
+    source: String,
+    spec: Spec,
+}
+
 /// Validate files/directories and return exit code (0 = success, 1 = failure).
-pub fn run_validate(files: &[std::path::PathBuf], check_deps: bool) -> i32 {
+pub fn run_validate(files: &[std::path::PathBuf], check_deep: bool) -> i32 {
     let mut any_failed = false;
     let mut seen = HashSet::new();
 
     for file in files {
         if file.is_dir() {
-            if !validate_directory(file, check_deps, &mut seen) {
+            if !validate_directory(file, true, &mut seen) {  // directories are always deep
                 any_failed = true;
             }
         } else {
             let mut graph_state: Option<GraphState> = None;
-            if check_deps {
+            if check_deep {
                 graph_state = Some(GraphState::load_or_build());
             }
 
             let tree_root = file.parent().unwrap_or(Path::new(".")).to_path_buf();
             let mut ctx = ValidationContext {
-                check_deps,
+                check_deep,
                 seen: &mut seen,
                 graph_state: graph_state.as_mut(),
             };
@@ -49,7 +56,7 @@ pub fn run_validate(files: &[std::path::PathBuf], check_deps: bool) -> i32 {
 }
 
 /// Validate all .spec files in a directory (recursively).
-fn validate_directory(dir: &Path, check_deps: bool, seen: &mut HashSet<String>) -> bool {
+fn validate_directory(dir: &Path, check_deep: bool, seen: &mut HashSet<String>) -> bool {
     if !dir.exists() {
         eprintln!("error: directory not found: {}", dir.display());
         return false;
@@ -69,7 +76,7 @@ fn validate_directory(dir: &Path, check_deps: bool, seen: &mut HashSet<String>) 
     }
 
     let mut graph_state: Option<GraphState> = None;
-    if check_deps {
+    if check_deep {
         graph_state = Some(GraphState::load_or_build());
     }
 
@@ -77,7 +84,7 @@ fn validate_directory(dir: &Path, check_deps: bool, seen: &mut HashSet<String>) 
     let mut any_failed = false;
     for file in &spec_files {
         let mut ctx = ValidationContext {
-            check_deps,
+            check_deep,
             seen,
             graph_state: graph_state.as_mut(),
         };
@@ -117,8 +124,13 @@ fn validate_one(path: &Path, spec_tree_root: &Path, ctx: &mut ValidationContext)
         return false;
     }
 
-    if ctx.check_deps {
-        return validate_with_deps(path, &source, &spec, spec_tree_root, ctx);
+    if ctx.check_deep {
+        let parsed = ParsedFile {
+            path: path.to_path_buf(),
+            source,
+            spec,
+        };
+        return validate_with_deps(&parsed, spec_tree_root, ctx);
     }
 
     display::print_success(&spec);
@@ -166,34 +178,42 @@ fn read_and_parse(path: &Path) -> Result<(String, crate::model::Spec), ()> {
 }
 
 fn validate_with_deps(
-    path: &Path,
-    source: &str,
-    spec: &crate::model::Spec,
+    parsed: &ParsedFile,
     spec_tree_root: &Path,
     ctx: &mut ValidationContext,
 ) -> bool {
-    let all_specs = discover::discover_specs(spec_tree_root, Some(path));
+    let all_specs = discover::discover_specs(spec_tree_root, Some(&parsed.path));
     let mut res_ctx = ResolutionContext {
         siblings: all_specs.clone(),
         resolved: HashMap::new(),
-        stack: vec![spec.name.clone()],
+        stack: vec![parsed.spec.name.clone()],
         errors: Vec::new(),
     };
 
-    deps::resolve_and_collect(&spec.dependencies, &mut res_ctx);
+    deps::resolve_and_collect(&parsed.spec.dependencies, &mut res_ctx);
 
-    update_graph_cache(path, spec, source, &all_specs, &res_ctx, ctx);
+    update_graph_cache(parsed, &all_specs, &res_ctx, ctx);
 
-    if !ctx.seen.contains(&spec.name) {
-        display::print_success(spec);
-        ctx.seen.insert(spec.name.clone());
-        let shallowest = display::compute_shallowest_depths(&spec.dependencies, &res_ctx.resolved);
+    if !ctx.seen.contains(&parsed.spec.name) {
+        display::print_success(&parsed.spec);
+        ctx.seen.insert(parsed.spec.name.clone());
+        let shallowest =
+            display::compute_shallowest_depths(&parsed.spec.dependencies, &res_ctx.resolved);
         let mut tree_ctx = TreeContext {
             resolved: &res_ctx.resolved,
             seen: ctx.seen,
             shallowest: &shallowest,
+            depth: 1,
         };
-        display::print_dep_tree(&spec.dependencies, &mut tree_ctx, "", 1);
+        display::print_dep_tree(&parsed.spec.dependencies, &mut tree_ctx, "");
+        let dep_count = res_ctx.resolved.len();
+        if dep_count > 0 {
+            println!(
+                "{} {} resolved",
+                dep_count,
+                if dep_count == 1 { "dependency" } else { "dependencies" }
+            );
+        }
     }
 
     if !res_ctx.errors.is_empty() {
@@ -220,12 +240,6 @@ fn update_graph_cache(
     };
 
     let hash = graph::content_hash(source);
-    let dep_names: Vec<String> = spec
-        .dependencies
-        .iter()
-        .map(|d| d.spec_name.clone())
-        .collect();
-
     if state.cache.is_changed(&spec.name, &hash) {
         state.cache.upsert(
             spec.name.clone(),
@@ -234,7 +248,7 @@ fn update_graph_cache(
                 version: spec.version.clone(),
                 behavior_count: spec.behaviors.len(),
                 valid: res_ctx.errors.is_empty(),
-                dependencies: dep_names,
+                dependencies: spec.dep_names(),
                 path: path.display().to_string(),
             },
         );
@@ -246,12 +260,6 @@ fn update_graph_cache(
             && let Ok(dep_source) = fs::read_to_string(dep_path) {
                 let dep_hash = graph::content_hash(&dep_source);
                 if state.cache.is_changed(dep_name, &dep_hash) {
-                    let dep_dep_names: Vec<String> = rd
-                        .spec
-                        .dependencies
-                        .iter()
-                        .map(|d| d.spec_name.clone())
-                        .collect();
                     state.cache.upsert(
                         dep_name.clone(),
                         CachedEntry {
@@ -259,7 +267,7 @@ fn update_graph_cache(
                             version: rd.spec.version.clone(),
                             behavior_count: rd.spec.behaviors.len(),
                             valid: rd.valid,
-                            dependencies: dep_dep_names,
+                            dependencies: rd.spec.dep_names(),
                             path: dep_path.display().to_string(),
                         },
                     );

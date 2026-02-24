@@ -85,6 +85,7 @@ fn display_success_line() {
     let spec = spec_with_behaviors("my-feature", "1.2.0", 12);
     let (_dir, path) = temp_spec("my-feature", &spec);
     minter()
+        .env("NO_COLOR", "1")
         .arg("validate")
         .arg(&path)
         .assert()
@@ -98,6 +99,7 @@ fn display_singular_behavior_count() {
     let spec = spec_with_behaviors("single-case", "1.0.0", 1);
     let (_dir, path) = temp_spec("single-case", &spec);
     minter()
+        .env("NO_COLOR", "1")
         .arg("validate")
         .arg(&path)
         .assert()
@@ -115,6 +117,7 @@ fn display_failure_line() {
     let spec = failing_spec("broken-feature", "2.0.0");
     let (_dir, path) = temp_spec("broken-feature", &spec);
     minter()
+        .env("NO_COLOR", "1")
         .arg("validate")
         .arg(&path)
         .assert()
@@ -163,7 +166,7 @@ fn display_dependency_tree() {
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b), ("c", &c)]);
     let output = minter()
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&paths[0])
         .assert()
         .success();
@@ -191,8 +194,9 @@ fn display_first_occurrence_expanded() {
 
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b)]);
     let output = minter()
+        .env("NO_COLOR", "1")
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&paths[0])
         .assert()
         .success();
@@ -221,7 +225,7 @@ fn display_repeated_dep_dimmed() {
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b), ("c", &c)]);
     let output = minter()
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&paths[0])
         .assert()
         .success();
@@ -266,7 +270,7 @@ fn display_repeated_dep_preserves_status() {
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b), ("c", &c)]);
     let output = minter()
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&paths[0])
         .assert()
         .failure();
@@ -296,7 +300,7 @@ fn display_tree_error_on_stderr() {
     let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b)]);
     let output = minter()
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&paths[0])
         .assert()
         .failure();
@@ -357,8 +361,9 @@ fn skip_already_shown_root() {
 
     let (_dir, dir_path) = temp_dir_with_specs(&[("a", &a), ("b", &b)]);
     let output = minter()
+        .env("NO_COLOR", "1")
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&dir_path)
         .assert()
         .success();
@@ -375,15 +380,148 @@ fn skip_already_shown_root() {
         "b should appear in a's tree, got:\n{stdout}"
     );
 
-    // Count how many root-level lines there are (lines without tree prefix).
+    // Count how many root-level result lines there are (lines without tree prefix,
+    // excluding the dependency count summary line).
     // b was already shown in a's tree, so it should NOT appear as a separate root line.
     let root_lines: Vec<&str> = stdout
         .lines()
         .filter(|l| !l.starts_with("├") && !l.starts_with("│") && !l.starts_with("└") && !l.starts_with(" "))
+        .filter(|l| !l.contains("resolved"))
         .collect();
 
     assert_eq!(
         root_lines.len(), 1,
         "Only a should appear at root level (b already shown in tree), got root lines: {root_lines:?}\nfull output:\n{stdout}"
     );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANSI color output (validate-display.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// validate-display.spec: color-success-checkmark-green
+#[test]
+fn color_success_checkmark_green() {
+    let spec = spec_with_behaviors("valid", "1.0.0", 1);
+    let (_dir, path) = temp_spec("valid", &spec);
+    let output = minter()
+        .env_remove("NO_COLOR")
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+
+    let stdout = output.get_output().stdout.clone();
+    let stdout_str = String::from_utf8_lossy(&stdout);
+
+    // The ✓ should be wrapped in ANSI green: \x1b[32m ✓ \x1b[0m
+    assert!(
+        stdout_str.contains("\x1b[32m\u{2713}\x1b[0m"),
+        "Expected green ANSI escape around ✓, got: {:?}",
+        stdout_str
+    );
+}
+
+/// validate-display.spec: color-failure-cross-red
+#[test]
+fn color_failure_cross_red() {
+    let spec = failing_spec("broken", "1.0.0");
+    let (_dir, path) = temp_spec("broken", &spec);
+    let output = minter()
+        .env_remove("NO_COLOR")
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure();
+
+    let stdout = output.get_output().stdout.clone();
+    let stdout_str = String::from_utf8_lossy(&stdout);
+
+    // The ✗ should be wrapped in ANSI red: \x1b[31m ✗ \x1b[0m
+    assert!(
+        stdout_str.contains("\x1b[31m\u{2717}\x1b[0m"),
+        "Expected red ANSI escape around ✗, got: {:?}",
+        stdout_str
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// No-color mode (validate-display.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// validate-display.spec: no-color-mode
+#[test]
+fn no_color_mode() {
+    let spec = spec_with_behaviors("plain", "1.0.0", 1);
+    let (_dir, path) = temp_spec("plain", &spec);
+    let output = minter()
+        .env("NO_COLOR", "1")
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+
+    // Should contain the checkmark
+    assert!(
+        stdout.contains("\u{2713}"),
+        "Expected ✓ in output, got: {stdout}"
+    );
+
+    // Should NOT contain any ANSI escape sequences
+    assert!(
+        !stdout.contains("\x1b["),
+        "Expected no ANSI escapes with NO_COLOR=1, got: {stdout:?}"
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Dependency count (validate-display.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// validate-display.spec: display-dependency-count
+#[test]
+fn display_dependency_count() {
+    let a = spec_with_dep("a", "1.0.0", &[("b", "1.0.0"), ("c", "1.0.0")]);
+    let b = spec_with_behaviors("b", "1.0.0", 1);
+    let c = spec_with_behaviors("c", "1.0.0", 1);
+
+    let (_dir, paths) = temp_specs(&[("a", &a), ("b", &b), ("c", &c)]);
+    let output = minter()
+        .env("NO_COLOR", "1")
+        .arg("validate")
+        .arg("--deep")
+        .arg(&paths[0])
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+
+    // Should show "2 dependencies resolved"
+    assert!(
+        stdout.contains("2 dependencies resolved"),
+        "Expected dependency count '2 dependencies resolved' in output, got: {stdout}"
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Long spec name (validate-display.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// validate-display.spec: display-long-spec-name
+#[test]
+fn display_long_spec_name() {
+    let long_name = "my-very-long-feature-name-that-exceeds-typical-width";
+    let spec = spec_with_behaviors(long_name, "1.0.0", 5);
+    let (_dir, path) = temp_spec(long_name, &spec);
+    minter()
+        .env("NO_COLOR", "1")
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "✓ my-very-long-feature-name-that-exceeds-typical-width v1.0.0 (5 behaviors)",
+        ));
 }

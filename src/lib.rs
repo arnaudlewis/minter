@@ -1,9 +1,13 @@
 pub mod deps;
 pub mod discover;
 pub mod display;
+pub mod format;
 pub mod graph;
+pub mod graph_cmd;
+pub mod inspect;
 pub mod model;
 pub mod parser;
+pub mod scaffold;
 pub mod semantic;
 pub mod validate;
 pub mod watch;

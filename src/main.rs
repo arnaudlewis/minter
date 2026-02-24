@@ -20,13 +20,41 @@ enum Commands {
 
         /// Also resolve and validate dependencies
         #[arg(long)]
-        deps: bool,
+        deep: bool,
     },
-    /// Watch a directory for spec file changes and validate incrementally
+    /// Watch a file or directory for spec file changes and validate incrementally
     Watch {
-        /// Directory to watch
+        /// File or directory to watch
+        #[arg(required = true)]
+        path: PathBuf,
+    },
+    /// Display the DSL grammar reference
+    Format {
+        /// Arguments: spec type (fr, nfr)
+        #[arg(trailing_var_arg = true)]
+        args: Vec<String>,
+    },
+    /// Generate a skeleton .spec file
+    Scaffold {
+        /// Arguments: spec type (fr, nfr), optional category
+        #[arg(trailing_var_arg = true)]
+        args: Vec<String>,
+    },
+    /// Display structured metadata for a spec file
+    Inspect {
+        /// Spec file to inspect
+        #[arg(required = true)]
+        file: PathBuf,
+    },
+    /// Display the dependency graph
+    Graph {
+        /// Directory containing spec files
         #[arg(required = true)]
         dir: PathBuf,
+
+        /// Show reverse dependencies of a named spec
+        #[arg(long)]
+        impacted: Option<String>,
     },
 }
 
@@ -34,11 +62,23 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Some(Commands::Validate { files, deps }) => {
-            process::exit(minter::validate::run_validate(&files, deps));
+        Some(Commands::Validate { files, deep }) => {
+            process::exit(minter::validate::run_validate(&files, deep));
         }
-        Some(Commands::Watch { dir }) => {
-            process::exit(minter::watch::run_watch(&dir));
+        Some(Commands::Watch { path }) => {
+            process::exit(minter::watch::run_watch(&path));
+        }
+        Some(Commands::Format { args }) => {
+            process::exit(minter::format::run_format(&args));
+        }
+        Some(Commands::Scaffold { args }) => {
+            process::exit(minter::scaffold::run_scaffold(&args));
+        }
+        Some(Commands::Inspect { file }) => {
+            process::exit(minter::inspect::run_inspect(&file));
+        }
+        Some(Commands::Graph { dir, impacted }) => {
+            process::exit(minter::graph_cmd::run_graph(&dir, impacted.as_deref()));
         }
         None => {
             use clap::CommandFactory;

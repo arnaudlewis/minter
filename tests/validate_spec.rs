@@ -4,10 +4,10 @@ use common::{minter, temp_dir_with_nested_specs, temp_dir_with_specs, temp_spec,
 use predicates::prelude::*;
 
 // ═══════════════════════════════════════════════════════════════
-// Happy paths (validate-spec.spec)
+// Happy paths (validate-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// validate-spec.spec: validate-valid-spec
+/// validate-command.spec: validate-valid-spec
 #[test]
 fn validate_valid_spec() {
     let (_dir, path) = temp_spec("test-spec", VALID_SPEC);
@@ -16,24 +16,10 @@ fn validate_valid_spec() {
         .arg(&path)
         .assert()
         .success()
-        .stdout(predicate::str::contains("✓ test-spec"));
+        .stdout(predicate::str::contains("test-spec"));
 }
 
-/// validate-spec.spec: validate-prints-summary
-#[test]
-fn validate_prints_summary() {
-    let (_dir, path) = temp_spec("test-spec", VALID_SPEC);
-    minter()
-        .arg("validate")
-        .arg(&path)
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("test-spec"))
-        .stdout(predicate::str::contains("1.0.0"))
-        .stdout(predicate::str::contains("1")); // behavior count
-}
-
-/// validate-spec.spec: validate-multiple-files-all-valid
+/// validate-command.spec: validate-multiple-files-all-valid
 #[test]
 fn validate_multiple_files_all_valid() {
     let second_spec = "\
@@ -66,11 +52,231 @@ behavior other-thing [happy_path]
         .success();
 }
 
+/// validate-command.spec: validate-single-file-is-isolated
+#[test]
+fn validate_single_file_is_isolated() {
+    let spec_a = "\
+spec a v1.0.0
+title \"A\"
+
+description
+  Spec A depends on b but b does not exist.
+
+motivation
+  Test isolated single-file validation.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+depends on b >= 1.0.0
+";
+    let (_dir, path) = temp_spec("a", spec_a);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("a"));
+}
+
+/// validate-command.spec: validate-deep-single-file
+#[test]
+fn validate_deep_single_file() {
+    let spec_a = "\
+spec a v1.0.0
+title \"A\"
+
+description
+  Spec A depends on b.
+
+motivation
+  Test deep single-file validation.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+depends on b >= 1.0.0
+";
+    let spec_b = "\
+spec b v1.0.0
+title \"B\"
+
+description
+  Spec B.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, paths) = temp_specs(&[("a", spec_a), ("b", spec_b)]);
+    let output = minter()
+        .arg("validate")
+        .arg("--deep")
+        .arg(&paths[0])
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+    assert!(
+        stdout.contains("a") && stdout.contains("b"),
+        "Expected both a and b in output, got: {stdout}"
+    );
+}
+
+/// validate-command.spec: validate-directory-is-always-deep
+#[test]
+fn validate_directory_is_always_deep() {
+    let spec_a = "\
+spec a v1.0.0
+title \"A\"
+
+description
+  Spec A depends on b.
+
+motivation
+  Test directory-always-deep.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+depends on b >= 1.0.0
+";
+    let spec_b = "\
+spec b v1.0.0
+title \"B\"
+
+description
+  Spec B.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, dir_path) = temp_dir_with_specs(&[("a", spec_a), ("b", spec_b)]);
+    let output = minter()
+        .arg("validate")
+        .arg(&dir_path)
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+    assert!(
+        stdout.contains("a") && stdout.contains("b"),
+        "Directory validation should always be deep; expected both a and b, got: {stdout}"
+    );
+}
+
+/// validate-command.spec: discover-specs-in-directory
+#[test]
+fn discover_specs_in_directory() {
+    let spec_a = "\
+spec a v1.0.0
+title \"A\"
+
+description
+  Spec A.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let spec_b = "\
+spec b v1.0.0
+title \"B\"
+
+description
+  Spec B.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, dir_path) = temp_dir_with_nested_specs(&[
+        ("sub/a", spec_a),
+        ("sub/deep/b", spec_b),
+    ]);
+    let output = minter()
+        .arg("validate")
+        .arg(&dir_path)
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+    assert!(
+        stdout.contains("a") && stdout.contains("b"),
+        "Expected both nested specs discovered, got: {stdout}"
+    );
+}
+
 // ═══════════════════════════════════════════════════════════════
-// Error cases — semantic validation (validate-spec.spec)
+// Error cases — semantic validation (validate-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// validate-spec.spec: reject-duplicate-behavior-names
+/// validate-command.spec: reject-duplicate-behavior-names
 #[test]
 fn reject_duplicate_behavior_names() {
     let spec = "\
@@ -111,10 +317,11 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("do-thing"));
+        .stderr(predicate::str::contains("do-thing"))
+        .stderr(predicate::str::contains("Duplicate"));
 }
 
-/// validate-spec.spec: reject-unresolved-alias
+/// validate-command.spec: reject-unresolved-alias
 #[test]
 fn reject_unresolved_alias() {
     let spec = "\
@@ -148,7 +355,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains("nonexistent"));
 }
 
-/// validate-spec.spec: reject-duplicate-aliases
+/// validate-command.spec: reject-duplicate-aliases
 #[test]
 fn reject_duplicate_aliases() {
     let spec = "\
@@ -179,10 +386,11 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("user"));
+        .stderr(predicate::str::contains("user"))
+        .stderr(predicate::str::contains("Duplicate"));
 }
 
-/// validate-spec.spec: reject-invalid-identity-name
+/// validate-command.spec: reject-invalid-identity-name
 #[test]
 fn reject_invalid_identity_name() {
     let spec = "\
@@ -215,7 +423,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains("InvalidName").or(predicate::str::contains("kebab-case")));
 }
 
-/// validate-spec.spec: reject-invalid-semver
+/// validate-command.spec: reject-invalid-semver
 #[test]
 fn reject_invalid_semver() {
     let spec = "\
@@ -248,7 +456,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains("NOPE").or(predicate::str::contains("semver")));
 }
 
-/// validate-spec.spec: reject-no-happy-path
+/// validate-command.spec: reject-no-happy-path
 #[test]
 fn reject_no_happy_path() {
     let spec = "\
@@ -282,10 +490,10 @@ behavior fail-thing [error_case]
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Edge cases (validate-spec.spec)
+// Edge cases (validate-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// validate-spec.spec: handle-nonexistent-file
+/// validate-command.spec: reject-nonexistent-file
 #[test]
 fn handle_nonexistent_file() {
     minter()
@@ -296,7 +504,7 @@ fn handle_nonexistent_file() {
         .stderr(predicate::str::contains("minter_nonexistent_file.spec"));
 }
 
-/// validate-spec.spec: handle-unreadable-file
+/// validate-command.spec: reject-unreadable-file
 #[test]
 fn handle_unreadable_file() {
     let (_dir, path) = temp_spec("unreadable", VALID_SPEC);
@@ -317,7 +525,7 @@ fn handle_unreadable_file() {
         .stderr(predicate::str::contains("permission").or(predicate::str::contains("Permission")));
 }
 
-/// validate-spec.spec: handle-empty-file
+/// validate-command.spec: reject-empty-file
 #[test]
 fn handle_empty_file() {
     let (_dir, path) = temp_spec("empty", "");
@@ -329,7 +537,7 @@ fn handle_empty_file() {
         .stderr(predicate::str::is_empty().not());
 }
 
-/// validate-spec.spec: report-all-errors
+/// validate-command.spec: report-all-errors
 #[test]
 fn report_all_errors() {
     // Three independent semantic errors: bad name, bad version, no happy_path
@@ -373,7 +581,7 @@ behavior fail-thing [error_case]
     );
 }
 
-/// validate-spec.spec: skip-semantic-when-parse-fails
+/// validate-command.spec: skip-semantic-when-parse-fails
 #[test]
 fn skip_semantic_when_parse_fails() {
     // Has a parse error (unknown keyword) AND would fail semantics
@@ -421,7 +629,7 @@ behavior fail-thing [error_case]
     );
 }
 
-/// validate-spec.spec: exit-1-when-any-file-invalid
+/// validate-command.spec: exit-1-when-any-file-invalid
 #[test]
 fn exit_1_when_any_file_invalid() {
     let invalid_spec = "\
@@ -454,7 +662,7 @@ behavior fail-thing [error_case]
         .failure();
 }
 
-/// validate-spec.spec: validate-all-files-independently
+/// validate-command.spec: validate-all-files-independently
 #[test]
 fn validate_all_files_independently() {
     let invalid_spec = "\
@@ -496,50 +704,7 @@ behavior fail-thing [error_case]
     );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Directory validation (validate-spec.spec)
-// ═══════════════════════════════════════════════════════════════
-
-/// validate-spec.spec: validate-directory
-#[test]
-fn validate_directory() {
-    let second_spec = "\
-spec other-spec v2.0.0
-title \"Other Spec\"
-
-description
-  Another valid spec.
-
-motivation
-  Testing directory validation.
-
-behavior other-thing [happy_path]
-  \"Do another thing\"
-
-  given
-    The system is ready
-
-  when act
-
-  then emits stdout
-    assert output contains \"done\"
-";
-    let (_dir, dir_path) = temp_dir_with_specs(&[("test-spec", VALID_SPEC), ("other-spec", second_spec)]);
-    let output = minter()
-        .arg("validate")
-        .arg(&dir_path)
-        .assert()
-        .success();
-
-    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
-    // Both specs should appear in results
-    assert!(
-        stdout.contains("test-spec") && stdout.contains("other-spec"),
-        "Expected results for both specs, got: {stdout}"
-    );
-}
-
-/// validate-spec.spec: validate-directory-with-invalid
+/// validate-command.spec: validate-directory-with-invalid
 #[test]
 fn validate_directory_with_invalid() {
     let invalid_spec = "\
@@ -581,7 +746,7 @@ behavior fail-thing [error_case]
     );
 }
 
-/// validate-spec.spec: handle-empty-directory
+/// validate-command.spec: reject-empty-directory
 #[test]
 fn handle_empty_directory() {
     let dir = tempfile::TempDir::new().expect("create temp dir");
@@ -595,7 +760,7 @@ fn handle_empty_directory() {
             .or(predicate::str::contains("no .spec files")));
 }
 
-/// validate-spec.spec: handle-nonexistent-directory
+/// validate-command.spec: reject-nonexistent-directory
 #[test]
 fn handle_nonexistent_directory() {
     let nonexistent = "/tmp/minter_nonexistent_dir_test";
@@ -607,44 +772,3 @@ fn handle_nonexistent_directory() {
         .stderr(predicate::str::contains(nonexistent));
 }
 
-/// validate-spec.spec: validate-directory-recursive
-#[test]
-fn validate_directory_recursive() {
-    let second_spec = "\
-spec other-spec v2.0.0
-title \"Other Spec\"
-
-description
-  Another valid spec.
-
-motivation
-  Testing recursive directory validation.
-
-behavior other-thing [happy_path]
-  \"Do another thing\"
-
-  given
-    The system is ready
-
-  when act
-
-  then emits stdout
-    assert output contains \"done\"
-";
-    let (_dir, dir_path) = temp_dir_with_nested_specs(&[
-        ("sub1/test-spec", VALID_SPEC),
-        ("sub2/other-spec", second_spec),
-    ]);
-    let output = minter()
-        .arg("validate")
-        .arg(&dir_path)
-        .assert()
-        .success();
-
-    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
-    // Both specs in subdirectories should be discovered and validated
-    assert!(
-        stdout.contains("test-spec") && stdout.contains("other-spec"),
-        "Expected results for specs in subdirectories, got: {stdout}"
-    );
-}

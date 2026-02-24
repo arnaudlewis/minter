@@ -74,6 +74,12 @@ pub enum Assertion {
     Prose(String),
 }
 
+impl Spec {
+    pub fn dep_names(&self) -> Vec<String> {
+        self.dependencies.iter().map(|d| d.spec_name.clone()).collect()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Dependency {
     pub spec_name: String,

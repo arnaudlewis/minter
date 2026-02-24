@@ -73,6 +73,21 @@ impl<'a> Parser<'a> {
 
 impl<'a> Parser<'a> {
     fn parse_spec(&mut self) -> Result<Spec, Vec<ParseError>> {
+        // Reject tab indentation anywhere in the file
+        let tab_errors: Vec<ParseError> = self
+            .lines
+            .iter()
+            .enumerate()
+            .filter(|(_, line)| line.starts_with('\t'))
+            .map(|(i, _)| ParseError {
+                line: i + 1,
+                message: "tab indentation is not allowed, use two spaces".to_string(),
+            })
+            .collect();
+        if !tab_errors.is_empty() {
+            return Err(tab_errors);
+        }
+
         self.skip_blank_lines();
         if self.at_end() {
             return Err(self.err("Empty input — expected 'spec <name> v<version>'"));
@@ -166,7 +181,7 @@ impl<'a> Parser<'a> {
         let mut lines = Vec::new();
         while !self.at_end() {
             let line = self.current_line();
-            if line.starts_with("  ") || line.starts_with('\t') {
+            if line.starts_with("  ") {
                 lines.push(line.trim());
                 self.advance();
             } else {
@@ -585,7 +600,7 @@ fn first_word(s: &str) -> &str {
 }
 
 fn is_indented(line: &str) -> bool {
-    line.starts_with("  ") || line.starts_with('\t')
+    line.starts_with("  ")
 }
 
 fn parse_quoted_string(s: &str) -> Option<String> {

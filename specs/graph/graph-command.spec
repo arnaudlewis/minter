@@ -102,6 +102,24 @@ behavior graph-no-specs [error_case]
     assert code == 1
 
 
+behavior graph-persists-cache [happy_path]
+  "Persist the graph cache after building the dependency graph"
+
+  given
+    specs/a.spec depends on b >= 1.0.0
+    specs/b.spec has no dependencies
+    No prior .minter/graph.json exists
+
+  when minter graph specs/
+
+  then emits file .minter/graph.json
+    assert file contains "a"
+    assert file contains "b"
+
+  then emits process_exit
+    assert code == 0
+
+
 behavior graph-no-dependencies [edge_case]
   "List all specs with no edges when none have dependencies"
 

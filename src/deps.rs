@@ -97,12 +97,24 @@ pub fn check_version_constraint(
 
     let req = match semver::Version::parse(required) {
         Ok(v) => v,
-        Err(_) => return,
+        Err(_) => {
+            errors.push(format!(
+                "dependency '{}' has invalid version constraint: {}",
+                dep.spec_name, constraint
+            ));
+            return;
+        }
     };
 
     let actual = match semver::Version::parse(&dep_spec.version) {
         Ok(v) => v,
-        Err(_) => return,
+        Err(_) => {
+            errors.push(format!(
+                "dependency '{}' has unparseable version: {}",
+                dep.spec_name, dep_spec.version
+            ));
+            return;
+        }
     };
 
     if actual < req {

@@ -1260,3 +1260,429 @@ depends on user-auth
         .failure()
         .stderr(predicate::str::contains("version").or(predicate::str::contains("user-auth")));
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Edge cases — header parsing (dsl-format.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// dsl-format.spec: parse-empty-description
+#[test]
+fn parse_empty_description() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  \x20
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("empty-desc", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+}
+
+/// dsl-format.spec: parse-unicode-in-quoted-strings
+#[test]
+fn parse_unicode_in_quoted_strings() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Sp\u{00e9}cification \u{2014} Feature\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("unicode-title", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+}
+
+/// dsl-format.spec: parse-trailing-whitespace
+#[test]
+fn parse_trailing_whitespace() {
+    let spec = "spec test-spec v1.0.0\ntitle \"Test\"\n\ndescription\n  This has trailing spaces   \n  And more trailing spaces  \n\nmotivation\n  Test.\n\nbehavior do-thing [happy_path]\n  \"Do it\"\n\n  given\n    Ready\n\n  when act\n\n  then emits stdout\n    assert output contains \"done\"\n";
+    let (_dir, path) = temp_spec("trailing-ws", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+}
+
+/// dsl-format.spec: accept-two-space-indentation
+#[test]
+fn accept_two_space_indentation() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  Two-space indented content.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("two-space-indent", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Edge cases — given aliases (dsl-format.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// dsl-format.spec: parse-given-alias-single-property
+#[test]
+fn parse_given_alias_single_property() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior with-single-prop [happy_path]
+  \"Alias with one property\"
+
+  given
+    @token = Token { value: \"abc123\" }
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("alias-single", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+}
+
+/// dsl-format.spec: parse-given-alias-zero-properties
+#[test]
+fn parse_given_alias_zero_properties() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior with-empty-alias [happy_path]
+  \"Alias with no properties\"
+
+  given
+    @empty = EmptyEntity {}
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("alias-zero", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Then section — plain (dsl-format.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// dsl-format.spec: parse-then-plain
+#[test]
+fn parse_then_plain() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior with-plain-then [happy_path]
+  \"Has plain then block\"
+
+  given
+    Ready
+
+  when act
+
+  then
+    assert name == \"test\"
+    assert count >= 1
+";
+    let (_dir, path) = temp_spec("then-plain", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Format errors — structural rejections (dsl-format.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// dsl-format.spec: reject-tab-indentation
+#[test]
+fn reject_tab_indentation() {
+    let spec = "spec test-spec v1.0.0\ntitle \"Test\"\n\ndescription\n\tTab indented content.\n\nmotivation\n  Test.\n\nbehavior do-thing [happy_path]\n  \"Do it\"\n\n  given\n    Ready\n\n  when act\n\n  then emits stdout\n    assert output contains \"done\"\n";
+    let (_dir, path) = temp_spec("tab-indent", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(
+            predicate::str::contains("indentation")
+                .or(predicate::str::contains("tab")),
+        );
+}
+
+/// dsl-format.spec: reject-missing-spec-declaration
+#[test]
+fn reject_missing_spec_declaration() {
+    let spec = "\
+title \"My Feature\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("no-spec-decl", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("spec").or(predicate::str::contains("Expected")));
+}
+
+/// dsl-format.spec: reject-missing-title
+#[test]
+fn reject_missing_title() {
+    let spec = "\
+spec test-spec v1.0.0
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("no-title", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("title").or(predicate::str::contains("Expected")));
+}
+
+/// dsl-format.spec: reject-missing-description
+#[test]
+fn reject_missing_description() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("no-desc", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("description").or(predicate::str::contains("Expected")));
+}
+
+/// dsl-format.spec: reject-missing-motivation
+#[test]
+fn reject_missing_motivation() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("no-motiv", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("motivation").or(predicate::str::contains("Expected")));
+}
+
+/// dsl-format.spec: reject-behavior-without-description
+#[test]
+fn reject_behavior_without_description() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  given
+    Some condition
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("no-behavior-desc", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("description").or(predicate::str::contains("quoted")));
+}
+
+/// dsl-format.spec: reject-zero-indent-in-block
+#[test]
+fn reject_zero_indent_in_block() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  First line is fine.
+not indented at all
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, path) = temp_spec("zero-indent", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::is_empty().not());
+}

@@ -7,7 +7,20 @@ pub const GREEN: &str = "\x1b[32m";
 pub const RED: &str = "\x1b[31m";
 pub const YELLOW: &str = "\x1b[33m";
 pub const CYAN: &str = "\x1b[36m";
+pub const DIM: &str = "\x1b[2m";
 pub const RESET: &str = "\x1b[0m";
+
+pub fn tree_connector(is_last: bool) -> &'static str {
+    if is_last { "\u{2514}\u{2500}\u{2500} " } else { "\u{251c}\u{2500}\u{2500} " }
+}
+
+pub fn tree_child_prefix(prefix: &str, is_last: bool) -> String {
+    if is_last {
+        format!("{}    ", prefix)
+    } else {
+        format!("{}\u{2502}   ", prefix)
+    }
+}
 
 pub fn behavior_count_label(count: usize) -> String {
     if count == 1 {
@@ -17,88 +30,88 @@ pub fn behavior_count_label(count: usize) -> String {
     }
 }
 
+pub fn use_color() -> bool {
+    std::env::var("NO_COLOR").is_err()
+}
+
 pub fn print_success(spec: &Spec) {
-    println!(
-        "\u{2713} {} v{} ({})",
-        spec.name,
-        spec.version,
-        behavior_count_label(spec.behaviors.len()),
-    );
+    if use_color() {
+        println!(
+            "{GREEN}\u{2713}{RESET} {} v{} ({})",
+            spec.name,
+            spec.version,
+            behavior_count_label(spec.behaviors.len()),
+        );
+    } else {
+        println!(
+            "\u{2713} {} v{} ({})",
+            spec.name,
+            spec.version,
+            behavior_count_label(spec.behaviors.len()),
+        );
+    }
 }
 
 pub fn print_failure(spec: &Spec) {
-    println!("\u{2717} {} v{}", spec.name, spec.version);
-}
-
-pub fn print_success_colored(spec: &Spec) {
-    println!(
-        "{}\u{2713}{} {} v{} ({})",
-        GREEN,
-        RESET,
-        spec.name,
-        spec.version,
-        behavior_count_label(spec.behaviors.len()),
-    );
-}
-
-pub fn print_failure_colored(spec: &Spec) {
-    println!("{}\u{2717}{} {} v{}", RED, RESET, spec.name, spec.version);
+    if use_color() {
+        println!("{RED}\u{2717}{RESET} {} v{}", spec.name, spec.version);
+    } else {
+        println!("\u{2717} {} v{}", spec.name, spec.version);
+    }
 }
 
 pub struct TreeContext<'a> {
     pub resolved: &'a HashMap<String, crate::deps::ResolvedDep>,
     pub seen: &'a mut HashSet<String>,
     pub shallowest: &'a HashMap<String, usize>,
+    pub depth: usize,
+}
+
+struct DepthAccumulator<'a> {
+    resolved: &'a HashMap<String, crate::deps::ResolvedDep>,
+    depths: HashMap<String, usize>,
+    visited: HashSet<String>,
 }
 
 pub fn compute_shallowest_depths(
     deps: &[Dependency],
     resolved: &HashMap<String, crate::deps::ResolvedDep>,
 ) -> HashMap<String, usize> {
-    let mut depths: HashMap<String, usize> = HashMap::new();
-    let mut visited = HashSet::new();
-    compute_depths_recursive(deps, resolved, 1, &mut depths, &mut visited);
-    depths
+    let mut acc = DepthAccumulator {
+        resolved,
+        depths: HashMap::new(),
+        visited: HashSet::new(),
+    };
+    compute_depths_recursive(deps, 1, &mut acc);
+    acc.depths
 }
 
-fn compute_depths_recursive(
-    deps: &[Dependency],
-    resolved: &HashMap<String, crate::deps::ResolvedDep>,
-    depth: usize,
-    depths: &mut HashMap<String, usize>,
-    visited: &mut HashSet<String>,
-) {
+fn compute_depths_recursive(deps: &[Dependency], depth: usize, acc: &mut DepthAccumulator) {
     for dep in deps {
-        let entry = depths.entry(dep.spec_name.clone()).or_insert(depth);
+        let entry = acc.depths.entry(dep.spec_name.clone()).or_insert(depth);
         if depth < *entry {
             *entry = depth;
         }
-        if visited.contains(&dep.spec_name) {
+        if acc.visited.contains(&dep.spec_name) {
             continue;
         }
-        visited.insert(dep.spec_name.clone());
-        if let Some(rd) = resolved.get(&dep.spec_name)
-            && !rd.spec.dependencies.is_empty() {
-                compute_depths_recursive(
-                    &rd.spec.dependencies,
-                    resolved,
-                    depth + 1,
-                    depths,
-                    visited,
-                );
-            }
+        acc.visited.insert(dep.spec_name.clone());
+        if let Some(rd) = acc.resolved.get(&dep.spec_name)
+            && !rd.spec.dependencies.is_empty()
+        {
+            let sub_deps = rd.spec.dependencies.clone();
+            compute_depths_recursive(&sub_deps, depth + 1, acc);
+        }
     }
 }
 
-pub fn print_dep_tree(deps: &[Dependency], ctx: &mut TreeContext, prefix: &str, depth: usize) {
+pub fn print_dep_tree(deps: &[Dependency], ctx: &mut TreeContext, prefix: &str) {
+    let color = use_color();
+    let depth = ctx.depth;
     for (i, dep) in deps.iter().enumerate() {
         let is_last = i == deps.len() - 1;
-        let connector = if is_last { "\u{2514}\u{2500}\u{2500} " } else { "\u{251c}\u{2500}\u{2500} " };
-        let child_prefix = if is_last {
-            format!("{}    ", prefix)
-        } else {
-            format!("{}\u{2502}   ", prefix)
-        };
+        let connector = tree_connector(is_last);
+        let child_prefix = tree_child_prefix(prefix, is_last);
 
         if let Some(rd) = ctx.resolved.get(&dep.spec_name) {
             let mark = if rd.valid { "\u{2713}" } else { "\u{2717}" };
@@ -117,11 +130,18 @@ pub fn print_dep_tree(deps: &[Dependency], ctx: &mut TreeContext, prefix: &str, 
                     behavior_count_label(rd.spec.behaviors.len()),
                 );
                 if !rd.spec.dependencies.is_empty() {
-                    print_dep_tree(&rd.spec.dependencies, ctx, &child_prefix, depth + 1);
+                    ctx.depth = depth + 1;
+                    print_dep_tree(&rd.spec.dependencies, ctx, &child_prefix);
+                    ctx.depth = depth;
                 }
+            } else if color {
+                println!(
+                    "{}{}{} {}{} v{}{}",
+                    prefix, connector, mark, DIM, rd.spec.name, rd.spec.version, RESET
+                );
             } else {
                 println!(
-                    "{}{}{} \x1b[2m{} v{}\x1b[0m",
+                    "{}{}{} {} v{}",
                     prefix, connector, mark, rd.spec.name, rd.spec.version
                 );
             }

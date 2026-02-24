@@ -2,7 +2,7 @@ mod common;
 
 use std::fs;
 
-use common::{read_graph_json, minter, temp_dir_with_nested_specs, temp_dir_with_specs, write_graph_json};
+use common::{read_graph_json, minter, temp_dir_with_specs, write_graph_json};
 use predicates::prelude::*;
 
 /// Helper: a valid spec with a given name, version, and optional dependency.
@@ -40,8 +40,7 @@ behavior do-thing [happy_path]
 // graph-cache.spec behaviors
 // ═══════════════════════════════════════════════════════════════
 
-/// graph-cache.spec: minter-directory-at-cwd
-/// .minter/ is created at CWD (project root), not inside the specs directory.
+/// dependency-resolution.spec: cache-directory-location
 #[test]
 fn minter_directory_at_cwd() {
     // Create a project structure: project_root/specs/a.spec
@@ -58,7 +57,7 @@ fn minter_directory_at_cwd() {
     minter()
         .current_dir(project_root.path())
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg("specs")
         .assert()
         .success();
@@ -74,47 +73,7 @@ fn minter_directory_at_cwd() {
     );
 }
 
-/// graph-cache.spec: build-graph-cold-start
-/// .minter/graph.json created on first --deps run, contains spec names + hashes + edges, exit 0.
-#[test]
-fn build_graph_cold_start() {
-    let (dir, dir_path) = temp_dir_with_specs(&[
-        ("a", &valid_spec("a", "1.0.0", Some(("b", "1.0.0")))),
-        ("b", &valid_spec("b", "1.0.0", None)),
-    ]);
-
-    minter()
-        .current_dir(dir.path())
-        .arg("validate")
-        .arg("--deps")
-        .arg(&dir_path)
-        .assert()
-        .success();
-
-    // .minter/graph.json should exist at CWD
-    let graph = read_graph_json(dir.path());
-
-    // Should contain spec entries
-    let specs = graph.get("specs").expect("graph.json should have 'specs' key");
-    assert!(specs.get("a").is_some(), "graph should contain spec 'a'");
-    assert!(specs.get("b").is_some(), "graph should contain spec 'b'");
-
-    // Each entry should have a content_hash
-    let a_entry = &specs["a"];
-    assert!(
-        a_entry.get("content_hash").is_some(),
-        "spec entry should have content_hash"
-    );
-
-    // Should have dependency edges
-    assert!(
-        a_entry.get("dependencies").is_some(),
-        "spec entry should have dependencies"
-    );
-}
-
-/// graph-cache.spec: empty-minter-directory
-/// .minter/ dir created when absent.
+/// dependency-resolution.spec: cache-cold-start-creates-directory
 #[test]
 fn create_minter_directory() {
     let (dir, dir_path) = temp_dir_with_specs(&[
@@ -127,7 +86,7 @@ fn create_minter_directory() {
     minter()
         .current_dir(dir.path())
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&dir_path)
         .assert()
         .success();
@@ -142,8 +101,7 @@ fn create_minter_directory() {
     );
 }
 
-/// graph-cache.spec: load-cached-graph
-/// Second run doesn't rewrite graph.json (check mtime), exit 0.
+/// dependency-resolution.spec: cache-produces-correct-results
 #[test]
 fn load_cached_graph() {
     let (dir, dir_path) = temp_dir_with_specs(&[
@@ -154,7 +112,7 @@ fn load_cached_graph() {
     minter()
         .current_dir(dir.path())
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&dir_path)
         .assert()
         .success();
@@ -172,7 +130,7 @@ fn load_cached_graph() {
     minter()
         .current_dir(dir.path())
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&dir_path)
         .assert()
         .success();
@@ -188,8 +146,7 @@ fn load_cached_graph() {
     );
 }
 
-/// graph-cache.spec: write-updated-graph
-/// After modifying a spec, graph.json is updated with new hash.
+/// dependency-resolution.spec: cache-revalidates-modified-and-dependents
 #[test]
 fn write_updated_graph() {
     let (dir, dir_path) = temp_dir_with_specs(&[
@@ -200,7 +157,7 @@ fn write_updated_graph() {
     minter()
         .current_dir(dir.path())
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&dir_path)
         .assert()
         .success();
@@ -223,7 +180,7 @@ fn write_updated_graph() {
     minter()
         .current_dir(dir.path())
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&dir_path)
         .assert()
         .success();
@@ -236,28 +193,29 @@ fn write_updated_graph() {
     assert_ne!(hash1, hash2, "content_hash should change when spec is modified");
 }
 
-/// graph-cache.spec: validate-without-deps-ignores-graph
-/// `validate` without `--deps` doesn't create/modify graph.json.
+/// dependency-resolution.spec: validate-without-deep-ignores-graph
 #[test]
 fn validate_without_deps_ignores_graph() {
-    let (dir, dir_path) = temp_dir_with_specs(&[
+    let (dir, _dir_path) = temp_dir_with_specs(&[
         ("a", &valid_spec("a", "1.0.0", None)),
     ]);
 
-    // Run without --deps
+    let spec_file = dir.path().join("a.spec");
+
+    // Run single file without --deep
     minter()
         .current_dir(dir.path())
         .arg("validate")
-        .arg(&dir_path)
+        .arg(&spec_file)
         .assert()
         .success();
 
     assert!(
         !dir.path().join(".minter").exists(),
-        ".minter should not be created without --deps"
+        ".minter should not be created without --deep for single file validation"
     );
 
-    // Now create a graph.json manually, run without --deps, check it's untouched
+    // Now create a graph.json manually, run single file without --deep, check it's untouched
     write_graph_json(dir.path(), r#"{"schema_version": 1, "specs": {}}"#);
     let mtime1 = fs::metadata(dir.path().join(".minter").join("graph.json"))
         .unwrap()
@@ -269,7 +227,7 @@ fn validate_without_deps_ignores_graph() {
     minter()
         .current_dir(dir.path())
         .arg("validate")
-        .arg(&dir_path)
+        .arg(&spec_file)
         .assert()
         .success();
 
@@ -280,12 +238,11 @@ fn validate_without_deps_ignores_graph() {
 
     assert_eq!(
         mtime1, mtime2,
-        "graph.json should not be modified when --deps is not used"
+        "graph.json should not be modified when --deep is not used for single file"
     );
 }
 
-/// graph-cache.spec: rebuild-on-corrupted-graph
-/// Corrupted JSON → stderr warns + rebuilds, exit reflects validation.
+/// dependency-resolution.spec: rebuild-on-corrupted-graph
 #[test]
 fn rebuild_on_corrupted_graph() {
     let (dir, dir_path) = temp_dir_with_specs(&[
@@ -298,7 +255,7 @@ fn rebuild_on_corrupted_graph() {
     minter()
         .current_dir(dir.path())
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&dir_path)
         .assert()
         .success()
@@ -310,8 +267,7 @@ fn rebuild_on_corrupted_graph() {
     assert!(graph.get("specs").is_some(), "rebuilt graph should have specs");
 }
 
-/// graph-cache.spec: rebuild-on-schema-mismatch
-/// Valid JSON wrong schema → stderr warns + rebuilds.
+/// dependency-resolution.spec: rebuild-on-schema-mismatch
 #[test]
 fn rebuild_on_schema_mismatch() {
     let (dir, dir_path) = temp_dir_with_specs(&[
@@ -324,7 +280,7 @@ fn rebuild_on_schema_mismatch() {
     minter()
         .current_dir(dir.path())
         .arg("validate")
-        .arg("--deps")
+        .arg("--deep")
         .arg(&dir_path)
         .assert()
         .success()
@@ -343,44 +299,3 @@ fn rebuild_on_schema_mismatch() {
     );
 }
 
-/// graph-cache.spec: build-graph-cold-start (updated)
-/// graph.json entries include a `path` field with subdirectory info.
-#[test]
-fn graph_stores_file_paths() {
-    let (_dir, dir_path) = temp_dir_with_nested_specs(&[
-        ("validation/a", &valid_spec("a", "1.0.0", Some(("b", "1.0.0")))),
-        ("caching/b", &valid_spec("b", "1.0.0", None)),
-    ]);
-
-    minter()
-        .current_dir(_dir.path())
-        .arg("validate")
-        .arg("--deps")
-        .arg(&dir_path)
-        .assert()
-        .success();
-
-    let graph = read_graph_json(_dir.path());
-    let specs = graph.get("specs").expect("graph should have specs");
-
-    // Each entry should have a path field
-    let a_entry = &specs["a"];
-    let a_path = a_entry
-        .get("path")
-        .and_then(|p| p.as_str())
-        .expect("spec entry should have a path field");
-    assert!(
-        a_path.contains("validation"),
-        "path for 'a' should contain subdirectory info, got: {a_path}"
-    );
-
-    let b_entry = &specs["b"];
-    let b_path = b_entry
-        .get("path")
-        .and_then(|p| p.as_str())
-        .expect("spec entry should have a path field");
-    assert!(
-        b_path.contains("caching"),
-        "path for 'b' should contain subdirectory info, got: {b_path}"
-    );
-}

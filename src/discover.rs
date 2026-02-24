@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 pub fn discover_specs(dir: &Path, exclude: Option<&Path>) -> HashMap<String, PathBuf> {
     let mut map = HashMap::new();
     for entry in walkdir::WalkDir::new(dir)
+        .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
     {
@@ -29,6 +30,7 @@ pub fn discover_spec_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
     let mut names_seen: HashMap<String, PathBuf> = HashMap::new();
 
     for entry in walkdir::WalkDir::new(dir)
+        .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
     {

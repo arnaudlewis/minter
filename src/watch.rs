@@ -14,21 +14,52 @@ use crate::display::{self, CYAN, GREEN, RED, RESET, YELLOW};
 use crate::graph::{self, CachedEntry, GraphCache};
 use crate::{parser, semantic};
 
-/// Run watch mode on a directory. Returns exit code.
-pub fn run_watch(dir: &Path) -> i32 {
-    if !dir.exists() || !dir.is_dir() {
-        eprintln!("error: {} is not a directory", dir.display());
+/// Run watch mode on a file or directory. Returns exit code.
+pub fn run_watch(path: &Path) -> i32 {
+    if !path.exists() {
+        eprintln!("error: {} does not exist", path.display());
         return 1;
     }
 
-    let mut cache = initial_validate(dir);
+    // Check read permissions
+    if path.is_dir() {
+        if fs::read_dir(path).is_err() {
+            eprintln!("error: permission denied: {}", path.display());
+            return 1;
+        }
+    } else if path.is_file() {
+        if fs::read_to_string(path).is_err() {
+            eprintln!("error: permission denied: {}", path.display());
+            return 1;
+        }
+    }
+
+    // Determine the watch directory and optional single-file filter
+    let (dir, single_file) = if path.is_file() {
+        let parent = path.parent().unwrap_or(Path::new("."));
+        (parent.to_path_buf(), Some(path.to_path_buf()))
+    } else {
+        (path.to_path_buf(), None)
+    };
+
+    let mut cache = initial_validate(&dir);
+
+    // Check for empty directory (no spec files found)
+    if cache.specs.is_empty() {
+        eprintln!("error: no spec files found in {}", path.display());
+        return 1;
+    }
 
     let graph_path = graph::graph_json_path_cwd();
     if let Err(e) = cache.save(&graph_path) {
         eprintln!("warning: failed to save initial graph: {}", e);
     }
 
-    println!("{}watching {}{}", CYAN, dir.display(), RESET);
+    if single_file.is_some() {
+        println!("{}watching {}{}", CYAN, path.display(), RESET);
+    } else {
+        println!("{}watching {}{}", CYAN, dir.display(), RESET);
+    }
     let _ = std::io::stdout().flush();
 
     let running = Arc::new(AtomicBool::new(true));
@@ -44,7 +75,7 @@ pub fn run_watch(dir: &Path) -> i32 {
 
     debouncer
         .watcher()
-        .watch(dir, notify::RecursiveMode::Recursive)
+        .watch(&dir, notify::RecursiveMode::Recursive)
         .expect("failed to watch directory");
 
     while running.load(Ordering::SeqCst) {
@@ -53,16 +84,26 @@ pub fn run_watch(dir: &Path) -> i32 {
                 let spec_events: Vec<_> = events
                     .iter()
                     .filter(|e| {
-                        e.kind == DebouncedEventKind::Any
-                            && e.path
-                                .extension()
-                                .and_then(|ext| ext.to_str())
-                                .is_some_and(|ext| ext == "spec")
+                        if e.kind != DebouncedEventKind::Any {
+                            return false;
+                        }
+                        let is_spec = e.path
+                            .extension()
+                            .and_then(|ext| ext.to_str())
+                            .is_some_and(|ext| ext == "spec");
+                        if !is_spec {
+                            return false;
+                        }
+                        // If watching a single file, filter to that file and its dependents
+                        if let Some(ref sf) = single_file {
+                            return e.path == *sf || is_dependent_of(&e.path, sf, &cache);
+                        }
+                        true
                     })
                     .collect();
 
                 if !spec_events.is_empty() {
-                    handle_watch_events(&spec_events, dir, &mut cache);
+                    handle_watch_events(&spec_events, &dir, &mut cache);
 
                     if let Err(e) = cache.save(&graph_path) {
                         eprintln!("warning: failed to save graph: {}", e);
@@ -82,6 +123,25 @@ pub fn run_watch(dir: &Path) -> i32 {
     }
 
     0
+}
+
+/// Check if a changed path is a dependent of the single watched file.
+fn is_dependent_of(changed: &Path, watched: &Path, cache: &GraphCache) -> bool {
+    let watched_name = watched
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("");
+    let changed_name = changed
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("");
+    if watched_name.is_empty() || changed_name.is_empty() {
+        return false;
+    }
+    if let Some(entry) = cache.specs.get(changed_name) {
+        return entry.dependencies.contains(&watched_name.to_string());
+    }
+    false
 }
 
 fn handle_watch_events(
@@ -195,12 +255,13 @@ fn handle_changes(
 fn initial_validate(dir: &Path) -> GraphCache {
     let mut cache = GraphCache::load(&graph::graph_json_path_cwd()).unwrap_or_default();
 
-    let spec_files: Vec<_> = walkdir::WalkDir::new(dir)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().and_then(|ext| ext.to_str()) == Some("spec"))
-        .map(|e| e.path().to_path_buf())
-        .collect();
+    let spec_files = match discover::discover_spec_files(dir) {
+        Ok(files) => files,
+        Err(e) => {
+            eprintln!("error: {}", e);
+            return cache;
+        }
+    };
 
     for path in &spec_files {
         if let Some(name) = path.file_stem().and_then(|s| s.to_str()) {
@@ -257,16 +318,10 @@ fn validate_and_cache_spec(
 
     let valid = semantic::validate(&spec).is_ok();
     if !valid {
-        display::print_failure_colored(&spec);
+        display::print_failure(&spec);
     } else {
         print_success_with_deps(&spec, dir);
     }
-
-    let dep_names: Vec<String> = spec
-        .dependencies
-        .iter()
-        .map(|d| d.spec_name.clone())
-        .collect();
 
     cache.upsert(
         name.to_string(),
@@ -275,7 +330,7 @@ fn validate_and_cache_spec(
             version: spec.version.clone(),
             behavior_count: spec.behaviors.len(),
             valid,
-            dependencies: dep_names,
+            dependencies: spec.dep_names(),
             path: path.display().to_string(),
         },
     );
@@ -283,30 +338,30 @@ fn validate_and_cache_spec(
 
 /// Print success with colored output and shallow 1-level dep tree (watch-specific).
 fn print_success_with_deps(spec: &crate::model::Spec, dir: &Path) {
-    println!(
-        "{}\u{2713}{} {} v{} ({})",
-        GREEN,
-        RESET,
-        spec.name,
-        spec.version,
-        display::behavior_count_label(spec.behaviors.len()),
-    );
+    display::print_success(spec);
 
     if !spec.dependencies.is_empty() {
+        let color = display::use_color();
         let siblings = discover::discover_specs(dir, None);
         let mut seen = HashSet::new();
         seen.insert(spec.name.clone());
         for (i, dep) in spec.dependencies.iter().enumerate() {
             let is_last = i == spec.dependencies.len() - 1;
-            let connector = if is_last { "\u{2514}\u{2500}\u{2500} " } else { "\u{251c}\u{2500}\u{2500} " };
+            let connector = display::tree_connector(is_last);
             if let Some(dep_path) = siblings.get(&dep.spec_name) {
                 if let Ok(dep_source) = fs::read_to_string(dep_path)
                     && let Ok(dep_spec) = parser::parse(&dep_source) {
                         let valid = semantic::validate(&dep_spec).is_ok();
-                        let mark = if valid {
-                            format!("{}\u{2713}{}", GREEN, RESET)
+                        let mark = if color {
+                            if valid {
+                                format!("{}\u{2713}{}", GREEN, RESET)
+                            } else {
+                                format!("{}\u{2717}{}", RED, RESET)
+                            }
+                        } else if valid {
+                            "\u{2713}".to_string()
                         } else {
-                            format!("{}\u{2717}{}", RED, RESET)
+                            "\u{2717}".to_string()
                         };
                         println!(
                             "{}{} {} v{} ({})",
@@ -318,10 +373,17 @@ fn print_success_with_deps(spec: &crate::model::Spec, dir: &Path) {
                         );
                     }
             } else {
-                println!(
-                    "{}{}\u{2717}{} {} (unresolved)",
-                    connector, RED, RESET, dep.spec_name
-                );
+                if color {
+                    println!(
+                        "{}{}\u{2717}{} {} (unresolved)",
+                        connector, RED, RESET, dep.spec_name
+                    );
+                } else {
+                    println!(
+                        "{}\u{2717} {} (unresolved)",
+                        connector, dep.spec_name
+                    );
+                }
             }
         }
     }
