@@ -137,7 +137,7 @@ fn validate_one(path: &Path, spec_tree_root: &Path, ctx: &mut ValidationContext)
     true
 }
 
-fn read_and_parse(path: &Path) -> Result<(String, crate::model::Spec), ()> {
+fn read_and_parse(path: &Path) -> Result<(String, Spec), ()> {
     let filename = path.display();
 
     if !path.exists() {
@@ -227,9 +227,7 @@ fn validate_with_deps(
 }
 
 fn update_graph_cache(
-    path: &Path,
-    spec: &crate::model::Spec,
-    source: &str,
+    parsed: &ParsedFile,
     all_specs: &HashMap<String, std::path::PathBuf>,
     res_ctx: &ResolutionContext,
     ctx: &mut ValidationContext,
@@ -239,17 +237,17 @@ fn update_graph_cache(
         None => return,
     };
 
-    let hash = graph::content_hash(source);
-    if state.cache.is_changed(&spec.name, &hash) {
+    let hash = graph::content_hash(&parsed.source);
+    if state.cache.is_changed(&parsed.spec.name, &hash) {
         state.cache.upsert(
-            spec.name.clone(),
+            parsed.spec.name.clone(),
             CachedEntry {
                 content_hash: hash,
-                version: spec.version.clone(),
-                behavior_count: spec.behaviors.len(),
+                version: parsed.spec.version.clone(),
+                behavior_count: parsed.spec.behaviors.len(),
                 valid: res_ctx.errors.is_empty(),
-                dependencies: spec.dep_names(),
-                path: path.display().to_string(),
+                dependencies: parsed.spec.dep_names(),
+                path: parsed.path.display().to_string(),
             },
         );
         state.dirty = true;
@@ -257,22 +255,23 @@ fn update_graph_cache(
 
     for (dep_name, rd) in &res_ctx.resolved {
         if let Some(dep_path) = all_specs.get(dep_name)
-            && let Ok(dep_source) = fs::read_to_string(dep_path) {
-                let dep_hash = graph::content_hash(&dep_source);
-                if state.cache.is_changed(dep_name, &dep_hash) {
-                    state.cache.upsert(
-                        dep_name.clone(),
-                        CachedEntry {
-                            content_hash: dep_hash,
-                            version: rd.spec.version.clone(),
-                            behavior_count: rd.spec.behaviors.len(),
-                            valid: rd.valid,
-                            dependencies: rd.spec.dep_names(),
-                            path: dep_path.display().to_string(),
-                        },
-                    );
-                    state.dirty = true;
-                }
+            && let Ok(dep_source) = fs::read_to_string(dep_path)
+        {
+            let dep_hash = graph::content_hash(&dep_source);
+            if state.cache.is_changed(dep_name, &dep_hash) {
+                state.cache.upsert(
+                    dep_name.clone(),
+                    CachedEntry {
+                        content_hash: dep_hash,
+                        version: rd.spec.version.clone(),
+                        behavior_count: rd.spec.behaviors.len(),
+                        valid: rd.valid,
+                        dependencies: rd.spec.dep_names(),
+                        path: dep_path.display().to_string(),
+                    },
+                );
+                state.dirty = true;
             }
+        }
     }
 }

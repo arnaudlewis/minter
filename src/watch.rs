@@ -12,6 +12,7 @@ use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
 use crate::discover;
 use crate::display::{self, CYAN, GREEN, RED, RESET, YELLOW};
 use crate::graph::{self, CachedEntry, GraphCache};
+use crate::model::Spec;
 use crate::{parser, semantic};
 
 /// Run watch mode on a file or directory. Returns exit code.
