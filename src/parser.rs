@@ -102,6 +102,9 @@ impl<'a> Parser<'a> {
         let motivation = self.parse_text_block("motivation")?;
         self.skip_blank_lines();
 
+        let nfr_refs = self.parse_spec_nfr_section()?;
+        self.skip_blank_lines();
+
         let behaviors = self.parse_behaviors()?;
         self.skip_blank_lines();
 
@@ -117,6 +120,7 @@ impl<'a> Parser<'a> {
             title,
             description,
             motivation,
+            nfr_refs,
             behaviors,
             dependencies,
         })
@@ -224,6 +228,8 @@ impl<'a> Parser<'a> {
         self.skip_blank_lines();
         let description = self.parse_behavior_description()?;
         self.skip_blank_lines();
+        let nfr_refs = self.parse_behavior_nfr_section()?;
+        self.skip_blank_lines();
         let preconditions = self.parse_given_section()?;
         self.skip_blank_lines();
         let action = self.parse_when_section()?;
@@ -234,6 +240,7 @@ impl<'a> Parser<'a> {
             name,
             category,
             description,
+            nfr_refs,
             preconditions,
             action,
             postconditions,
@@ -551,6 +558,106 @@ fn parse_prose_or_unknown(rest: &str, tokens: &[&str], line: usize) -> Result<As
         }]);
     }
     Ok(Assertion::Prose(rest.to_string()))
+}
+
+// ── NFR cross-reference sections ────────────────────────
+
+impl<'a> Parser<'a> {
+    /// Parse the optional spec-level `nfr` section (after motivation, before behaviors).
+    /// Returns empty vec if no `nfr` keyword found.
+    fn parse_spec_nfr_section(&mut self) -> Result<Vec<NfrRef>, Vec<ParseError>> {
+        if self.at_end() {
+            return Ok(vec![]);
+        }
+        let line = self.current_line().trim();
+        if line != "nfr" {
+            return Ok(vec![]);
+        }
+        self.advance();
+
+        let mut refs = Vec::new();
+        while !self.at_end() {
+            let line = self.current_line();
+            let trimmed = line.trim();
+            if !is_indented(line) || trimmed.is_empty() {
+                break;
+            }
+            // Check for override syntax (not allowed at spec level)
+            let parts: Vec<&str> = trimmed.splitn(2, ' ').collect();
+            let ref_part = parts[0];
+            if parts.len() > 1 {
+                return Err(self.err(
+                    "override not allowed in spec-level nfr section"
+                ));
+            }
+            // Parse category or category#anchor
+            if let Some((cat, anchor)) = ref_part.split_once('#') {
+                refs.push(NfrRef {
+                    category: cat.to_string(),
+                    anchor: Some(anchor.to_string()),
+                });
+            } else {
+                refs.push(NfrRef {
+                    category: ref_part.to_string(),
+                    anchor: None,
+                });
+            }
+            self.advance();
+        }
+        Ok(refs)
+    }
+
+    /// Parse the optional behavior-level `nfr` section (after description, before given).
+    /// Returns empty vec if no `nfr` keyword found.
+    fn parse_behavior_nfr_section(&mut self) -> Result<Vec<BehaviorNfrRef>, Vec<ParseError>> {
+        if self.at_end() {
+            return Ok(vec![]);
+        }
+        let line = self.current_line().trim();
+        if line != "nfr" {
+            return Ok(vec![]);
+        }
+        self.advance();
+
+        let mut refs = Vec::new();
+        while !self.at_end() {
+            let line = self.current_line();
+            let trimmed = line.trim();
+            if !is_indented(line) || trimmed.is_empty() {
+                break;
+            }
+            // Split on first space to separate ref from optional override
+            let parts: Vec<&str> = trimmed.splitn(2, ' ').collect();
+            let ref_part = parts[0];
+
+            // Must have anchor (category#anchor)
+            if let Some((cat, anchor)) = ref_part.split_once('#') {
+                let (override_operator, override_value) = if parts.len() > 1 {
+                    let override_str = parts[1].trim();
+                    let op_end = override_str
+                        .find(|c: char| c.is_whitespace())
+                        .unwrap_or(override_str.len());
+                    let op = &override_str[..op_end];
+                    let val = override_str[op_end..].trim();
+                    (Some(op.to_string()), Some(val.to_string()))
+                } else {
+                    (None, None)
+                };
+                refs.push(BehaviorNfrRef {
+                    category: cat.to_string(),
+                    anchor: anchor.to_string(),
+                    override_operator,
+                    override_value,
+                });
+            } else {
+                return Err(self.err(
+                    "whole-file reference not allowed in behavior-level nfr section; use category#constraint-name"
+                ));
+            }
+            self.advance();
+        }
+        Ok(refs)
+    }
 }
 
 // ── Dependency parsing ──────────────────────────────────

@@ -1,4 +1,4 @@
-spec format-command v1.0.0
+spec format-command v1.1.0
 title "Format Command"
 
 description
@@ -11,6 +11,9 @@ motivation
   writing specs. A built-in format command eliminates context
   switching to external docs and ensures the reference always
   matches the parser's actual grammar.
+
+nfr
+  operability#ci-friendly-output
 
 
 behavior display-fr-grammar [happy_path]
@@ -46,10 +49,19 @@ behavior display-nfr-grammar [happy_path]
   when minter format nfr
 
   then emits stdout
+    assert output contains "nfr"
     assert output contains "constraint"
+    assert output contains "metric"
+    assert output contains "threshold"
+    assert output contains "rule"
     assert output contains "verification"
-    assert output contains "references"
-    assert output contains "overrides"
+    assert output contains "violation"
+    assert output contains "overridable"
+    assert output contains "environment"
+    assert output contains "benchmark"
+    assert output contains "pass"
+    assert output contains "static"
+    assert output contains "runtime"
 
   then emits process_exit
     assert code == 0
@@ -86,3 +98,6 @@ behavior reject-missing-format-type [error_case]
 
   then emits process_exit
     assert code == 1
+
+
+depends on nfr-dsl-format >= 1.0.0

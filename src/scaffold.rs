@@ -11,22 +11,22 @@ pub fn run_scaffold(args: &[String]) -> i32 {
         }
         "nfr" => {
             if args.len() < 2 {
-                eprintln!("missing category for nfr scaffold. Valid categories: performance, security, reliability, scalability, usability, maintainability, observability");
+                eprintln!("missing category for nfr scaffold. Valid categories: performance, reliability, security, observability, scalability, cost, operability");
                 return 1;
             }
             let category = &args[1];
             let valid = [
                 "performance",
-                "security",
                 "reliability",
-                "scalability",
-                "usability",
-                "maintainability",
+                "security",
                 "observability",
+                "scalability",
+                "cost",
+                "operability",
             ];
             if !valid.contains(&category.as_str()) {
                 eprintln!(
-                    "unknown nfr category: {category}. Valid categories: performance, security, reliability, scalability, usability, maintainability, observability"
+                    "unknown nfr category: {category}. Valid categories: performance, reliability, security, observability, scalability, cost, operability"
                 );
                 return 1;
             }
@@ -69,25 +69,29 @@ behavior do-something [happy_path]
 fn print_nfr_scaffold(category: &str) {
     print!(
         "\
-spec my-{category}-requirement v0.1.0
-title \"My {title} Requirement\"
+nfr {category} v0.1.0
+title \"{title} Requirements\"
 
 description
-  Describe the {category} requirement.
+  Describe the {category} requirements.
 
 motivation
-  Explain why this {category} requirement matters.
+  Explain why these {category} requirements matter.
 
-behavior meet-{category}-target [happy_path]
-  \"The system meets the {category} target\"
 
-  given
-    The system is under normal load
+constraint example-constraint [metric]
+  \"Describe what this constraint measures\"
 
-  when measure-{category}
+  metric \"The metric being measured\"
+  threshold < 1s
 
-  then returns measurement
-    assert value >= \"threshold\"
+  verification
+    environment all
+    benchmark \"Describe the benchmark procedure\"
+    pass \"Describe what constitutes passing\"
+
+  violation medium
+  overridable yes
 ",
         category = category,
         title = capitalize(category),

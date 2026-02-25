@@ -1,4 +1,4 @@
-spec validate-command v2.0.0
+spec validate-command v2.1.0
 title "Validate Command"
 
 description
@@ -13,6 +13,14 @@ motivation
   This is the deterministic gate in the spec-driven pipeline. Every
   spec must pass through minter validate before reaching downstream
   agents. Without this gate, spec inconsistencies propagate silently.
+
+nfr
+  performance#validation-latency
+  performance#directory-validation-scaling
+  performance#no-redundant-file-reads
+  reliability#error-completeness
+  reliability#no-silent-data-loss
+  operability#ci-friendly-output
 
 
 behavior validate-valid-spec [happy_path]
@@ -376,5 +384,131 @@ behavior validate-all-files-independently [error_case]
     assert code == 1
 
 
+# NFR validation
+
+behavior validate-valid-nfr [happy_path]
+  "Report success and exit 0 when an NFR file passes all validation"
+
+  given
+    A .nfr file with category performance at version 1.0.0 with 3 constraints
+    The file has valid NFR DSL syntax and valid semantics
+
+  when minter validate specs/performance.nfr
+
+  then emits stdout
+    assert output contains "performance"
+    assert output contains "v1.0.0"
+    assert output contains "3 constraints"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior validate-nfr-single-file-is-isolated [happy_path]
+  "Single NFR file validation has no dependency graph"
+
+  given
+    A valid .nfr file with category performance
+    No other spec or nfr files exist in the directory
+
+  when minter validate specs/performance.nfr
+
+  then emits stdout
+    assert output contains "performance"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior discover-nfr-in-directory [happy_path]
+  "Discover .nfr files recursively when given a directory path"
+
+  given
+    A directory containing:
+    specs/performance.nfr
+    specs/sub/security.nfr
+
+  when minter validate specs/
+
+  then emits stdout
+    assert output contains "performance"
+    assert output contains "security"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior validate-mixed-spec-and-nfr-directory [happy_path]
+  "Validate both .spec and .nfr files when discovered in same directory"
+
+  given
+    A directory containing:
+    specs/my-feature.spec (valid)
+    specs/performance.nfr (valid)
+
+  when minter validate specs/
+
+  then emits stdout
+    assert output contains "my-feature"
+    assert output contains "performance"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior reject-invalid-nfr [error_case]
+  "Exit 1 when an NFR file has validation errors"
+
+  given
+    A .nfr file with missing required fields
+
+  when minter validate specs/broken.nfr
+
+  then emits stderr
+    assert output contains validation error messages
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior validate-cross-references-in-directory [happy_path]
+  "Validate FR-to-NFR cross-references when directory contains both types"
+
+  given
+    A directory containing:
+    specs/my-feature.spec with nfr section referencing performance
+    specs/performance.nfr declaring category performance
+    All references resolve correctly
+
+  when minter validate specs/
+
+  then emits stdout
+    assert output contains "my-feature"
+    assert output contains "performance"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior reject-broken-cross-reference [error_case]
+  "Exit 1 when an FR spec references a nonexistent NFR category or anchor"
+
+  given
+    A directory containing:
+    specs/my-feature.spec with nfr section referencing reliability
+    No .nfr file declares category reliability
+
+  when minter validate specs/
+
+  then emits stderr
+    assert output contains "reliability"
+    assert output contains "not found" or "missing"
+
+  then emits process_exit
+    assert code == 1
+
+
 depends on dsl-format >= 1.1.0
 depends on validate-display >= 2.0.0
+depends on nfr-dsl-format >= 1.0.0
+depends on nfr-cross-reference >= 1.0.0

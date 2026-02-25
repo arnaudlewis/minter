@@ -16,6 +16,13 @@ motivation
   these problems. The cache makes repeated resolution fast as the
   spec tree grows.
 
+nfr
+  performance#no-redundant-file-reads
+  performance#directory-validation-scaling
+  reliability#graceful-corruption-recovery
+  reliability#error-completeness
+  operability#graph-location-predictability
+
 
 # Resolution — happy paths
 

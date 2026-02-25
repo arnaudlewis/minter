@@ -5,13 +5,14 @@ use std::path::Path;
 use crate::deps::{self, ResolutionContext};
 use crate::display::{self, TreeContext};
 use crate::graph::{self, CachedEntry, GraphState};
-use crate::model::Spec;
-use crate::{discover, parser, semantic};
+use crate::model::{NfrSpec, Spec};
+use crate::{discover, nfr_crossref, nfr_parser, nfr_semantic, parser, semantic};
 
 pub struct ValidationContext<'a> {
     pub check_deep: bool,
     pub seen: &'a mut HashSet<String>,
     pub graph_state: Option<&'a mut GraphState>,
+    pub nfr_specs: Option<&'a HashMap<String, NfrSpec>>,
 }
 
 struct ParsedFile {
@@ -37,10 +38,16 @@ pub fn run_validate(files: &[std::path::PathBuf], check_deep: bool) -> i32 {
             }
 
             let tree_root = file.parent().unwrap_or(Path::new(".")).to_path_buf();
+            let nfr_map = if check_deep {
+                Some(discover_and_parse_nfrs(&tree_root))
+            } else {
+                None
+            };
             let mut ctx = ValidationContext {
                 check_deep,
                 seen: &mut seen,
                 graph_state: graph_state.as_mut(),
+                nfr_specs: nfr_map.as_ref(),
             };
             if !validate_one(file, &tree_root, &mut ctx) {
                 any_failed = true;
@@ -55,14 +62,14 @@ pub fn run_validate(files: &[std::path::PathBuf], check_deep: bool) -> i32 {
     if any_failed { 1 } else { 0 }
 }
 
-/// Validate all .spec files in a directory (recursively).
+/// Validate all .spec and .nfr files in a directory (recursively).
 fn validate_directory(dir: &Path, check_deep: bool, seen: &mut HashSet<String>) -> bool {
     if !dir.exists() {
         eprintln!("error: directory not found: {}", dir.display());
         return false;
     }
 
-    let spec_files = match discover::discover_spec_files(dir) {
+    let spec_files = match discover::discover_all_files(dir) {
         Ok(files) => files,
         Err(dup_err) => {
             eprintln!("error: {}", dup_err);
@@ -71,7 +78,7 @@ fn validate_directory(dir: &Path, check_deep: bool, seen: &mut HashSet<String>) 
     };
 
     if spec_files.is_empty() {
-        eprintln!("error: no .spec files found in {}", dir.display());
+        eprintln!("error: no .spec or .nfr files found in {}", dir.display());
         return false;
     }
 
@@ -80,6 +87,12 @@ fn validate_directory(dir: &Path, check_deep: bool, seen: &mut HashSet<String>) 
         graph_state = Some(GraphState::load_or_build());
     }
 
+    let nfr_map = if check_deep {
+        Some(discover_and_parse_nfrs(dir))
+    } else {
+        None
+    };
+
     let tree_root = dir.to_path_buf();
     let mut any_failed = false;
     for file in &spec_files {
@@ -87,6 +100,7 @@ fn validate_directory(dir: &Path, check_deep: bool, seen: &mut HashSet<String>) 
             check_deep,
             seen,
             graph_state: graph_state.as_mut(),
+            nfr_specs: nfr_map.as_ref(),
         };
         if !validate_one(file, &tree_root, &mut ctx) {
             any_failed = true;
@@ -110,6 +124,11 @@ fn validate_directory(dir: &Path, check_deep: bool, seen: &mut HashSet<String>) 
 
 /// Validate a single file. Returns true if valid, false if invalid.
 fn validate_one(path: &Path, spec_tree_root: &Path, ctx: &mut ValidationContext) -> bool {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    if ext == "nfr" {
+        return validate_nfr_file(path);
+    }
+
     let (source, spec) = match read_and_parse(path) {
         Ok(result) => result,
         Err(_) => return false,
@@ -137,6 +156,51 @@ fn validate_one(path: &Path, spec_tree_root: &Path, ctx: &mut ValidationContext)
     true
 }
 
+/// Validate a single .nfr file. Returns true if valid, false if invalid.
+fn validate_nfr_file(path: &Path) -> bool {
+    let filename = path.display();
+
+    if !path.exists() {
+        eprintln!("error: cannot read {}: No such file or directory", filename);
+        return false;
+    }
+
+    let source = match fs::read_to_string(path) {
+        Ok(s) => s,
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("ermission") {
+                eprintln!("error: permission denied reading {}", filename);
+            } else {
+                eprintln!("error: cannot read {}: {}", filename, e);
+            }
+            return false;
+        }
+    };
+
+    let nfr = match nfr_parser::parse_nfr(&source) {
+        Ok(nfr) => nfr,
+        Err(errors) => {
+            for e in &errors {
+                eprintln!("{}: {}", filename, e);
+            }
+            return false;
+        }
+    };
+
+    if let Err(errors) = nfr_semantic::validate(&nfr) {
+        display::print_nfr_failure(&nfr);
+        let filename = path.display();
+        for e in &errors {
+            eprintln!("{}: {}", filename, e);
+        }
+        return false;
+    }
+
+    display::print_nfr_success(&nfr);
+    true
+}
+
 fn read_and_parse(path: &Path) -> Result<(String, Spec), ()> {
     let filename = path.display();
 
@@ -146,8 +210,8 @@ fn read_and_parse(path: &Path) -> Result<(String, Spec), ()> {
     }
 
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-    if ext != "spec" {
-        eprintln!("error: {} does not have a .spec extension", filename);
+    if ext != "spec" && ext != "nfr" {
+        eprintln!("error: {} does not have a .spec or .nfr extension", filename);
         return Err(());
     }
 
@@ -182,9 +246,8 @@ fn validate_with_deps(
     spec_tree_root: &Path,
     ctx: &mut ValidationContext,
 ) -> bool {
-    let all_specs = discover::discover_specs(spec_tree_root, Some(&parsed.path));
     let mut res_ctx = ResolutionContext {
-        siblings: all_specs.clone(),
+        siblings: discover::discover_specs(spec_tree_root, Some(&parsed.path)),
         resolved: HashMap::new(),
         stack: vec![parsed.spec.name.clone()],
         errors: Vec::new(),
@@ -192,7 +255,7 @@ fn validate_with_deps(
 
     deps::resolve_and_collect(&parsed.spec.dependencies, &mut res_ctx);
 
-    update_graph_cache(parsed, &all_specs, &res_ctx, ctx);
+    update_graph_cache(parsed, &res_ctx, ctx);
 
     if !ctx.seen.contains(&parsed.spec.name) {
         display::print_success(&parsed.spec);
@@ -223,12 +286,25 @@ fn validate_with_deps(
         return false;
     }
 
+    // Cross-validate NFR references if nfr_specs are available
+    if let Some(nfr_specs) = ctx.nfr_specs {
+        let has_nfr_refs = !parsed.spec.nfr_refs.is_empty()
+            || parsed.spec.behaviors.iter().any(|b| !b.nfr_refs.is_empty());
+        if has_nfr_refs
+            && let Err(errors) = nfr_crossref::cross_validate(&parsed.spec, nfr_specs)
+        {
+            for e in &errors {
+                eprintln!("{}: {}", parsed.path.display(), e);
+            }
+            return false;
+        }
+    }
+
     true
 }
 
 fn update_graph_cache(
     parsed: &ParsedFile,
-    all_specs: &HashMap<String, std::path::PathBuf>,
     res_ctx: &ResolutionContext,
     ctx: &mut ValidationContext,
 ) {
@@ -254,7 +330,7 @@ fn update_graph_cache(
     }
 
     for (dep_name, rd) in &res_ctx.resolved {
-        if let Some(dep_path) = all_specs.get(dep_name)
+        if let Some(dep_path) = res_ctx.siblings.get(dep_name)
             && let Ok(dep_source) = fs::read_to_string(dep_path)
         {
             let dep_hash = graph::content_hash(&dep_source);
@@ -274,4 +350,18 @@ fn update_graph_cache(
             }
         }
     }
+}
+
+/// Discover all .nfr files in a directory, parse them, and return a map of category -> NfrSpec.
+fn discover_and_parse_nfrs(dir: &Path) -> HashMap<String, NfrSpec> {
+    let mut map = HashMap::new();
+    let nfr_files = discover::discover_nfr_files(dir);
+    for path in &nfr_files {
+        if let Ok(source) = fs::read_to_string(path)
+            && let Ok(nfr) = nfr_parser::parse_nfr(&source)
+        {
+            map.insert(nfr.category.clone(), nfr);
+        }
+    }
+    map
 }

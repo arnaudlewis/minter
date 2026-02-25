@@ -1,6 +1,6 @@
 mod common;
 
-use common::{minter, temp_spec};
+use common::{minter, temp_nfr, temp_spec};
 use predicates::prelude::*;
 
 // ═══════════════════════════════════════════════════════════════
@@ -34,7 +34,12 @@ fn scaffold_nfr_with_category() {
         .arg("performance")
         .assert()
         .success()
-        .stdout(predicate::str::contains("performance"));
+        .stdout(predicate::str::contains("nfr"))
+        .stdout(predicate::str::contains("performance"))
+        .stdout(predicate::str::contains("constraint"))
+        .stdout(predicate::str::contains("verification"))
+        .stdout(predicate::str::contains("violation"))
+        .stdout(predicate::str::contains("overridable"));
 }
 
 /// scaffold-command.spec: scaffold-nfr-all-categories
@@ -65,7 +70,9 @@ fn reject_unknown_nfr_category() {
         .stderr(predicate::str::contains("banana"))
         .stderr(predicate::str::contains("performance"))
         .stderr(predicate::str::contains("security"))
-        .stderr(predicate::str::contains("reliability"));
+        .stderr(predicate::str::contains("reliability"))
+        .stderr(predicate::str::contains("cost"))
+        .stderr(predicate::str::contains("operability"));
 }
 
 /// scaffold-command.spec: reject-nfr-missing-category
@@ -90,6 +97,28 @@ fn reject_unknown_scaffold_type() {
         .stderr(predicate::str::contains("banana"))
         .stderr(predicate::str::contains("fr"))
         .stderr(predicate::str::contains("nfr"));
+}
+
+/// scaffold-command.spec: scaffold-nfr-output-is-parseable
+#[test]
+fn scaffold_nfr_output_is_parseable() {
+    let output = minter()
+        .arg("scaffold")
+        .arg("nfr")
+        .arg("performance")
+        .output()
+        .expect("failed to run scaffold nfr");
+    assert!(output.status.success());
+
+    let scaffold_content = String::from_utf8(output.stdout).expect("invalid utf8");
+
+    let (_dir, path) = temp_nfr("scaffolded", &scaffold_content);
+
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
 }
 
 /// scaffold-command.spec: scaffold-output-is-parseable

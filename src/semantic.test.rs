@@ -9,6 +9,7 @@ fn valid_spec() -> Spec {
         title: "Test".to_string(),
         description: "A test.".to_string(),
         motivation: "Testing.".to_string(),
+        nfr_refs: vec![],
         behaviors: vec![happy_behavior("do-thing")],
         dependencies: vec![],
     }
@@ -19,6 +20,7 @@ fn happy_behavior(name: &str) -> Behavior {
         name: name.to_string(),
         category: BehaviorCategory::HappyPath,
         description: "Do it".to_string(),
+        nfr_refs: vec![],
         preconditions: vec![Precondition::Prose("Ready".to_string())],
         action: Action { name: "act".to_string(), inputs: vec![] },
         postconditions: vec![Postcondition {
@@ -36,6 +38,7 @@ fn error_behavior(name: &str) -> Behavior {
         name: name.to_string(),
         category: BehaviorCategory::ErrorCase,
         description: "Fail".to_string(),
+        nfr_refs: vec![],
         preconditions: vec![Precondition::Prose("Ready".to_string())],
         action: Action { name: "act".to_string(), inputs: vec![] },
         postconditions: vec![Postcondition {

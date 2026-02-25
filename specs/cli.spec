@@ -1,4 +1,4 @@
-spec cli v2.0.0
+spec cli v2.2.0
 title "CLI Interface"
 
 description
@@ -14,11 +14,15 @@ motivation
   argument parsing, helpful error messages, and predictable exit codes
   are essential for both human users and CI pipelines.
 
+nfr
+  operability#ci-friendly-output
+  operability#zero-config
+
 
 # Help and version
 
 behavior show-help [happy_path]
-  "Print usage information listing all six commands"
+  "Print usage information listing all seven commands"
 
   given
     No arguments provided, or --help flag is used
@@ -33,6 +37,7 @@ behavior show-help [happy_path]
     assert output contains "scaffold"
     assert output contains "inspect"
     assert output contains "graph"
+    assert output contains "explain"
 
   then emits process_exit
     assert code == 0
@@ -242,6 +247,24 @@ behavior route-graph-impacted [happy_path]
     assert code == 0
 
 
+# Explain routing
+
+behavior route-explain [happy_path]
+  "Route to the explain command for methodology reference"
+
+  given
+    The explain subcommand is invoked
+
+  when minter explain
+
+  then emits stdout
+    assert output contains "spec"
+    assert output contains "NFR"
+
+  then emits process_exit
+    assert code == 0
+
+
 # Error cases
 
 behavior reject-unknown-command [error_case]
@@ -260,6 +283,7 @@ behavior reject-unknown-command [error_case]
     assert output contains "scaffold"
     assert output contains "inspect"
     assert output contains "graph"
+    assert output contains "explain"
 
   then emits process_exit
     assert code == 1
@@ -296,15 +320,16 @@ behavior reject-missing-required-argument [error_case]
 
 
 behavior reject-non-spec-extension [error_case]
-  "Print error when a file does not have a .spec extension"
+  "Print error when a file does not have a .spec or .nfr extension"
 
   given
-    A file argument that does not end in .spec
+    A file argument that does not end in .spec or .nfr
 
   when minter validate readme.md
 
   then emits stderr
     assert output contains ".spec"
+    assert output contains ".nfr"
 
   then emits process_exit
     assert code == 1
@@ -348,6 +373,71 @@ behavior handle-mixed-valid-invalid-files [error_case]
     assert code == 1
 
 
+# NFR routing
+
+behavior route-validate-nfr-file [happy_path]
+  "Route to validation for a single .nfr file"
+
+  given
+    specs/performance.nfr is a valid .nfr file
+
+  when minter validate specs/performance.nfr
+
+  then emits stdout
+    assert output contains "performance"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior route-watch-nfr-file [happy_path]
+  "Route to watch mode for a single .nfr file"
+
+  given
+    specs/performance.nfr is a valid .nfr file
+
+  when minter watch specs/performance.nfr
+
+  then emits stdout
+    assert output contains "watching"
+    assert output contains "performance.nfr"
+
+  then
+    assert the process does not emit an exit code
+
+
+behavior route-inspect-nfr [happy_path]
+  "Route to inspect for a single .nfr file"
+
+  given
+    specs/performance.nfr is a valid .nfr file with 4 constraints
+
+  when minter inspect specs/performance.nfr
+
+  then emits stdout
+    assert output contains "4 constraints"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior route-validate-mixed-directory [happy_path]
+  "Route to validation for a directory containing both .spec and .nfr files"
+
+  given
+    A directory containing specs/my-feature.spec and specs/performance.nfr
+    Both files are valid
+
+  when minter validate specs/
+
+  then emits stdout
+    assert output contains "my-feature"
+    assert output contains "performance"
+
+  then emits process_exit
+    assert code == 0
+
+
 depends on validate-command >= 2.0.0
 depends on dependency-resolution >= 2.0.0
 depends on watch-command >= 2.0.0
@@ -355,3 +445,5 @@ depends on format-command >= 1.0.0
 depends on scaffold-command >= 1.0.0
 depends on inspect-command >= 1.0.0
 depends on graph-command >= 1.0.0
+depends on explain-command >= 1.0.0
+depends on nfr-dsl-format >= 1.0.0

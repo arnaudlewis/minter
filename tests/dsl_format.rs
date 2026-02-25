@@ -996,7 +996,8 @@ behavior bad [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("given").or(predicate::str::contains("Given")));
+        .stderr(predicate::str::contains("given").or(predicate::str::contains("Given")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-behavior-without-when
@@ -1027,7 +1028,8 @@ behavior bad [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("when").or(predicate::str::contains("When")));
+        .stderr(predicate::str::contains("when").or(predicate::str::contains("When")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-behavior-without-then
@@ -1057,7 +1059,8 @@ behavior bad [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("then").or(predicate::str::contains("Then")));
+        .stderr(predicate::str::contains("then").or(predicate::str::contains("Then")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-wrong-section-order
@@ -1090,7 +1093,8 @@ behavior bad [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::is_empty().not());
+        .stderr(predicate::str::is_empty().not())
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-assert-without-field
@@ -1123,7 +1127,8 @@ behavior bad [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::is_empty().not());
+        .stderr(predicate::str::is_empty().not())
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-unknown-assertion-operator
@@ -1156,7 +1161,8 @@ behavior bad [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("frobnicates").or(predicate::str::contains("operator")));
+        .stderr(predicate::str::contains("frobnicates").or(predicate::str::contains("operator")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-alias-without-entity
@@ -1189,7 +1195,8 @@ behavior bad [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::is_empty().not());
+        .stderr(predicate::str::is_empty().not())
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-malformed-alias-reference
@@ -1223,7 +1230,8 @@ behavior bad [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::is_empty().not());
+        .stderr(predicate::str::is_empty().not())
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-depends-on-without-version
@@ -1258,7 +1266,8 @@ depends on user-auth
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("version").or(predicate::str::contains("user-auth")));
+        .stderr(predicate::str::contains("version").or(predicate::str::contains("user-auth")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1495,7 +1504,8 @@ fn reject_tab_indentation() {
         .stderr(
             predicate::str::contains("indentation")
                 .or(predicate::str::contains("tab")),
-        );
+        )
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-missing-spec-declaration
@@ -1527,7 +1537,8 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("spec").or(predicate::str::contains("Expected")));
+        .stderr(predicate::str::contains("spec").or(predicate::str::contains("Expected")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-missing-title
@@ -1559,7 +1570,8 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("title").or(predicate::str::contains("Expected")));
+        .stderr(predicate::str::contains("title").or(predicate::str::contains("Expected")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-missing-description
@@ -1589,7 +1601,8 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("description").or(predicate::str::contains("Expected")));
+        .stderr(predicate::str::contains("description").or(predicate::str::contains("Expected")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-missing-motivation
@@ -1619,7 +1632,8 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("motivation").or(predicate::str::contains("Expected")));
+        .stderr(predicate::str::contains("motivation").or(predicate::str::contains("Expected")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-behavior-without-description
@@ -1650,7 +1664,8 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("description").or(predicate::str::contains("quoted")));
+        .stderr(predicate::str::contains("description").or(predicate::str::contains("quoted")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// dsl-format.spec: reject-zero-indent-in-block
@@ -1684,5 +1699,6 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::is_empty().not());
+        .stderr(predicate::str::is_empty().not())
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }

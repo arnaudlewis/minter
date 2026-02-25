@@ -12,6 +12,10 @@ motivation
   When changing a spec, authors need to know which other specs will be
   affected. The graph command makes this visible.
 
+nfr
+  operability#deterministic-output
+  operability#ci-friendly-output
+
 
 behavior display-full-graph [happy_path]
   "Display all specs and their dependency edges"

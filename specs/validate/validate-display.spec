@@ -1,4 +1,4 @@
-spec validate-display v2.0.0
+spec validate-display v2.1.0
 title "Validation Display"
 
 description
@@ -12,6 +12,11 @@ motivation
   specs. Centralizing all display concerns into one spec ensures
   consistent presentation across single-file, multi-file, directory,
   dependency-tree, and watch mode output.
+
+nfr
+  operability#deterministic-output
+  operability#ci-friendly-output
+
 
 # Success output
 
@@ -304,6 +309,52 @@ behavior display-long-spec-name [edge_case]
 
 # Channel separation
 
+# NFR display
+
+behavior display-nfr-success-line [happy_path]
+  "Print a checkmark line with category, version, and constraint count for NFR"
+
+  given
+    An NFR file with category performance at version 1.0.0 with 4 constraints
+    The NFR file passes all validation
+
+  when minter validate specs/performance.nfr
+
+  then emits stdout
+    assert output contains "✓ performance v1.0.0 (4 constraints)"
+
+
+behavior display-nfr-singular-constraint-count [happy_path]
+  "Use singular form when NFR has exactly one constraint"
+
+  given
+    An NFR file with category security at version 1.0.0 with 1 constraint
+    The NFR file passes all validation
+
+  when minter validate specs/security.nfr
+
+  then emits stdout
+    assert output contains "✓ security v1.0.0 (1 constraint)"
+
+
+behavior display-nfr-failure-line [error_case]
+  "Print a cross mark line with category and version on NFR validation failure"
+
+  given
+    An NFR file with category performance at version 2.0.0
+    The NFR file fails validation
+
+  when minter validate specs/performance.nfr
+
+  then emits stdout
+    assert output contains "✗ performance v2.0.0"
+
+  then emits process_exit
+    assert code == 1
+
+
+# Channel separation
+
 behavior separate-result-and-errors [happy_path]
   "Result lines go to stdout, error details go to stderr"
 
@@ -319,3 +370,6 @@ behavior separate-result-and-errors [happy_path]
 
   then emits stderr
     assert output is empty
+
+
+depends on nfr-dsl-format >= 1.0.0

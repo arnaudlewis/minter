@@ -547,10 +547,10 @@ frobnicate something
 
     let stderr = String::from_utf8_lossy(&output.get_output().stderr);
     let stdout = String::from_utf8_lossy(&output.get_output().stdout);
-    // Should contain parse/validation errors in stderr
+    // Should contain the parse error with the unrecognised keyword
     assert!(
-        stderr.contains("frobnicate") || stderr.contains("parse") || stderr.contains("keyword"),
-        "Expected parse error in stderr, got: {stderr}"
+        stderr.contains("frobnicate"),
+        "Expected parse error mentioning 'frobnicate' in stderr, got: {stderr}"
     );
     // Should NOT contain dependency resolution output
     assert!(

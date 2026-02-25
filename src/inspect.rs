@@ -2,14 +2,19 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use crate::model::{Assertion, BehaviorCategory};
-use crate::parser;
+use crate::model::{Assertion, BehaviorCategory, ConstraintType};
+use crate::{nfr_parser, parser};
 
 /// Display structured metadata for a spec file.
 pub fn run_inspect(file: &Path) -> i32 {
     if !file.exists() {
         eprintln!("error: file not found: {}", file.display());
         return 1;
+    }
+
+    let ext = file.extension().and_then(|e| e.to_str()).unwrap_or("");
+    if ext == "nfr" {
+        return inspect_nfr(file);
     }
 
     let source = match fs::read_to_string(file) {
@@ -98,6 +103,66 @@ pub fn run_inspect(file: &Path) -> i32 {
             println!("  {}: {}", at, n);
         }
     }
+
+    0
+}
+
+/// Display structured metadata for an NFR file.
+fn inspect_nfr(file: &Path) -> i32 {
+    let source = match fs::read_to_string(file) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("error: cannot read {}: {}", file.display(), e);
+            return 1;
+        }
+    };
+
+    let nfr = match nfr_parser::parse_nfr(&source) {
+        Ok(n) => n,
+        Err(errors) => {
+            for e in &errors {
+                eprintln!("{}: {}", file.display(), e);
+            }
+            return 1;
+        }
+    };
+
+    // Header
+    println!("{} v{}", nfr.category, nfr.version);
+    println!("title: {}", nfr.title);
+    println!();
+
+    // Constraint count
+    let count = nfr.constraints.len();
+    println!(
+        "{} {}",
+        count,
+        if count == 1 {
+            "constraint"
+        } else {
+            "constraints"
+        }
+    );
+
+    // Type distribution
+    let mut metric_count = 0;
+    let mut rule_count = 0;
+    for c in &nfr.constraints {
+        match c.constraint_type {
+            ConstraintType::Metric => metric_count += 1,
+            ConstraintType::Rule => rule_count += 1,
+        }
+    }
+    println!("  metric: {}", metric_count);
+    println!("  rule: {}", rule_count);
+    println!();
+
+    // Category
+    println!("category: {}", nfr.category);
+    println!();
+
+    // No dependencies for NFR files
+    println!("no dependencies");
 
     0
 }

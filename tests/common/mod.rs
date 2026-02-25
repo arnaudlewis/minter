@@ -84,6 +84,60 @@ pub fn temp_dir_with_nested_specs(specs: &[(&str, &str)]) -> (TempDir, PathBuf) 
     (dir, dir_path)
 }
 
+/// Write a single .nfr file to a temp directory.
+/// Returns the dir handle (must be kept alive) and the file path.
+pub fn temp_nfr(name: &str, content: &str) -> (TempDir, PathBuf) {
+    let dir = TempDir::new().expect("create temp dir");
+    let path = dir.path().join(format!("{}.nfr", name));
+    fs::write(&path, content).expect("write nfr file");
+    (dir, path)
+}
+
+/// A minimal valid NFR spec that exercises the core structure.
+pub const VALID_NFR: &str = "\
+nfr performance v1.0.0
+title \"Performance Requirements\"
+
+description
+  Defines performance constraints.
+
+motivation
+  Performance matters.
+
+
+constraint api-response-time [metric]
+  \"API endpoints must respond within acceptable latency bounds\"
+
+  metric \"HTTP response time, p95\"
+  threshold < 1s
+
+  verification
+    environment staging, production
+    benchmark \"100 concurrent requests per endpoint\"
+    pass \"p95 < threshold\"
+
+  violation high
+  overridable yes
+";
+
+/// Write a .spec and one or more .nfr files to a temp directory.
+/// Returns the dir handle and directory path.
+pub fn temp_dir_with_spec_and_nfrs(
+    spec_name: &str,
+    spec_content: &str,
+    nfrs: &[(&str, &str)],
+) -> (TempDir, PathBuf) {
+    let dir = TempDir::new().expect("create temp dir");
+    let spec_path = dir.path().join(format!("{}.spec", spec_name));
+    fs::write(&spec_path, spec_content).expect("write spec file");
+    for (name, content) in nfrs {
+        let nfr_path = dir.path().join(format!("{}.nfr", name));
+        fs::write(&nfr_path, content).expect("write nfr file");
+    }
+    let dir_path = dir.path().to_path_buf();
+    (dir, dir_path)
+}
+
 /// A minimal valid spec that exercises the core structure.
 pub const VALID_SPEC: &str = "\
 spec test-spec v1.0.0

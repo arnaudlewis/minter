@@ -72,7 +72,7 @@ fn print_nfr_grammar() {
 Non-Functional Requirement (NFR) Spec Grammar
 ===============================================
 
-spec <name> v<version>
+nfr <category> v<version>
 title \"<title>\"
 
 description
@@ -81,23 +81,37 @@ description
 motivation
   <free text>
 
-behavior <name> [<category>]
+
+constraint <name> [metric]
   \"<description>\"
 
-  given
-    <precondition text>
+  metric \"<what is measured>\"
+  threshold <operator> <value>
 
-  when <action-name>
+  verification
+    environment <env1>, <env2>, ...
+    benchmark \"<procedure>\"
+    dataset \"<data requirements>\"
+    pass \"<criteria>\"
 
-  then returns <channel>
-    assert <field> == <value>
+  violation <critical|high|medium|low>
+  overridable <yes|no>
 
-NFR-Specific Keywords:
-  constraint    — defines a non-functional constraint
-  verification  — describes how the constraint is verified
-  references    — links to external standards or documents
-  overrides     — indicates this NFR overrides another spec
 
-depends on <spec-name> >= <version>"
+constraint <name> [rule]
+  \"<description>\"
+
+  rule
+    <free text>
+
+  verification
+    static \"<check description>\"
+    runtime \"<check description>\"
+
+  violation <critical|high|medium|low>
+  overridable <yes|no>
+
+Categories: performance, reliability, security, observability, scalability, cost, operability
+Threshold operators: <, >, <=, >=, =="
     );
 }

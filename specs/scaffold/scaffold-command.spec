@@ -1,4 +1,4 @@
-spec scaffold-command v1.0.0
+spec scaffold-command v1.1.0
 title "Scaffold Command"
 
 description
@@ -44,7 +44,11 @@ behavior scaffold-nfr-with-category [happy_path]
   when minter scaffold nfr performance
 
   then emits stdout
+    assert output contains "nfr"
     assert output contains "constraint"
+    assert output contains "verification"
+    assert output contains "violation"
+    assert output contains "overridable"
     assert output contains "performance"
 
   then emits process_exit
@@ -77,8 +81,12 @@ behavior reject-unknown-nfr-category [error_case]
   then emits stderr
     assert output contains "banana"
     assert output contains "performance"
-    assert output contains "security"
     assert output contains "reliability"
+    assert output contains "security"
+    assert output contains "observability"
+    assert output contains "scalability"
+    assert output contains "cost"
+    assert output contains "operability"
 
   then emits process_exit
     assert code == 1
@@ -126,3 +134,18 @@ behavior scaffold-output-is-parseable [edge_case]
 
   then emits process_exit
     assert code == 0
+
+
+behavior scaffold-nfr-output-is-parseable [edge_case]
+  "The generated NFR scaffold passes validation when saved to a file"
+
+  given
+    The scaffold nfr performance output is written to a file named scaffolded.nfr
+
+  when minter validate scaffolded.nfr
+
+  then emits process_exit
+    assert code == 0
+
+
+depends on nfr-dsl-format >= 1.0.0

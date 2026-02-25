@@ -1,6 +1,6 @@
 mod common;
 
-use common::{minter, temp_dir_with_nested_specs, temp_dir_with_specs, temp_spec, temp_specs, VALID_SPEC};
+use common::{minter, temp_dir_with_nested_specs, temp_dir_with_spec_and_nfrs, temp_dir_with_specs, temp_nfr, temp_spec, temp_specs, VALID_NFR, VALID_SPEC};
 use predicates::prelude::*;
 
 // ═══════════════════════════════════════════════════════════════
@@ -318,7 +318,8 @@ behavior do-thing [happy_path]
         .assert()
         .failure()
         .stderr(predicate::str::contains("do-thing"))
-        .stderr(predicate::str::contains("Duplicate"));
+        .stderr(predicate::str::contains("Duplicate"))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// validate-command.spec: reject-unresolved-alias
@@ -352,7 +353,8 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("nonexistent"));
+        .stderr(predicate::str::contains("nonexistent"))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// validate-command.spec: reject-duplicate-aliases
@@ -387,7 +389,8 @@ behavior do-thing [happy_path]
         .assert()
         .failure()
         .stderr(predicate::str::contains("user"))
-        .stderr(predicate::str::contains("Duplicate"));
+        .stderr(predicate::str::contains("Duplicate"))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// validate-command.spec: reject-invalid-identity-name
@@ -420,7 +423,8 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("InvalidName").or(predicate::str::contains("kebab-case")));
+        .stderr(predicate::str::contains("InvalidName").or(predicate::str::contains("kebab-case")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// validate-command.spec: reject-invalid-semver
@@ -453,7 +457,8 @@ behavior do-thing [happy_path]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("NOPE").or(predicate::str::contains("semver")));
+        .stderr(predicate::str::contains("NOPE").or(predicate::str::contains("semver")))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 /// validate-command.spec: reject-no-happy-path
@@ -486,7 +491,8 @@ behavior fail-thing [error_case]
         .arg(&path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("happy_path"));
+        .stderr(predicate::str::contains("happy_path"))
+        .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -569,15 +575,19 @@ behavior fail-thing [error_case]
         .assert()
         .failure();
 
-    // Should report multiple errors, not just the first
+    // Should report all three errors, not just the first
     let stderr = String::from_utf8_lossy(&output.get_output().stderr);
-    // Count error occurrences — expect at least 2 distinct errors reported
-    let error_lines: Vec<&str> = stderr.lines().filter(|l| !l.is_empty()).collect();
     assert!(
-        error_lines.len() >= 2,
-        "Expected at least 2 error lines, got {}: {:?}",
-        error_lines.len(),
-        error_lines
+        stderr.contains("kebab-case"),
+        "Expected kebab-case-name error, got: {stderr}"
+    );
+    assert!(
+        stderr.contains("valid-semver"),
+        "Expected valid-semver error, got: {stderr}"
+    );
+    assert!(
+        stderr.contains("happy_path"),
+        "Expected at-least-one-happy-path error, got: {stderr}"
     );
 }
 
@@ -617,10 +627,10 @@ behavior fail-thing [error_case]
         .failure();
 
     let stderr = String::from_utf8_lossy(&output.get_output().stderr);
-    // Should mention the parse error
+    // Should mention the parse error with the unrecognised keyword
     assert!(
-        stderr.contains("frobnicate") || stderr.contains("parse") || stderr.contains("keyword"),
-        "Expected parse error in stderr, got: {stderr}"
+        stderr.contains("frobnicate"),
+        "Expected parse error mentioning 'frobnicate' in stderr, got: {stderr}"
     );
     // Should NOT mention semantic errors like kebab-case or happy_path
     assert!(
@@ -659,7 +669,8 @@ behavior fail-thing [error_case]
         .arg(&paths[0])
         .arg(&paths[1])
         .assert()
-        .failure();
+        .failure()
+        .stderr(predicate::str::contains("happy_path"));
 }
 
 /// validate-command.spec: validate-all-files-independently
@@ -694,13 +705,18 @@ behavior fail-thing [error_case]
         .assert()
         .failure();
 
-    // Both files should be mentioned in output (stdout or stderr combined)
+    // Both files should get result lines in stdout
     let stdout = String::from_utf8_lossy(&output.get_output().stdout);
     let stderr = String::from_utf8_lossy(&output.get_output().stderr);
-    let combined = format!("{stdout}{stderr}");
+    // One should fail (✗) and one should pass (✓)
     assert!(
-        combined.contains("invalid") && combined.contains("valid"),
-        "Both files should be reported, got stdout: {stdout}\nstderr: {stderr}"
+        stdout.contains("\u{2717}") && stdout.contains("\u{2713}"),
+        "Expected both ✗ and ✓ in stdout (both files validated), got: {stdout}"
+    );
+    // Stderr should report the specific error for the invalid file
+    assert!(
+        stderr.contains("happy_path"),
+        "Expected happy_path error in stderr, got: {stderr}"
     );
 }
 
@@ -737,12 +753,20 @@ behavior fail-thing [error_case]
 
     let stdout = String::from_utf8_lossy(&output.get_output().stdout);
     let stderr = String::from_utf8_lossy(&output.get_output().stderr);
-    let combined = format!("{stdout}{stderr}");
 
-    // Both files should have results
+    // Both specs should get result lines in stdout with their names
     assert!(
-        combined.contains("valid") && combined.contains("invalid"),
-        "Expected results for both files, got stdout: {stdout}\nstderr: {stderr}"
+        stdout.contains("invalid v1.0.0"),
+        "Expected 'invalid' spec in stdout, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("valid v1.0.0"),
+        "Expected 'valid' spec in stdout, got: {stdout}"
+    );
+    // Stderr should report the specific error for the invalid file
+    assert!(
+        stderr.contains("happy_path"),
+        "Expected happy_path error in stderr, got: {stderr}"
     );
 }
 
@@ -756,8 +780,8 @@ fn handle_empty_directory() {
         .arg(&dir_path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("no spec files")
-            .or(predicate::str::contains("no .spec files")));
+        .stderr(predicate::str::contains("no .spec")
+            .or(predicate::str::contains("no spec files")));
 }
 
 /// validate-command.spec: reject-nonexistent-directory
@@ -770,5 +794,197 @@ fn handle_nonexistent_directory() {
         .assert()
         .failure()
         .stderr(predicate::str::contains(nonexistent));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NFR validation (validate-command.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// validate-command.spec: validate-valid-nfr
+#[test]
+fn validate_valid_nfr() {
+    let (_dir, path) = temp_nfr("perf", VALID_NFR);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success();
+}
+
+/// validate-command.spec: validate-nfr-single-file-is-isolated
+#[test]
+fn validate_nfr_single_file_is_isolated() {
+    // NFR files have no dependency graph — always isolated
+    let (_dir, path) = temp_nfr("perf", VALID_NFR);
+    minter()
+        .arg("validate")
+        .arg("--deep")
+        .arg(&path)
+        .assert()
+        .success();
+}
+
+/// validate-command.spec: reject-invalid-nfr
+#[test]
+fn reject_invalid_nfr() {
+    let content = "\
+nfr banana v1.0.0
+title \"Bad\"
+
+description
+  D.
+
+motivation
+  M.
+
+
+constraint c [rule]
+  \"C\"
+
+  rule
+    R.
+
+  verification
+    static \"S\"
+
+  violation low
+  overridable no
+";
+    let (_dir, path) = temp_nfr("bad", content);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Invalid category"));
+}
+
+/// validate-command.spec: discover-nfr-in-directory
+#[test]
+fn discover_nfr_in_directory() {
+    let dir = tempfile::TempDir::new().expect("create temp dir");
+    let nfr_path = dir.path().join("perf.nfr");
+    std::fs::write(&nfr_path, VALID_NFR).expect("write nfr file");
+
+    minter()
+        .arg("validate")
+        .arg(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("performance"));
+}
+
+/// validate-command.spec: validate-cross-references-in-directory
+#[test]
+fn validate_cross_references_in_directory() {
+    let spec_content = "\
+spec crossref-test v1.0.0
+title \"Crossref Test\"
+
+description
+  A spec with nfr cross-references.
+
+motivation
+  Testing cross-ref resolution.
+
+nfr
+  performance#api-response-time
+
+behavior do-thing [happy_path]
+  \"Do the thing\"
+
+  given
+    The system is ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, dir_path) =
+        temp_dir_with_spec_and_nfrs("crossref-test", spec_content, &[("performance", VALID_NFR)]);
+
+    let output = minter()
+        .env("NO_COLOR", "1")
+        .arg("validate")
+        .arg(&dir_path)
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+    assert!(
+        stdout.contains("crossref-test"),
+        "Should validate .spec file, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("performance"),
+        "Should validate .nfr file, got: {stdout}"
+    );
+}
+
+/// validate-command.spec: reject-broken-cross-reference
+#[test]
+fn reject_broken_cross_reference() {
+    let spec_content = "\
+spec broken-ref v1.0.0
+title \"Broken Ref\"
+
+description
+  A spec referencing a nonexistent NFR category.
+
+motivation
+  Testing broken cross-refs.
+
+nfr
+  reliability#completeness
+
+behavior do-thing [happy_path]
+  \"Do the thing\"
+
+  given
+    The system is ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let dir = tempfile::TempDir::new().expect("create temp dir");
+    let spec_path = dir.path().join("broken-ref.spec");
+    std::fs::write(&spec_path, spec_content).expect("write spec file");
+
+    minter()
+        .arg("validate")
+        .arg(dir.path())
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("reliability"));
+}
+
+/// validate-command.spec: validate-mixed-spec-and-nfr-directory
+#[test]
+fn validate_mixed_spec_and_nfr_directory() {
+    let dir = tempfile::TempDir::new().expect("create temp dir");
+    let spec_path = dir.path().join("test-spec.spec");
+    std::fs::write(&spec_path, VALID_SPEC).expect("write spec file");
+    let nfr_path = dir.path().join("perf.nfr");
+    std::fs::write(&nfr_path, VALID_NFR).expect("write nfr file");
+
+    let output = minter()
+        .env("NO_COLOR", "1")
+        .arg("validate")
+        .arg(dir.path())
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+    assert!(
+        stdout.contains("test-spec"),
+        "Should validate .spec file, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("performance"),
+        "Should validate .nfr file, got: {stdout}"
+    );
 }
 

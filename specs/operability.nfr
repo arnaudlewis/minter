@@ -1,0 +1,96 @@
+nfr operability v1.0.0
+title "Operability Requirements"
+
+description
+  Defines the operability constraints for the minter CLI. Minter must
+  behave predictably in both interactive and CI environments, produce
+  deterministic output, and require zero configuration to function.
+
+motivation
+  Build tools that behave differently depending on working directory,
+  environment, or hidden config erode developer trust. These constraints
+  lock the operational contract that authors and CI pipelines depend on.
+
+
+# Deterministic output
+
+constraint deterministic-output [rule]
+  "Same input must produce identical output across invocations"
+
+  rule
+    Given the same spec files on disk, minter must produce byte-identical
+    stdout and stderr output (modulo ANSI codes controlled by NO_COLOR).
+    No timestamps, process IDs, random values, or ordering variations
+    may appear in validation output. Spec results in directory mode must
+    be sorted in a stable, deterministic order.
+
+  verification
+    static "Audit all println/eprintln call sites for dynamic values (timestamps, PIDs, random)"
+    runtime "Run minter validate on the same directory 10 times, assert stdout is identical across all runs"
+
+  violation high
+  overridable no
+
+
+# CI-friendly output
+
+constraint ci-friendly-output [rule]
+  "Output conventions must support automated CI consumption"
+
+  rule
+    All commands must maintain these conventions:
+    - Exit code 0 for success, 1 for any failure
+    - Validation results on stdout, error details on stderr
+    - NO_COLOR environment variable suppresses ANSI escape sequences
+    - Error messages include file path and line number in a grep-friendly format
+    These conventions enable CI pipelines to gate on exit code, parse
+    errors from stderr, and display clean results in logs.
+
+  verification
+    static "Every command path in main.rs returns ExitCode(0) or ExitCode(1)"
+    runtime "Run validate with NO_COLOR=1, assert no ANSI escapes in stdout or stderr"
+    runtime "Run validate on a broken spec, assert exit code 1 and errors on stderr only"
+
+  violation high
+  overridable no
+
+
+# Graph location
+
+constraint graph-location-predictability [rule]
+  "The .minter/ cache directory must be located relative to the spec root"
+
+  rule
+    The .minter/graph.json file must be created relative to the
+    spec directory being validated, not relative to the process
+    working directory. Running minter validate /absolute/path/specs/
+    from any working directory must produce the cache at
+    /absolute/path/specs/.minter/graph.json. The current cwd-dependent
+    behavior causes cache misses when the same spec tree is validated
+    from different directories.
+
+  verification
+    runtime "Run minter validate /tmp/specs/ from /home/user, assert .minter/graph.json is at /tmp/specs/.minter/graph.json, not /home/user/.minter/graph.json"
+
+  violation medium
+  overridable no
+
+
+# Zero configuration
+
+constraint zero-config [rule]
+  "The tool must function with no configuration files"
+
+  rule
+    Minter must not require any configuration file (.minterrc,
+    minter.toml, or similar) to function. All behavior is controlled
+    via CLI flags and conventions. The only persisted state is the
+    .minter/graph.json cache, which is automatically created and
+    automatically recovered if corrupted or absent.
+
+  verification
+    static "No config file parsing code exists in the codebase — no references to .minterrc, minter.toml, or config loading"
+    runtime "Delete .minter/ directory entirely, run validate on a spec tree, assert correct results and automatic cache creation"
+
+  violation medium
+  overridable no

@@ -1,4 +1,4 @@
-spec watch-command v2.0.0
+spec watch-command v2.1.0
 title "Watch Command"
 
 description
@@ -15,6 +15,13 @@ motivation
   see validation results immediately. By keeping the graph in memory and
   using incremental validation, re-validation is near-instant even for
   large spec trees.
+
+nfr
+  performance#watch-revalidation-latency
+  reliability#no-silent-data-loss
+  reliability#crash-safe-persistence
+  operability#ci-friendly-output
+
 
 # Startup
 
@@ -338,6 +345,50 @@ behavior watch-graph-persist-failure-on-shutdown [error_case]
 
   then emits process_exit
     assert code == 0
+
+
+# NFR watch support
+
+behavior watch-discover-nfr-files [happy_path]
+  "Include .nfr files in the initial directory scan and validation"
+
+  given
+    A directory containing specs/a.spec and specs/performance.nfr
+    Both files are valid
+
+  when minter watch specs/
+
+  then emits stdout
+    assert output contains "watching"
+    assert output contains "a"
+    assert output contains "performance"
+
+
+behavior watch-revalidate-changed-nfr [happy_path]
+  "Re-validate when a .nfr file is modified and saved"
+
+  given
+    Watch mode is running with specs/performance.nfr in the watch set
+    specs/performance.nfr is modified and saved
+
+  when file change detected for specs/performance.nfr
+
+  then emits stdout
+    assert output contains "performance.nfr"
+    assert output contains validation result for performance
+
+
+behavior watch-integrate-new-nfr-file [happy_path]
+  "Add a newly created .nfr file to the watch set and validate it"
+
+  given
+    Watch mode is running with a valid graph in memory
+
+  when a new file specs/security.nfr is created
+
+  then emits stdout
+    assert output contains "security.nfr"
+    assert output contains validation result for security
 
 
 depends on dependency-resolution >= 2.0.0

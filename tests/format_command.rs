@@ -35,10 +35,19 @@ fn display_nfr_grammar() {
         .arg("nfr")
         .assert()
         .success()
+        .stdout(predicate::str::contains("nfr"))
         .stdout(predicate::str::contains("constraint"))
+        .stdout(predicate::str::contains("metric"))
+        .stdout(predicate::str::contains("threshold"))
+        .stdout(predicate::str::contains("rule"))
         .stdout(predicate::str::contains("verification"))
-        .stdout(predicate::str::contains("references"))
-        .stdout(predicate::str::contains("overrides"));
+        .stdout(predicate::str::contains("violation"))
+        .stdout(predicate::str::contains("overridable"))
+        .stdout(predicate::str::contains("environment"))
+        .stdout(predicate::str::contains("benchmark"))
+        .stdout(predicate::str::contains("pass"))
+        .stdout(predicate::str::contains("static"))
+        .stdout(predicate::str::contains("runtime"));
 }
 
 // ═══════════════════════════════════════════════════════════════

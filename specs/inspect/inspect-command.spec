@@ -1,4 +1,4 @@
-spec inspect-command v1.0.0
+spec inspect-command v1.1.0
 title "Inspect Command"
 
 description
@@ -10,6 +10,9 @@ motivation
   When reviewing or debugging a spec, authors need a quick summary of
   its structure without reading the full file. The inspect command
   provides this at a glance.
+
+nfr
+  operability#ci-friendly-output
 
 
 behavior inspect-behavior-count [happy_path]
@@ -122,5 +125,69 @@ behavior inspect-no-dependencies [edge_case]
     assert code == 0
 
 
+# NFR inspection
+
+behavior inspect-nfr-constraint-count [happy_path]
+  "Display the total number of constraints in an NFR file"
+
+  given
+    specs/performance.nfr is valid with 4 constraints
+
+  when minter inspect specs/performance.nfr
+
+  then emits stdout
+    assert output contains "4 constraints"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior inspect-nfr-type-distribution [happy_path]
+  "Display the count of metric vs rule constraints"
+
+  given
+    specs/performance.nfr is valid with 3 metric and 2 rule constraints
+
+  when minter inspect specs/performance.nfr
+
+  then emits stdout
+    assert output contains "metric" and "3"
+    assert output contains "rule" and "2"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior inspect-nfr-category [happy_path]
+  "Display the NFR category"
+
+  given
+    specs/performance.nfr is valid with category performance
+
+  when minter inspect specs/performance.nfr
+
+  then emits stdout
+    assert output contains "performance"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior inspect-nfr-no-dependencies [edge_case]
+  "Indicate that an NFR file has no dependencies"
+
+  given
+    specs/performance.nfr is a valid NFR file with no depends on declarations
+
+  when minter inspect specs/performance.nfr
+
+  then emits stdout
+    assert output contains "no dependencies"
+
+  then emits process_exit
+    assert code == 0
+
+
 depends on dsl-format >= 1.1.0
 depends on validate-command >= 2.0.0
+depends on nfr-dsl-format >= 1.0.0

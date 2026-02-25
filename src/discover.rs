@@ -54,3 +54,33 @@ pub fn discover_spec_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
     spec_files.sort();
     Ok(spec_files)
 }
+
+/// Recursively discover all .nfr files in a directory tree.
+/// Returns sorted paths.
+pub fn discover_nfr_files(dir: &Path) -> Vec<PathBuf> {
+    let mut nfr_files = Vec::new();
+
+    for entry in walkdir::WalkDir::new(dir)
+        .follow_links(false)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        let path = entry.path().to_path_buf();
+        if path.extension().and_then(|e| e.to_str()) == Some("nfr") {
+            nfr_files.push(path);
+        }
+    }
+
+    nfr_files.sort();
+    nfr_files
+}
+
+/// Recursively discover all .spec and .nfr files in a directory tree.
+/// Returns sorted paths, or an error if duplicate spec names are found.
+pub fn discover_all_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
+    let mut spec_files = discover_spec_files(dir)?;
+    let nfr_files = discover_nfr_files(dir);
+    spec_files.extend(nfr_files);
+    spec_files.sort();
+    Ok(spec_files)
+}

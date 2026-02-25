@@ -1276,3 +1276,193 @@ fn watch_rebuild_stale_graph_entries() {
     let _ = child.kill();
     let _ = child.wait();
 }
+
+// ═══════════════════════════════════════════════════════════════
+// watch-command.spec NFR behaviors
+// ═══════════════════════════════════════════════════════════════
+
+/// A minimal valid .nfr content for watch tests.
+fn valid_nfr(category: &str, version: &str) -> String {
+    format!(
+        "\
+nfr {category} v{version}
+title \"{category} Requirements\"
+
+description
+  Defines {category} constraints.
+
+motivation
+  Testing watch mode.
+
+
+constraint sample-constraint [metric]
+  \"A sample constraint\"
+
+  metric \"sample metric\"
+  threshold < 1s
+
+  verification
+    environment staging
+    benchmark \"test run\"
+    pass \"p95 < threshold\"
+
+  violation high
+  overridable yes
+"
+    )
+}
+
+/// watch-command.spec: watch-discover-nfr-files
+#[test]
+fn watch_discover_nfr_files() {
+    let dir = tempfile::TempDir::new().unwrap();
+    fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
+    fs::write(
+        dir.path().join("performance.nfr"),
+        valid_nfr("performance", "1.0.0"),
+    )
+    .unwrap();
+
+    let mut child = Command::new(minter_bin())
+        .current_dir(dir.path())
+        .arg("watch")
+        .arg(dir.path())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn minter watch");
+
+    let stdout = child.stdout.take().unwrap();
+    let receiver = LineReceiver::new(stdout);
+
+    // Collect all initial output including validation results and watching banner
+    let initial_lines = receiver.collect_for(Duration::from_secs(10));
+    let stdout_combined = initial_lines.join("\n");
+
+    // Should see both the spec and the nfr validated
+    assert!(
+        stdout_combined.contains("a"),
+        "initial output should contain spec 'a': got {:?}",
+        stdout_combined
+    );
+    assert!(
+        stdout_combined.contains("performance"),
+        "initial output should contain nfr 'performance': got {:?}",
+        stdout_combined
+    );
+    assert!(
+        stdout_combined.to_lowercase().contains("watch"),
+        "should see watching banner: got {:?}",
+        stdout_combined
+    );
+
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
+/// watch-command.spec: watch-revalidate-changed-nfr
+#[test]
+fn watch_revalidate_changed_nfr() {
+    let dir = tempfile::TempDir::new().unwrap();
+    fs::write(
+        dir.path().join("performance.nfr"),
+        valid_nfr("performance", "1.0.0"),
+    )
+    .unwrap();
+    fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
+
+    let mut child = Command::new(minter_bin())
+        .current_dir(dir.path())
+        .arg("watch")
+        .arg(dir.path())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn minter watch");
+
+    let stdout = child.stdout.take().unwrap();
+    let receiver = LineReceiver::new(stdout);
+
+    // Wait for initial watch message
+    receiver
+        .wait_for(
+            |l| l.to_lowercase().contains("watch"),
+            Duration::from_secs(10),
+        )
+        .expect("should see initial watch message");
+
+    // Wait for watcher setup, then modify the .nfr file
+    std::thread::sleep(Duration::from_millis(500));
+    fs::write(
+        dir.path().join("performance.nfr"),
+        valid_nfr("performance", "1.1.0"),
+    )
+    .unwrap();
+
+    // Should see output about the changed nfr file
+    let line = receiver.wait_for(
+        |l| l.contains("performance") || l.contains("changed"),
+        Duration::from_secs(10),
+    );
+
+    assert!(
+        line.is_some(),
+        "should see revalidation output after .nfr file change"
+    );
+
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
+/// watch-command.spec: watch-integrate-new-nfr-file
+#[test]
+fn watch_integrate_new_nfr_file() {
+    let dir = tempfile::TempDir::new().unwrap();
+    fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
+
+    let mut child = Command::new(minter_bin())
+        .current_dir(dir.path())
+        .arg("watch")
+        .arg(dir.path())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn minter watch");
+
+    let stdout = child.stdout.take().unwrap();
+    let receiver = LineReceiver::new(stdout);
+
+    // Wait for initial watch message
+    receiver
+        .wait_for(
+            |l| l.to_lowercase().contains("watch"),
+            Duration::from_secs(10),
+        )
+        .expect("should see initial watch message");
+
+    // Wait for watcher setup, then create a new .nfr file
+    std::thread::sleep(Duration::from_millis(500));
+    fs::write(
+        dir.path().join("reliability.nfr"),
+        valid_nfr("reliability", "1.0.0"),
+    )
+    .unwrap();
+
+    // Should see output about the new nfr file
+    let line = receiver.wait_for(
+        |l| {
+            l.contains("reliability")
+                || l.contains("new")
+                || l.contains("detected")
+        },
+        Duration::from_secs(10),
+    );
+
+    assert!(
+        line.is_some(),
+        "should detect and report new .nfr file"
+    );
+
+    let _ = child.kill();
+    let _ = child.wait();
+}

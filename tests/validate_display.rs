@@ -1,6 +1,6 @@
 mod common;
 
-use common::{minter, temp_dir_with_specs, temp_spec, temp_specs, VALID_SPEC};
+use common::{minter, temp_dir_with_specs, temp_nfr, temp_spec, temp_specs, VALID_SPEC};
 use predicates::prelude::*;
 
 /// Helper: a valid spec with a given name, version, and number of behaviors.
@@ -139,10 +139,10 @@ fn display_errors_on_stderr() {
     let stderr = String::from_utf8_lossy(&output.get_output().stderr);
     let stdout = String::from_utf8_lossy(&output.get_output().stdout);
 
-    // Errors should be on stderr
+    // Errors should be on stderr with the specific validation error
     assert!(
-        !stderr.is_empty(),
-        "stderr should contain error details, got empty"
+        stderr.contains("happy_path"),
+        "stderr should contain 'happy_path' error detail, got: {stderr}"
     );
 
     // stdout should NOT contain error details (only the result line)
@@ -309,12 +309,8 @@ fn display_tree_error_on_stderr() {
 
     // Error details for b should be on stderr
     assert!(
-        !stderr.is_empty(),
-        "stderr should contain error details for failed dep, got empty"
-    );
-    assert!(
-        stderr.contains("b") || stderr.contains("happy_path") || stderr.contains("validation"),
-        "stderr should contain error info about dep b, got: {stderr}"
+        stderr.contains("b") && stderr.contains("validation errors"),
+        "stderr should mention dep 'b' has validation errors, got: {stderr}"
     );
 }
 
@@ -524,4 +520,164 @@ fn display_long_spec_name() {
         .stdout(predicate::str::contains(
             "✓ my-very-long-feature-name-that-exceeds-typical-width v1.0.0 (5 behaviors)",
         ));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NFR display output (validate-display.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// validate-display.spec: display-nfr-success-line
+#[test]
+fn display_nfr_success_line() {
+    let content = "\
+nfr performance v1.0.0
+title \"Perf\"
+
+description
+  D.
+
+motivation
+  M.
+
+
+constraint c1 [metric]
+  \"M1\"
+
+  metric \"m\"
+  threshold < 1s
+
+  verification
+    environment all
+    benchmark \"b\"
+    pass \"p\"
+
+  violation high
+  overridable yes
+
+
+constraint c2 [metric]
+  \"M2\"
+
+  metric \"m\"
+  threshold > 100
+
+  verification
+    environment all
+    benchmark \"b\"
+    pass \"p\"
+
+  violation medium
+  overridable yes
+
+
+constraint c3 [rule]
+  \"R1\"
+
+  rule
+    Invariant.
+
+  verification
+    static \"S\"
+
+  violation low
+  overridable no
+
+
+constraint c4 [rule]
+  \"R2\"
+
+  rule
+    Another invariant.
+
+  verification
+    runtime \"R\"
+
+  violation medium
+  overridable no
+";
+    let (_dir, path) = temp_nfr("perf", content);
+    minter()
+        .env("NO_COLOR", "1")
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "✓ performance v1.0.0 (4 constraints)",
+        ));
+}
+
+/// validate-display.spec: display-nfr-singular-constraint-count
+#[test]
+fn display_nfr_singular_constraint_count() {
+    let content = "\
+nfr security v1.0.0
+title \"Security\"
+
+description
+  D.
+
+motivation
+  M.
+
+
+constraint one-rule [rule]
+  \"Single rule\"
+
+  rule
+    Invariant.
+
+  verification
+    static \"S\"
+
+  violation critical
+  overridable no
+";
+    let (_dir, path) = temp_nfr("sec", content);
+    minter()
+        .env("NO_COLOR", "1")
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "✓ security v1.0.0 (1 constraint)",
+        ));
+}
+
+/// validate-display.spec: display-nfr-failure-line
+#[test]
+fn display_nfr_failure_line() {
+    // NFR with non-kebab constraint name triggers semantic error
+    let content = "\
+nfr performance v1.0.0
+title \"Perf\"
+
+description
+  D.
+
+motivation
+  M.
+
+
+constraint BadName [rule]
+  \"Bad\"
+
+  rule
+    R.
+
+  verification
+    static \"S\"
+
+  violation low
+  overridable no
+";
+    let (_dir, path) = temp_nfr("bad", content);
+    minter()
+        .env("NO_COLOR", "1")
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("✗ performance v1.0.0"));
 }

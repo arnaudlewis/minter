@@ -13,7 +13,17 @@ use crate::discover;
 use crate::display::{self, CYAN, GREEN, RED, RESET, YELLOW};
 use crate::graph::{self, CachedEntry, GraphCache};
 use crate::model::Spec;
-use crate::{parser, semantic};
+use crate::{nfr_parser, nfr_semantic, parser, semantic};
+
+fn is_spec_or_nfr_ext(ext: &str) -> bool {
+    ext == "spec" || ext == "nfr"
+}
+
+fn file_ext_display(path: &Path) -> &str {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("spec")
+}
 
 /// Run watch mode on a file or directory. Returns exit code.
 pub fn run_watch(path: &Path) -> i32 {
@@ -28,11 +38,11 @@ pub fn run_watch(path: &Path) -> i32 {
             eprintln!("error: permission denied: {}", path.display());
             return 1;
         }
-    } else if path.is_file() {
-        if fs::read_to_string(path).is_err() {
-            eprintln!("error: permission denied: {}", path.display());
-            return 1;
-        }
+    } else if path.is_file()
+        && fs::read_to_string(path).is_err()
+    {
+        eprintln!("error: permission denied: {}", path.display());
+        return 1;
     }
 
     // Determine the watch directory and optional single-file filter
@@ -88,11 +98,11 @@ pub fn run_watch(path: &Path) -> i32 {
                         if e.kind != DebouncedEventKind::Any {
                             return false;
                         }
-                        let is_spec = e.path
+                        let is_spec_or_nfr = e.path
                             .extension()
                             .and_then(|ext| ext.to_str())
-                            .is_some_and(|ext| ext == "spec");
-                        if !is_spec {
+                            .is_some_and(is_spec_or_nfr_ext);
+                        if !is_spec_or_nfr {
                             return false;
                         }
                         // If watching a single file, filter to that file and its dependents
@@ -161,9 +171,9 @@ fn handle_watch_events(
 fn classify_events(
     spec_events: &[&notify_debouncer_mini::DebouncedEvent],
     cache: &GraphCache,
-) -> (HashMap<String, std::path::PathBuf>, HashSet<String>, HashMap<String, std::path::PathBuf>) {
+) -> (HashMap<String, std::path::PathBuf>, HashMap<String, String>, HashMap<String, std::path::PathBuf>) {
     let mut changed_files: HashMap<String, std::path::PathBuf> = HashMap::new();
-    let mut deleted_files = HashSet::new();
+    let mut deleted_files: HashMap<String, String> = HashMap::new();
     let mut new_files: HashMap<String, std::path::PathBuf> = HashMap::new();
 
     for event in spec_events {
@@ -178,7 +188,12 @@ fn classify_events(
         }
 
         if !path.exists() {
-            deleted_files.insert(name);
+            let ext = path
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("spec")
+                .to_string();
+            deleted_files.insert(name, ext);
         } else if cache.specs.contains_key(&name) {
             changed_files.insert(name, path.clone());
         } else {
@@ -189,9 +204,9 @@ fn classify_events(
     (changed_files, deleted_files, new_files)
 }
 
-fn handle_deletions(deleted: &HashSet<String>, cache: &mut GraphCache) {
-    for name in deleted {
-        println!("{}deleted: {}.spec{}", RED, name, RESET);
+fn handle_deletions(deleted: &HashMap<String, String>, cache: &mut GraphCache) {
+    for (name, ext) in deleted {
+        println!("{}deleted: {}.{}{}", RED, name, ext, RESET);
         let _ = std::io::stdout().flush();
         cache.specs.remove(name);
 
@@ -214,7 +229,8 @@ fn handle_deletions(deleted: &HashSet<String>, cache: &mut GraphCache) {
 
 fn handle_new_files(new: &HashMap<String, std::path::PathBuf>, dir: &Path, cache: &mut GraphCache) {
     for (name, path) in new {
-        println!("{}detected new file: {}.spec{}", CYAN, name, RESET);
+        let ext = file_ext_display(path);
+        println!("{}detected new file: {}.{}{}", CYAN, name, ext, RESET);
         let _ = std::io::stdout().flush();
         validate_and_cache_spec(path, name, dir, cache);
     }
@@ -226,7 +242,8 @@ fn handle_changes(
     cache: &mut GraphCache,
 ) {
     for (name, path) in changed {
-        println!("{}changed: {}.spec{}", YELLOW, name, RESET);
+        let ext = file_ext_display(path);
+        println!("{}changed: {}.{}{}", YELLOW, name, ext, RESET);
         let _ = std::io::stdout().flush();
         validate_and_cache_spec(path, name, dir, cache);
 
@@ -256,7 +273,7 @@ fn handle_changes(
 fn initial_validate(dir: &Path) -> GraphCache {
     let mut cache = GraphCache::load(&graph::graph_json_path_cwd()).unwrap_or_default();
 
-    let spec_files = match discover::discover_spec_files(dir) {
+    let all_files = match discover::discover_all_files(dir) {
         Ok(files) => files,
         Err(e) => {
             eprintln!("error: {}", e);
@@ -264,7 +281,7 @@ fn initial_validate(dir: &Path) -> GraphCache {
         }
     };
 
-    for path in &spec_files {
+    for path in &all_files {
         if let Some(name) = path.file_stem().and_then(|s| s.to_str()) {
             validate_and_cache_spec(path, name, dir, &mut cache);
         }
@@ -273,13 +290,15 @@ fn initial_validate(dir: &Path) -> GraphCache {
     cache
 }
 
-/// Validate a single spec file and update the cache.
+/// Validate a single spec or nfr file and update the cache.
 fn validate_and_cache_spec(
     path: &Path,
     name: &str,
     dir: &Path,
     cache: &mut GraphCache,
 ) {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+
     let source = match fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
@@ -290,6 +309,29 @@ fn validate_and_cache_spec(
 
     let hash = graph::content_hash(&source);
     if !cache.is_changed(name, &hash) {
+        return;
+    }
+
+    if ext == "nfr" {
+        let entry = match validate_nfr(path, &source) {
+            Some((nfr, valid)) => CachedEntry {
+                content_hash: hash,
+                version: nfr.version.clone(),
+                behavior_count: nfr.constraints.len(),
+                valid,
+                dependencies: vec![],
+                path: path.display().to_string(),
+            },
+            None => CachedEntry {
+                content_hash: hash,
+                version: String::new(),
+                behavior_count: 0,
+                valid: false,
+                dependencies: vec![],
+                path: path.display().to_string(),
+            },
+        };
+        cache.upsert(name.to_string(), entry);
         return;
     }
 
@@ -314,12 +356,37 @@ fn validate_and_cache_spec(
     cache.upsert(name.to_string(), entry);
 }
 
+/// Parse and validate a .nfr file. Returns (nfr, valid) or None on parse failure.
+fn validate_nfr(path: &Path, source: &str) -> Option<(crate::model::NfrSpec, bool)> {
+    let name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+    let nfr = match nfr_parser::parse_nfr(source) {
+        Ok(n) => n,
+        Err(errors) => {
+            println!("{}\u{2717}{} {}", RED, RESET, name);
+            let _ = std::io::stdout().flush();
+            for e in &errors {
+                eprintln!("{}: {}", path.display(), e);
+            }
+            return None;
+        }
+    };
+
+    let valid = nfr_semantic::validate(&nfr).is_ok();
+    if valid {
+        display::print_nfr_success(&nfr);
+    } else {
+        display::print_nfr_failure(&nfr);
+    }
+    Some((nfr, valid))
+}
+
 /// Parse and validate a spec file. Returns (spec, valid) or None on parse failure.
 fn parse_and_validate(path: &Path, source: &str, dir: &Path) -> Option<(Spec, bool)> {
+    let name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
     let spec = match parser::parse(source) {
         Ok(s) => s,
         Err(errors) => {
-            println!("{}\u{2717}{} {}", RED, RESET, path.display());
+            println!("{}\u{2717}{} {}", RED, RESET, name);
             let _ = std::io::stdout().flush();
             for e in &errors {
                 eprintln!("{}: {}", path.display(), e);
@@ -373,18 +440,16 @@ fn print_success_with_deps(spec: &Spec, dir: &Path) {
                             display::behavior_count_label(dep_spec.behaviors.len()),
                         );
                     }
+            } else if color {
+                println!(
+                    "{}{}\u{2717}{} {} (unresolved)",
+                    connector, RED, RESET, dep.spec_name
+                );
             } else {
-                if color {
-                    println!(
-                        "{}{}\u{2717}{} {} (unresolved)",
-                        connector, RED, RESET, dep.spec_name
-                    );
-                } else {
-                    println!(
-                        "{}\u{2717} {} (unresolved)",
-                        connector, dep.spec_name
-                    );
-                }
+                println!(
+                    "{}\u{2717} {} (unresolved)",
+                    connector, dep.spec_name
+                );
             }
         }
     }

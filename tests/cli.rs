@@ -5,7 +5,10 @@ use std::process::{Command, Stdio};
 use std::sync::mpsc;
 use std::time::Duration;
 
-use common::{minter, temp_dir_with_specs, temp_spec, VALID_SPEC};
+use common::{
+    minter, temp_dir_with_spec_and_nfrs, temp_dir_with_specs, temp_nfr, temp_spec, VALID_NFR,
+    VALID_SPEC,
+};
 use predicates::prelude::*;
 
 /// Get the path to the minter binary.
@@ -150,6 +153,31 @@ fn reject_non_spec_extension() {
         .assert()
         .failure()
         .stderr(predicate::str::contains(".spec"));
+}
+
+/// cli.spec: route-validate-nfr-file
+#[test]
+fn route_validate_nfr_file() {
+    let (_dir, path) = temp_nfr("perf", VALID_NFR);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("performance"));
+}
+
+/// cli.spec: route-inspect-nfr
+#[test]
+fn route_inspect_nfr() {
+    let (_dir, path) = temp_nfr("perf", VALID_NFR);
+    minter()
+        .arg("inspect")
+        .arg(&path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("performance"))
+        .stdout(predicate::str::contains("constraint"));
 }
 
 /// cli.spec: reject-unknown-flag
@@ -453,6 +481,54 @@ fn route_watch_folder() {
 
     let _ = child.kill();
     let _ = child.wait();
+}
+
+/// cli.spec: route-validate-mixed-directory
+#[test]
+fn route_validate_mixed_directory() {
+    let spec_content = "\
+spec mixed-route v1.0.0
+title \"Mixed Route\"
+
+description
+  A spec with nfr references.
+
+motivation
+  Testing mixed directory routing.
+
+nfr
+  performance#api-response-time
+
+behavior do-thing [happy_path]
+  \"Do the thing\"
+
+  given
+    The system is ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+    let (_dir, dir_path) =
+        temp_dir_with_spec_and_nfrs("mixed-route", spec_content, &[("performance", VALID_NFR)]);
+
+    let output = minter()
+        .env("NO_COLOR", "1")
+        .arg("validate")
+        .arg(&dir_path)
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&output.get_output().stdout);
+    assert!(
+        stdout.contains("mixed-route"),
+        "Should validate .spec file, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("performance"),
+        "Should validate .nfr file, got: {stdout}"
+    );
 }
 
 /// cli.spec: route-watch-file

@@ -1,0 +1,86 @@
+nfr performance v1.0.0
+title "Performance Requirements"
+
+description
+  Defines the performance constraints for the minter CLI. Minter is
+  on the critical path of spec authoring — slow validation kills the
+  feedback loop. Watch mode is particularly sensitive because authors
+  expect near-instant feedback after every save.
+
+motivation
+  A spec compiler that takes seconds to respond trains authors to
+  batch edits and avoid saving. Sub-second feedback keeps authors
+  in flow state and catches errors at the point of introduction.
+
+
+# Validation latency
+
+constraint validation-latency [metric]
+  "Single-file validation must complete within interactive latency bounds"
+
+  metric "Wall-clock time from invocation to exit for a single spec file"
+  threshold < 200ms
+
+  verification
+    environment all
+    benchmark "Validate a 50-behavior spec file with no dependencies"
+    pass "p95 < threshold across 100 consecutive runs"
+
+  violation high
+  overridable yes
+
+
+# Watch mode latency
+
+constraint watch-revalidation-latency [metric]
+  "Re-validation after a file save must complete before the author's attention shifts"
+
+  metric "Wall-clock time from file save event to validation output appearing on stdout"
+  threshold < 500ms
+
+  verification
+    environment all
+    benchmark "Start watch mode, modify a spec file, measure time to output"
+    dataset "Spec tree with 20 specs, 3 levels of dependency depth"
+    pass "p95 < threshold including the 300ms debounce window"
+
+  violation high
+  overridable yes
+
+
+# Directory scaling
+
+constraint directory-validation-scaling [metric]
+  "Directory validation time must scale linearly with spec count"
+
+  metric "Wall-clock time per additional spec file in directory validation"
+  threshold < 20ms
+
+  verification
+    environment all
+    benchmark "Validate directories with 10, 50, and 100 spec files, measure per-spec cost"
+    dataset "Synthetic spec trees with controlled dependency fan-out"
+    pass "Per-spec marginal cost remains below threshold at all tree sizes"
+
+  violation medium
+  overridable yes
+
+
+# Redundant I/O
+
+constraint no-redundant-file-reads [rule]
+  "No spec file should be read from disk more than once per validation pass"
+
+  rule
+    During a single validation invocation, each spec file is read
+    from disk at most once. Parsed content and computed hashes are
+    retained in memory for reuse by dependency resolution and cache
+    updates. Re-reading a file that was already parsed in the same
+    pass is a performance defect.
+
+  verification
+    static "Audit validate.rs and deps.rs call sites for fs::read_to_string — each file path appears in at most one read call per pass"
+    runtime "Instrument file reads with a counter, validate a 10-spec deep tree, assert no file is read more than once"
+
+  violation medium
+  overridable no

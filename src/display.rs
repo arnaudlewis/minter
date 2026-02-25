@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::model::{Dependency, Spec};
+use crate::model::{Dependency, NfrSpec, Spec};
 
 // ANSI color codes
 pub const GREEN: &str = "\x1b[32m";
@@ -60,6 +60,40 @@ pub fn print_failure(spec: &Spec) {
     }
 }
 
+pub fn constraint_count_label(count: usize) -> String {
+    if count == 1 {
+        "1 constraint".to_string()
+    } else {
+        format!("{} constraints", count)
+    }
+}
+
+pub fn print_nfr_success(nfr: &NfrSpec) {
+    if use_color() {
+        println!(
+            "{GREEN}\u{2713}{RESET} {} v{} ({})",
+            nfr.category,
+            nfr.version,
+            constraint_count_label(nfr.constraints.len()),
+        );
+    } else {
+        println!(
+            "\u{2713} {} v{} ({})",
+            nfr.category,
+            nfr.version,
+            constraint_count_label(nfr.constraints.len()),
+        );
+    }
+}
+
+pub fn print_nfr_failure(nfr: &NfrSpec) {
+    if use_color() {
+        println!("{RED}\u{2717}{RESET} {} v{}", nfr.category, nfr.version);
+    } else {
+        println!("\u{2717} {} v{}", nfr.category, nfr.version);
+    }
+}
+
 pub struct TreeContext<'a> {
     pub resolved: &'a HashMap<String, crate::deps::ResolvedDep>,
     pub seen: &'a mut HashSet<String>,
@@ -96,11 +130,13 @@ fn compute_depths_recursive(deps: &[Dependency], depth: usize, acc: &mut DepthAc
             continue;
         }
         acc.visited.insert(dep.spec_name.clone());
-        if let Some(rd) = acc.resolved.get(&dep.spec_name)
-            && !rd.spec.dependencies.is_empty()
-        {
-            let sub_deps = rd.spec.dependencies.clone();
-            compute_depths_recursive(&sub_deps, depth + 1, acc);
+        let sub_deps: Option<Vec<Dependency>> = acc
+            .resolved
+            .get(&dep.spec_name)
+            .filter(|rd| !rd.spec.dependencies.is_empty())
+            .map(|rd| rd.spec.dependencies.clone());
+        if let Some(sub) = sub_deps {
+            compute_depths_recursive(&sub, depth + 1, acc);
         }
     }
 }

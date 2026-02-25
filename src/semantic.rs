@@ -24,6 +24,8 @@ pub fn validate(spec: &Spec) -> Result<(), Vec<SemanticError>> {
     check_unique_behavior_names(spec, &mut errors);
     check_at_least_one_happy_path(spec, &mut errors);
 
+    check_nfr_containment(spec, &mut errors);
+
     for behavior in &spec.behaviors {
         check_unique_aliases(behavior, &mut errors);
         check_alias_refs_resolve(behavior, &mut errors);
@@ -76,6 +78,26 @@ fn check_at_least_one_happy_path(spec: &Spec, errors: &mut Vec<SemanticError>) {
             rule: "at-least-one-happy-path",
             message: "Spec must have at least one happy_path behavior".to_string(),
         });
+    }
+}
+
+fn check_nfr_containment(spec: &Spec, errors: &mut Vec<SemanticError>) {
+    if spec.nfr_refs.is_empty() {
+        return;
+    }
+    let spec_categories = spec.nfr_categories();
+    for behavior in &spec.behaviors {
+        for nfr_ref in &behavior.nfr_refs {
+            if !spec_categories.contains(&nfr_ref.category) {
+                errors.push(SemanticError {
+                    rule: "nfr-containment",
+                    message: format!(
+                        "Behavior '{}' references NFR category '{}' which is not declared in the spec-level nfr section",
+                        behavior.name, nfr_ref.category
+                    ),
+                });
+            }
+        }
     }
 }
 
