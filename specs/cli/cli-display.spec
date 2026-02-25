@@ -1,4 +1,4 @@
-spec validate-display v2.1.0
+spec cli-display v2.1.0
 title "Validation Display"
 
 description

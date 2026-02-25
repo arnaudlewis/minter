@@ -18,6 +18,8 @@ motivation
 
 nfr
   performance#no-redundant-file-reads
+  performance#single-discovery-pass
+  performance#cache-skip-unchanged
   performance#directory-validation-scaling
   reliability#graceful-corruption-recovery
   reliability#error-completeness

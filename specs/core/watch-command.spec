@@ -392,4 +392,4 @@ behavior watch-integrate-new-nfr-file [happy_path]
 
 
 depends on dependency-resolution >= 2.0.0
-depends on validate-display >= 2.0.0
+depends on cli-display >= 2.0.0

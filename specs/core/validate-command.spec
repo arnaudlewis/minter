@@ -18,6 +18,9 @@ nfr
   performance#validation-latency
   performance#directory-validation-scaling
   performance#no-redundant-file-reads
+  performance#single-discovery-pass
+  performance#cache-skip-unchanged
+  performance#large-tree-validation-scaling
   reliability#error-completeness
   reliability#no-silent-data-loss
   operability#ci-friendly-output
@@ -509,6 +512,6 @@ behavior reject-broken-cross-reference [error_case]
 
 
 depends on dsl-format >= 1.1.0
-depends on validate-display >= 2.0.0
+depends on cli-display >= 2.0.0
 depends on nfr-dsl-format >= 1.0.0
 depends on nfr-cross-reference >= 1.0.0
