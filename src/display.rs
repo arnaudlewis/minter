@@ -52,6 +52,24 @@ pub fn print_success(spec: &Spec) {
     }
 }
 
+pub fn print_cached_success(name: &str, version: &str, behavior_count: usize) {
+    if use_color() {
+        println!(
+            "{GREEN}\u{2713}{RESET} {} v{} ({})",
+            name,
+            version,
+            behavior_count_label(behavior_count),
+        );
+    } else {
+        println!(
+            "\u{2713} {} v{} ({})",
+            name,
+            version,
+            behavior_count_label(behavior_count),
+        );
+    }
+}
+
 pub fn print_failure(spec: &Spec) {
     if use_color() {
         println!("{RED}\u{2717}{RESET} {} v{}", spec.name, spec.version);

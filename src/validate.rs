@@ -1,10 +1,10 @@
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::deps::{self, ResolutionContext};
 use crate::display::{self, TreeContext};
-use crate::graph::{self, CachedEntry, GraphState};
+use crate::graph::{self, CachedEntry, GraphCache, GraphState};
 use crate::model::{NfrSpec, Spec};
 use crate::{discover, nfr_crossref, nfr_parser, nfr_semantic, parser, semantic};
 
@@ -94,8 +94,33 @@ fn validate_directory(dir: &Path, check_deep: bool, seen: &mut HashSet<String>) 
     };
 
     let tree_root = dir.to_path_buf();
+    let skippable = match graph_state.as_ref() {
+        Some(state) => compute_skippable(&spec_files, &state.cache),
+        None => HashSet::new(),
+    };
+
     let mut any_failed = false;
     for file in &spec_files {
+        let ext = file.extension().and_then(|e| e.to_str()).unwrap_or("");
+        if ext == "spec" {
+            if let Some(stem) = file.file_stem().and_then(|s| s.to_str()) {
+                if skippable.contains(stem) {
+                    if let Some(entry) = graph_state.as_ref().and_then(|s| s.cache.specs.get(stem))
+                    {
+                        if !seen.contains(stem) {
+                            display::print_cached_success(
+                                stem,
+                                &entry.version,
+                                entry.behavior_count,
+                            );
+                            seen.insert(stem.to_string());
+                        }
+                    }
+                    continue;
+                }
+            }
+        }
+
         let mut ctx = ValidationContext {
             check_deep,
             seen,
@@ -350,6 +375,74 @@ fn update_graph_cache(
             }
         }
     }
+}
+
+/// Compute the set of spec names that can be safely skipped (cache hit).
+/// A spec is skippable if: hash matches cache, valid == true, and all transitive
+/// dependencies are also skippable.
+fn compute_skippable(files: &[PathBuf], cache: &GraphCache) -> HashSet<String> {
+    // First pass: find specs whose content hash matches and are valid in cache
+    let mut hash_ok: HashMap<String, bool> = HashMap::new();
+    for file in files {
+        if file.extension().and_then(|e| e.to_str()) != Some("spec") {
+            continue;
+        }
+        if let Some(stem) = file.file_stem().and_then(|s| s.to_str()) {
+            if let Ok(source) = fs::read_to_string(file) {
+                let hash = graph::content_hash(&source);
+                if let Some(entry) = cache.specs.get(stem) {
+                    hash_ok.insert(
+                        stem.to_string(),
+                        entry.content_hash == hash && entry.valid,
+                    );
+                    continue;
+                }
+            }
+            hash_ok.insert(stem.to_string(), false);
+        }
+    }
+
+    // Second pass: transitive dependency check — a spec is skippable only if
+    // it and all its transitive deps are hash-ok
+    let mut result: HashMap<String, bool> = HashMap::new();
+    for name in hash_ok.keys() {
+        is_transitively_skippable(name, &hash_ok, cache, &mut result);
+    }
+
+    result
+        .into_iter()
+        .filter_map(|(k, v)| if v { Some(k) } else { None })
+        .collect()
+}
+
+/// Recursively check if a spec and all its deps are skippable.
+fn is_transitively_skippable(
+    name: &str,
+    hash_ok: &HashMap<String, bool>,
+    cache: &GraphCache,
+    memo: &mut HashMap<String, bool>,
+) -> bool {
+    if let Some(&cached) = memo.get(name) {
+        return cached;
+    }
+
+    // Guard against cycles: mark as not-skippable while visiting
+    memo.insert(name.to_string(), false);
+
+    if !hash_ok.get(name).copied().unwrap_or(false) {
+        return false;
+    }
+
+    if let Some(entry) = cache.specs.get(name) {
+        for dep in &entry.dependencies {
+            if !is_transitively_skippable(dep, hash_ok, cache, memo) {
+                return false;
+            }
+        }
+    }
+
+    memo.insert(name.to_string(), true);
+    true
 }
 
 /// Discover all .nfr files in a directory, parse them, and return a map of category -> NfrSpec.
