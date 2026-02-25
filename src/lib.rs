@@ -1,6 +1,7 @@
 pub mod deps;
 pub mod discover;
 pub mod display;
+pub mod explain;
 pub mod format;
 pub mod graph;
 pub mod graph_cmd;

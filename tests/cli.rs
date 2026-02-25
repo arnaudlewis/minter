@@ -65,7 +65,7 @@ fn spawn_line_reader(reader: impl std::io::Read + Send + 'static) -> mpsc::Recei
 /// cli.spec: show-help
 #[test]
 fn show_help() {
-    // --help flag prints usage with all six commands
+    // --help flag prints usage with all seven commands
     minter()
         .arg("--help")
         .assert()
@@ -76,7 +76,8 @@ fn show_help() {
         .stdout(predicate::str::contains("format"))
         .stdout(predicate::str::contains("scaffold"))
         .stdout(predicate::str::contains("inspect"))
-        .stdout(predicate::str::contains("graph"));
+        .stdout(predicate::str::contains("graph"))
+        .stdout(predicate::str::contains("explain"));
 
     // No arguments also prints usage
     minter()
@@ -561,6 +562,55 @@ fn route_watch_file() {
     );
 
     // Process should still be alive (long-running watch)
+    assert!(
+        child.try_wait().unwrap().is_none(),
+        "watch process should still be running"
+    );
+
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
+/// cli.spec: route-explain
+#[test]
+fn route_explain() {
+    minter()
+        .arg("explain")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("spec"))
+        .stdout(predicate::str::contains("NFR"));
+}
+
+/// cli.spec: route-watch-nfr-file
+#[test]
+fn route_watch_nfr_file() {
+    let (_dir, path) = temp_nfr("perf", VALID_NFR);
+
+    let mut child = Command::new(minter_bin())
+        .arg("watch")
+        .arg(&path)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn minter watch");
+
+    let stdout = child.stdout.take().unwrap();
+    let rx = spawn_line_reader(stdout);
+
+    let line = wait_for_line(
+        &rx,
+        |l| l.to_lowercase().contains("watching"),
+        Duration::from_secs(10),
+    );
+
+    assert!(line.is_some(), "should see 'watching' message in stdout");
+    let line = line.unwrap();
+    assert!(
+        line.contains("performance.nfr") || line.contains(".nfr"),
+        "output should reference the watched .nfr file: {line}"
+    );
+
     assert!(
         child.try_wait().unwrap().is_none(),
         "watch process should still be running"

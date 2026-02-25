@@ -46,6 +46,8 @@ enum Commands {
         #[arg(required = true)]
         file: PathBuf,
     },
+    /// Print the spec-driven development methodology reference
+    Explain,
     /// Display the dependency graph
     Graph {
         /// Directory containing spec files
@@ -76,6 +78,9 @@ fn main() {
         }
         Some(Commands::Inspect { file }) => {
             process::exit(minter::inspect::run_inspect(&file));
+        }
+        Some(Commands::Explain) => {
+            process::exit(minter::explain::run_explain());
         }
         Some(Commands::Graph { dir, impacted }) => {
             process::exit(minter::graph_cmd::run_graph(&dir, impacted.as_deref()));
