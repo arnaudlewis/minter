@@ -27,9 +27,9 @@ commit_parsers = [
     { message = "^perf", group = "Performance" },
     { message = "^refactor", group = "Changed" },
     { message = "^docs", group = "Documentation" },
-    { message = "^test", skip = true },
-    { message = "^ci", skip = true },
-    { message = "^chore", skip = true },
+    { message = "^test", group = "Testing" },
+    { message = "^ci", group = "CI/CD" },
+    { message = "^chore", group = "Maintenance" },
 ]
 filter_commits = false
 tag_pattern = "v[0-9].*"

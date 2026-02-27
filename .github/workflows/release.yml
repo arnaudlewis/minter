@@ -86,11 +86,19 @@ jobs:
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
           echo "commits=$(echo "$COMMITS" | base64 -w 0)" >> "$GITHUB_OUTPUT"
 
-      - name: Generate changelog preview
+      - name: Generate internal changelog preview
         if: steps.bump.outputs.bump != 'none'
-        id: changelog
+        id: changelog_internal
         uses: orhun/git-cliff-action@v4
         with:
+          args: --unreleased --tag ${{ steps.bump.outputs.new_tag }} --strip header
+
+      - name: Generate public changelog preview
+        if: steps.bump.outputs.bump != 'none'
+        id: changelog_public
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.public.toml
           args: --unreleased --tag ${{ steps.bump.outputs.new_tag }} --strip header
 
       - name: Print summary
@@ -115,8 +123,11 @@ jobs:
           echo "${{ steps.bump.outputs.commits }}" | base64 -d >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Changelog Preview" >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ steps.changelog.outputs.content }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Public Changelog (what users see)" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.changelog_public.outputs.content }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Internal Changelog (full detail)" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.changelog_internal.outputs.content }}" >> "$GITHUB_STEP_SUMMARY"
 
   ci:
     name: CI Gate
@@ -270,7 +281,8 @@ jobs:
         id: changelog
         uses: orhun/git-cliff-action@v4
         with:
-          args: --config cliff.public.toml --latest --strip header
+          config: cliff.public.toml
+          args: --latest --strip header
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
