@@ -163,7 +163,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Install git-cliff
-        run: cargo install git-cliff --locked
+        uses: orhun/git-cliff-action@v4
+        with:
+          args: --version
 
       - name: Configure git
         run: |
