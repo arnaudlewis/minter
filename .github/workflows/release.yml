@@ -270,7 +270,7 @@ jobs:
         id: changelog
         uses: orhun/git-cliff-action@v4
         with:
-          args: --latest --strip header
+          args: --config cliff.public.toml --latest --strip header
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
