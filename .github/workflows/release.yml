@@ -189,8 +189,12 @@ jobs:
 
   build:
     name: Build (${{ matrix.target }})
-    needs: [prepare, tag]
-    if: inputs.execute && needs.prepare.outputs.bump != 'none'
+    needs: [prepare, ci, tag]
+    if: >-
+      always() &&
+      needs.prepare.outputs.bump != 'none' &&
+      needs.ci.result == 'success' &&
+      (needs.tag.result == 'success' || needs.tag.result == 'skipped')
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -209,7 +213,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.prepare.outputs.new_tag }}
+          ref: ${{ needs.tag.result == 'success' && needs.prepare.outputs.new_tag || github.sha }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
