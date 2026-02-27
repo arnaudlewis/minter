@@ -1,0 +1,164 @@
+nfr operability v1.1.0
+title "Operability Requirements"
+
+description
+  Defines the operability constraints for minter across both delivery
+  channels: the CLI (terminal users and CI pipelines) and the MCP server
+  (AI agents and MCP-compatible hosts). Shared constraints cover
+  determinism, cache location, and zero-config. Channel-specific
+  constraints cover the output conventions each consumer depends on.
+
+motivation
+  Build tools that behave differently depending on working directory,
+  environment, or hidden config erode developer trust. These constraints
+  lock the operational contract that authors, CI pipelines, and AI agents
+  depend on — whether consuming minter through the terminal or through
+  the Model Context Protocol.
+
+
+# Shared constraints
+
+constraint deterministic-output [rule]
+  "Same input must produce identical output across invocations"
+
+  rule
+    Given the same spec files on disk, minter must produce identical
+    output across invocations regardless of delivery channel. For the
+    CLI this means byte-identical stdout and stderr (modulo ANSI codes
+    controlled by NO_COLOR). For the MCP server this means identical
+    JSON responses. No timestamps, process IDs, random values, or
+    ordering variations may appear in output. Results in directory mode
+    must be sorted in a stable, deterministic order.
+
+  verification
+    static "Audit all output call sites for dynamic values (timestamps, PIDs, random)"
+    runtime "Run minter validate on the same directory 10 times, assert stdout is identical across all runs"
+    runtime "Call the MCP validate tool on the same directory 10 times, assert JSON responses are identical"
+
+  violation high
+  overridable no
+
+
+constraint graph-location-predictability [rule]
+  "The .minter/ cache directory must be located at the process working directory"
+
+  rule
+    The .minter/graph.json file is created at the current working
+    directory. This is predictable because the user controls which
+    directory they run minter from. All commands that use the graph
+    cache (validate, watch, graph) consistently use the same
+    cwd-relative location.
+
+  verification
+    runtime "Run minter validate specs/ from project root, assert .minter/graph.json is at ./.minter/graph.json"
+
+  violation medium
+  overridable no
+
+
+constraint zero-config [rule]
+  "The tool must function with no configuration files"
+
+  rule
+    Minter must not require any configuration file (.minterrc,
+    minter.toml, or similar) to function. All CLI behavior is controlled
+    via CLI flags and conventions. The MCP server is configured on the
+    host side (e.g. settings.json) — minter itself requires no
+    configuration. The only persisted state is the .minter/graph.json
+    cache, which is automatically created and automatically recovered
+    if corrupted or absent.
+
+  verification
+    static "No config file parsing code exists in the codebase — no references to .minterrc, minter.toml, or config loading"
+    runtime "Delete .minter/ directory entirely, run validate on a spec tree, assert correct results and automatic cache creation"
+
+  violation medium
+  overridable no
+
+
+# CLI-specific constraints
+
+constraint ci-friendly-output [rule]
+  "CLI output conventions must support automated CI consumption"
+
+  rule
+    All CLI commands must maintain these conventions:
+    - Exit code 0 for success, 1 for any failure
+    - Validation results on stdout, error details on stderr
+    - NO_COLOR environment variable suppresses ANSI escape sequences
+    - Error messages include file path and line number in a grep-friendly format
+    These conventions enable CI pipelines to gate on exit code, parse
+    errors from stderr, and display clean results in logs.
+
+  verification
+    static "Every command path in main.rs returns ExitCode(0) or ExitCode(1)"
+    runtime "Run validate with NO_COLOR=1, assert no ANSI escapes in stdout or stderr"
+    runtime "Run validate on a broken spec, assert exit code 1 and errors on stderr only"
+
+  violation high
+  overridable no
+
+
+# MCP-specific constraints
+
+constraint mcp-protocol-compliance [rule]
+  "The MCP server must implement the Model Context Protocol correctly"
+
+  rule
+    The minter-mcp binary must implement the MCP specification over
+    stdio transport: JSON-RPC 2.0 framing, proper initialize/initialized
+    handshake, capabilities declaration (tools), and standard error codes
+    for protocol violations. Malformed requests must produce a JSON-RPC
+    error response, never a crash or silent failure. The server must
+    shut down cleanly when the transport closes.
+
+  verification
+    static "The server binary uses a conformant MCP SDK or passes the MCP protocol test suite"
+    runtime "Send an initialize request, assert valid JSON-RPC response with server info and capabilities"
+    runtime "Send a malformed JSON-RPC request, assert error response with standard error code"
+    runtime "Close stdin, assert the server process exits cleanly"
+
+  violation high
+  overridable no
+
+
+constraint json-response-schema [rule]
+  "All MCP tool responses must follow a stable, documented JSON schema"
+
+  rule
+    Every tool that returns structured data must produce valid JSON
+    with consistent field names, types, and nesting. The schema must
+    not change between invocations or between patch/minor versions.
+    Responses must never contain ANSI escape sequences, terminal control
+    characters, or formatting intended for human terminals. Field names
+    use snake_case. New fields may be added in minor versions but
+    existing fields must not be removed or change type without a major
+    version bump.
+
+  verification
+    static "All tool response types derive Serialize and have documented field types"
+    runtime "Call each structured tool 10 times with the same input, assert JSON responses parse to the same schema"
+    runtime "Search all tool response content for ANSI escape sequences (\\x1b[), assert none found"
+
+  violation high
+  overridable no
+
+
+constraint input-schema-accuracy [rule]
+  "Declared tool input schemas must match the parameters actually accepted"
+
+  rule
+    Each tool's inputSchema declared in the tools/list response must
+    exactly match the parameters the tool accepts. An agent constructing
+    a tool call solely from the declared schema must produce a valid
+    request and receive correct results. Required fields in the schema
+    must cause a clear error when omitted. Optional fields must have
+    documented defaults. Schema and implementation must not drift.
+
+  verification
+    static "Audit each tool handler — every parameter in the input struct appears in the inputSchema and vice versa"
+    runtime "Call tools/list, for each tool construct a minimal valid call from the schema alone, assert success"
+    runtime "Call tools/list, for each required field omit it, assert a clear error response"
+
+  violation high
+  overridable no

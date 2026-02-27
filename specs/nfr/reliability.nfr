@@ -1,0 +1,98 @@
+nfr reliability v1.0.0
+title "Reliability Requirements"
+
+description
+  Defines the reliability constraints for the minter CLI. Minter is
+  the deterministic gate in the spec-driven pipeline — every spec must
+  pass through it before reaching downstream agents. Silent failures
+  or lost errors undermine the entire pipeline's trustworthiness.
+
+motivation
+  A validation tool that silently skips files or loses error details
+  is worse than no validation at all. It creates false confidence.
+  These constraints ensure minter fails loud, recovers gracefully,
+  and never hides problems from the author.
+
+
+# Corruption recovery
+
+constraint graceful-corruption-recovery [rule]
+  "Cache corruption must never cause a crash or incorrect validation results"
+
+  rule
+    When the .minter/graph.json file is corrupted, truncated, or
+    uses an incompatible schema version, minter must detect the
+    condition, emit a warning to stderr, discard the cached state,
+    and rebuild from disk. Validation results must be identical
+    whether the cache is warm, cold, or corrupted.
+
+  verification
+    static "graph.rs load_or_build handles Corrupted, SchemaMismatch, and Io error variants with rebuild logic"
+    runtime "Truncate graph.json mid-file, run validate, assert warning on stderr and correct results on stdout"
+    runtime "Write invalid JSON to graph.json, run validate, assert same behavior"
+
+  violation critical
+  overridable no
+
+
+# Silent exclusion
+
+constraint no-silent-data-loss [rule]
+  "No spec file or directory may be silently excluded from validation"
+
+  rule
+    When a file or directory cannot be read during discovery or
+    validation, minter must report the path and the reason on stderr.
+    Silent exclusion via filter_map, ok(), or swallowed errors is
+    a reliability defect. The author must be able to trust that
+    every file in the spec tree was either validated or reported
+    as unreadable.
+
+  verification
+    static "Audit discover.rs and validate.rs for filter_map(|e| e.ok()) or similar patterns that discard errors without reporting"
+    runtime "Create a directory with a permission-denied subdirectory containing spec files, run validate, assert stderr mentions the unreadable path"
+
+  violation high
+  overridable no
+
+
+# Crash-safe persistence
+
+constraint crash-safe-persistence [rule]
+  "Process interruption must not leave persisted state unrecoverable"
+
+  rule
+    If the minter process is interrupted during a write to
+    .minter/graph.json, the file may be left truncated or empty.
+    On the next invocation, minter must detect this condition and
+    rebuild the cache from disk without user intervention. The
+    combination of non-atomic writes and graceful corruption
+    recovery satisfies this constraint — but both halves are
+    required.
+
+  verification
+    runtime "Kill minter mid-write to graph.json (e.g., with SIGKILL during save), run validate again, assert correct results and no crash"
+
+  violation high
+  overridable no
+
+
+# Error completeness
+
+constraint error-completeness [rule]
+  "All validation errors must include file path, line number, and actionable message"
+
+  rule
+    Every error reported by minter must include the file path where
+    the error occurred, the line number (when applicable), and a
+    message that tells the author what is wrong and what to fix.
+    Dependency resolution errors must propagate the original parse
+    errors from the dependency file, not just report that the
+    dependency has errors.
+
+  verification
+    static "Audit deps.rs resolve_dependency error path — parse errors from dependency files must be included in the error context, not replaced with a generic message"
+    runtime "Create a spec with a dependency that has a parse error at line 7, run validate --deep, assert stderr contains the dependency file path and line 7"
+
+  violation high
+  overridable no

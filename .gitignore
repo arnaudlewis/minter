@@ -1,1 +1,6 @@
 /target
+/.minter
+.DS_Store
+.idea/
+.vscode/
+*.swp

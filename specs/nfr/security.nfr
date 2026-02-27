@@ -1,0 +1,90 @@
+nfr security v1.0.0
+title "Security Requirements"
+
+description
+  Defines the input safety constraints for minter across both delivery
+  channels: the CLI and the MCP server. Minter reads arbitrary files from
+  disk and accepts inline content strings. These constraints bound what
+  minter will read, how much it will accept, and what it exposes in
+  responses — preventing resource exhaustion, information leakage, and
+  unintended file access.
+
+motivation
+  The CLI runs locally under the user's own permissions, but the MCP
+  server is invoked by AI agents that construct tool calls from model
+  output. A malicious or confused agent could pass paths that escape the
+  spec tree, oversized files that exhaust memory, or arbitrary extensions
+  that leak content through parse errors. These constraints lock the
+  safety boundary that both channels must enforce.
+
+
+# Input size limits
+
+constraint max-file-size [metric]
+  "Files exceeding the size limit must be rejected before reading"
+
+  metric "Maximum file size in bytes that minter will read into memory"
+  threshold <= 10MB
+
+  verification
+    environment all
+    benchmark "Attempt to validate a file larger than 10MB"
+    pass "minter rejects the file with an error before reading it into memory"
+
+  violation high
+  overridable no
+
+
+constraint max-inline-content-size [metric]
+  "Inline content exceeding the size limit must be rejected before parsing"
+
+  metric "Maximum inline content length in bytes that the MCP server will parse"
+  threshold <= 10MB
+
+  verification
+    environment all
+    benchmark "Send an MCP validate call with a content string larger than 10MB"
+    pass "The tool returns isError true without attempting to parse the content"
+
+  violation high
+  overridable no
+
+
+# File access restrictions
+
+constraint file-extension-validation [rule]
+  "Only .spec and .nfr files may be read for validation and inspection"
+
+  rule
+    When a single file path is provided to validate or inspect, minter
+    must verify the file extension is .spec or .nfr before reading the
+    file contents. Files with any other extension must be rejected with
+    an error listing the valid extensions. This prevents reading
+    arbitrary files (e.g., .env, .pem, .key) and leaking their content
+    through parse error messages.
+
+  verification
+    static "Validate and inspect handlers check file extension before calling read_to_string"
+    runtime "Call validate with a .txt file, assert error mentions .spec and .nfr"
+    runtime "Call inspect with a .env file, assert error mentions .spec and .nfr"
+
+  violation high
+  overridable no
+
+
+constraint permission-denied-handling [rule]
+  "Permission errors must produce a clean error without leaking OS details"
+
+  rule
+    When a file cannot be read due to filesystem permissions, minter must
+    detect PermissionDenied specifically and produce a clean error message
+    containing the file path and the word "permission". The raw OS error
+    string must not be included in the output, as it may vary by platform
+    and leak system details.
+
+  verification
+    static "File read paths check for ErrorKind::PermissionDenied before falling through to generic error handling"
+    runtime "Set a spec file to mode 000, call validate, assert error contains 'permission' and file path but not OS-specific error text"
+
+  violation medium
+  overridable no

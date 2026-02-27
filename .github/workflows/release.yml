@@ -1,0 +1,400 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      execute:
+        description: "Perform the release (unchecked = dry run, checked = bump + tag + build + publish)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  PUBLIC_REPO: arnaudlewis/minter-releases
+  TAP_REPO: arnaudlewis/homebrew-tap
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      bump: ${{ steps.bump.outputs.bump }}
+      new_version: ${{ steps.bump.outputs.new_version }}
+      new_tag: ${{ steps.bump.outputs.new_tag }}
+      commits: ${{ steps.bump.outputs.commits }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [[ -z "$LAST_TAG" ]]; then
+            echo "No previous tag found. Starting from first commit."
+            COMMITS=$(git log --oneline --no-decorate)
+            CURRENT="0.0.0"
+          else
+            echo "Last release: $LAST_TAG"
+            COMMITS=$(git log "${LAST_TAG}..HEAD" --oneline --no-decorate)
+            CURRENT="${LAST_TAG#v}"
+          fi
+
+          if [[ -z "$COMMITS" ]]; then
+            echo "No commits since last release."
+            echo "bump=none" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BUMP="none"
+          while IFS= read -r line; do
+            MSG="${line#* }"
+            if echo "$MSG" | grep -qiE 'BREAKING CHANGE|^[a-z]+(\(.+\))?!:'; then
+              BUMP="major"; break
+            fi
+            if echo "$MSG" | grep -qE '^feat(\(.+\))?:'; then
+              [[ "$BUMP" != "major" ]] && BUMP="minor"
+            fi
+            if echo "$MSG" | grep -qE '^(fix|perf|refactor|docs)(\(.+\))?:'; then
+              [[ "$BUMP" == "none" ]] && BUMP="patch"
+            fi
+          done <<< "$COMMITS"
+
+          if [[ "$BUMP" == "none" ]]; then
+            echo "No releasable commits (only test/ci/chore)."
+            echo "bump=none" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          NEW_TAG="v${NEW_VERSION}"
+
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "commits=$(echo "$COMMITS" | base64 -w 0)" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog preview
+        if: steps.bump.outputs.bump != 'none'
+        id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          args: --unreleased --tag ${{ steps.bump.outputs.new_tag }} --strip header
+
+      - name: Print summary
+        run: |
+          echo "## Release Preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          BUMP="${{ steps.bump.outputs.bump }}"
+          if [[ "$BUMP" == "none" ]]; then
+            echo "No releasable commits found. Nothing to do." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "**Bump type:** $BUMP" >> "$GITHUB_STEP_SUMMARY"
+          echo "**New version:** ${{ steps.bump.outputs.new_tag }}" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "${{ inputs.execute }}" == "true" ]]; then
+            echo "**Mode:** Execute (will tag, build, and publish)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**Mode:** Dry run (CI checks only, no tag or publish)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Commits" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.bump.outputs.commits }}" | base64 -d >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Changelog Preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.changelog.outputs.content }}" >> "$GITHUB_STEP_SUMMARY"
+
+  ci:
+    name: CI Gate
+    needs: prepare
+    if: needs.prepare.outputs.bump != 'none'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy -- -D warnings
+      - name: Run tests
+        run: |
+          cargo test --all-targets 2>&1 | tee /tmp/test-output.txt
+          echo ""
+          echo "=== Test Summary ==="
+          grep "^test result:" /tmp/test-output.txt | grep -v " 0 passed;"
+
+  tag:
+    name: Bump & Tag
+    needs: [prepare, ci]
+    if: inputs.execute && needs.prepare.outputs.bump != 'none'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install git-cliff
+        run: cargo install git-cliff --locked
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        run: |
+          NEW_VERSION="${{ needs.prepare.outputs.new_version }}"
+          sed -i "0,/^version = \"[^\"]*\"/{s/^version = \"[^\"]*\"/version = \"${NEW_VERSION}\"/}" Cargo.toml
+          cargo check --quiet
+
+      - name: Generate changelog
+        run: git-cliff --output CHANGELOG.md --tag "${{ needs.prepare.outputs.new_tag }}"
+
+      - name: Commit and tag
+        run: |
+          NEW_TAG="${{ needs.prepare.outputs.new_tag }}"
+          git add Cargo.toml Cargo.lock CHANGELOG.md
+          git commit -m "chore: release ${NEW_TAG}"
+          git tag -a "$NEW_TAG" -m "Release ${NEW_TAG}"
+          git push origin HEAD
+          git push origin "$NEW_TAG"
+
+  build:
+    name: Build (${{ matrix.target }})
+    needs: [prepare, tag]
+    if: inputs.execute && needs.prepare.outputs.bump != 'none'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-apple-darwin
+            os: macos-13
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            cross: true
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.new_tag }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install cross
+        if: matrix.cross
+        uses: cross-rs/cross-action@v1
+
+      - name: Build (cross)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Build (native)
+        if: ${{ !matrix.cross }}
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package (unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          TAG="${{ needs.prepare.outputs.new_tag }}"
+          ARCHIVE="minter-${TAG}-${{ matrix.target }}.tar.gz"
+          STAGING="archive"
+          mkdir -p "${STAGING}"
+          cp "target/${{ matrix.target }}/release/minter" "${STAGING}/"
+          cp "target/${{ matrix.target }}/release/minter-mcp" "${STAGING}/"
+          cp LICENSE README.md "${STAGING}/"
+          tar -czf "${ARCHIVE}" -C "${STAGING}" .
+          echo "ARCHIVE=${ARCHIVE}" >> "$GITHUB_ENV"
+
+      - name: Package (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $TAG = "${{ needs.prepare.outputs.new_tag }}"
+          $ARCHIVE = "minter-${TAG}-${{ matrix.target }}.zip"
+          $STAGING = "archive"
+          New-Item -ItemType Directory -Force -Path $STAGING
+          Copy-Item "target/${{ matrix.target }}/release/minter.exe" "$STAGING/"
+          Copy-Item "target/${{ matrix.target }}/release/minter-mcp.exe" "$STAGING/"
+          Copy-Item "LICENSE", "README.md" "$STAGING/"
+          Compress-Archive -Path "$STAGING/*" -DestinationPath $ARCHIVE
+          "ARCHIVE=$ARCHIVE" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ env.ARCHIVE }}
+
+  publish:
+    name: Publish Release
+    needs: [prepare, build]
+    if: inputs.execute && needs.prepare.outputs.bump != 'none'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.new_tag }}
+          fetch-depth: 0
+
+      - name: Generate release changelog
+        id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          args: --latest --strip header
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect archives
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' \) -exec mv {} release/ \;
+
+      - name: Generate checksums
+        working-directory: release
+        run: sha256sum * > SHA256SUMS.txt
+
+      - name: Create public GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: ${{ env.PUBLIC_REPO }}
+          token: ${{ secrets.RELEASE_TOKEN }}
+          tag_name: ${{ needs.prepare.outputs.new_tag }}
+          name: "minter ${{ needs.prepare.outputs.new_tag }}"
+          draft: false
+          generate_release_notes: false
+          body: |
+            ${{ steps.changelog.outputs.content }}
+
+            ## Install
+
+            **Homebrew:**
+            ```bash
+            brew install arnaudlewis/tap/minter
+            ```
+
+            **Manual download:** Pick the archive for your platform below, extract, and place `minter` and `minter-mcp` on your PATH.
+          files: |
+            release/*
+
+  update-tap:
+    name: Update Homebrew Tap
+    needs: [prepare, publish]
+    if: inputs.execute && needs.prepare.outputs.bump != 'none'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect archives
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' \) -exec mv {} release/ \;
+
+      - name: Compute checksums
+        id: shas
+        run: |
+          cd release
+          echo "sha_darwin_arm64=$(sha256sum minter-${{ needs.prepare.outputs.new_tag }}-aarch64-apple-darwin.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "sha_darwin_x86=$(sha256sum minter-${{ needs.prepare.outputs.new_tag }}-x86_64-apple-darwin.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "sha_linux_x86=$(sha256sum minter-${{ needs.prepare.outputs.new_tag }}-x86_64-unknown-linux-gnu.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "sha_linux_arm64=$(sha256sum minter-${{ needs.prepare.outputs.new_tag }}-aarch64-unknown-linux-gnu.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TAP_REPO }}
+          token: ${{ secrets.RELEASE_TOKEN }}
+          path: tap
+
+      - name: Update formula
+        env:
+          VERSION: ${{ needs.prepare.outputs.new_version }}
+          TAG: ${{ needs.prepare.outputs.new_tag }}
+          SHA_DARWIN_ARM64: ${{ steps.shas.outputs.sha_darwin_arm64 }}
+          SHA_DARWIN_X86: ${{ steps.shas.outputs.sha_darwin_x86 }}
+          SHA_LINUX_X86: ${{ steps.shas.outputs.sha_linux_x86 }}
+          SHA_LINUX_ARM64: ${{ steps.shas.outputs.sha_linux_arm64 }}
+        run: |
+          mkdir -p tap/Formula
+          BASE_URL="https://github.com/${PUBLIC_REPO}/releases/download/${TAG}"
+          cat > tap/Formula/minter.rb << FORMULA
+          class Minter < Formula
+            desc "Spec compiler and validator for structured behavioral specifications"
+            homepage "https://github.com/${PUBLIC_REPO}"
+            version "${VERSION}"
+            license :cannot_represent
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "${BASE_URL}/minter-${TAG}-aarch64-apple-darwin.tar.gz"
+                sha256 "${SHA_DARWIN_ARM64}"
+              else
+                url "${BASE_URL}/minter-${TAG}-x86_64-apple-darwin.tar.gz"
+                sha256 "${SHA_DARWIN_X86}"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.arm?
+                url "${BASE_URL}/minter-${TAG}-aarch64-unknown-linux-gnu.tar.gz"
+                sha256 "${SHA_LINUX_ARM64}"
+              else
+                url "${BASE_URL}/minter-${TAG}-x86_64-unknown-linux-gnu.tar.gz"
+                sha256 "${SHA_LINUX_X86}"
+              end
+            end
+
+            def install
+              bin.install "minter"
+              bin.install "minter-mcp"
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/minter --version")
+            end
+          end
+          FORMULA
+
+      - name: Push formula
+        working-directory: tap
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/minter.rb
+          git commit -m "minter ${{ needs.prepare.outputs.new_tag }}"
+          git push

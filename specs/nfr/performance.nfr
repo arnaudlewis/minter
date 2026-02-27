@@ -1,0 +1,145 @@
+nfr performance v1.1.0
+title "Performance Requirements"
+
+description
+  Defines the performance constraints for the minter CLI. Minter is
+  on the critical path of spec authoring — slow validation kills the
+  feedback loop. Watch mode is particularly sensitive because authors
+  expect near-instant feedback after every save.
+
+motivation
+  A spec compiler that takes seconds to respond trains authors to
+  batch edits and avoid saving. Sub-second feedback keeps authors
+  in flow state and catches errors at the point of introduction.
+
+
+# Validation latency
+
+constraint validation-latency [metric]
+  "Single-file validation must complete within interactive latency bounds"
+
+  metric "Wall-clock time from invocation to exit for a single spec file"
+  threshold < 200ms
+
+  verification
+    environment all
+    benchmark "Validate a 50-behavior spec file with no dependencies"
+    pass "p95 < threshold across 100 consecutive runs"
+
+  violation high
+  overridable yes
+
+
+# Watch mode latency
+
+constraint watch-revalidation-latency [metric]
+  "Re-validation after a file save must complete before the author's attention shifts"
+
+  metric "Wall-clock time from file save event to validation output appearing on stdout"
+  threshold < 500ms
+
+  verification
+    environment all
+    benchmark "Start watch mode, modify a spec file, measure time to output"
+    dataset "Spec tree with 20 specs, 3 levels of dependency depth"
+    pass "p95 < threshold including the 300ms debounce window"
+
+  violation high
+  overridable yes
+
+
+# Directory scaling
+
+constraint directory-validation-scaling [metric]
+  "Directory validation time must scale linearly with spec count"
+
+  metric "Wall-clock time per additional spec file in directory validation"
+  threshold < 20ms
+
+  verification
+    environment all
+    benchmark "Validate directories with 10, 50, and 100 spec files, measure per-spec cost"
+    dataset "Synthetic spec trees with controlled dependency fan-out"
+    pass "Per-spec marginal cost remains below threshold at all tree sizes"
+
+  violation medium
+  overridable yes
+
+
+# Redundant I/O
+
+constraint no-redundant-file-reads [rule]
+  "No spec file should be read from disk more than once per validation pass"
+
+  rule
+    During a single validation invocation, each spec file is read
+    from disk at most once. Parsed content and computed hashes are
+    retained in memory for reuse by dependency resolution and cache
+    updates. Re-reading a file that was already parsed in the same
+    pass is a performance defect.
+
+  verification
+    static "Audit validate.rs and deps.rs call sites for fs::read_to_string — each file path appears in at most one read call per pass"
+    runtime "Instrument file reads with a counter, validate a 10-spec deep tree, assert no file is read more than once"
+
+  violation medium
+  overridable no
+
+
+# Discovery amortization
+
+constraint single-discovery-pass [rule]
+  "File discovery must traverse the directory tree at most once per validation invocation"
+
+  rule
+    During a directory validation, the filesystem tree is walked once
+    to build the complete file index. Dependency resolution, NFR
+    discovery, and sibling lookups all read from this pre-built index.
+    Calling walkdir or similar traversal per-spec is a performance
+    defect that produces O(N x tree-size) filesystem operations.
+
+  verification
+    static "Audit validate.rs — discover_specs, discover_nfr_files, and discover_all_files are each called at most once per invocation"
+    runtime "Instrument WalkDir with a counter, validate a 100-spec directory, assert total traversals equals 1"
+
+  violation medium
+  overridable no
+
+
+# Cache-accelerated validation
+
+constraint cache-skip-unchanged [rule]
+  "Unchanged spec files must skip parsing when a valid graph cache exists"
+
+  rule
+    When .minter/graph.json contains an entry for a spec file whose
+    content hash matches the current file on disk, validation may
+    trust the cached validity result and skip parsing entirely. The
+    cache is invalidated per-file when the hash changes, and globally
+    when the schema version is bumped. Cold starts (no cache) parse
+    everything and build the cache as a side effect.
+
+  verification
+    static "Audit validate.rs — files with matching content hash in graph cache are not passed to parser::parse or nfr_parser::parse_nfr"
+    runtime "Validate a 50-spec directory twice without changes, instrument parse calls, assert zero parses on second run"
+
+  violation low
+  overridable no
+
+
+# Large tree scaling
+
+constraint large-tree-validation-scaling [metric]
+  "Validation of large spec trees must remain practical for CI pipelines"
+
+  metric "Total wall-clock time for full directory validation"
+  threshold < 5s
+
+  verification
+    environment all
+    benchmark "Validate a directory with 500 spec files, average dependency depth of 3, and 7 NFR files"
+    dataset "Synthetic spec tree generated with controlled fan-out and depth"
+    pass "p95 < threshold across 10 consecutive cold-cache runs"
+
+  violation medium
+  overridable yes
