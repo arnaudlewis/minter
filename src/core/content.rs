@@ -393,7 +393,35 @@ Work Type Classification
   enhancement   — add behaviors to existing spec, bump minor version
   bug fix       — add error_case behavior that reproduces the bug
   refactor      — no spec change (behavior is preserved)
-  deprecation   — mark behaviors as removed, bump major version"
+  deprecation   — mark behaviors as removed, bump major version
+
+Phase Collapse Rule
+  When a system has sequential internal phases (validate → process →
+  cleanup), do NOT write one behavior per phase. Instead:
+  1. Identify the end-state observable to the user
+  2. Write ONE behavior describing that end-state
+  3. Internal phases become implementation, not spec
+  The \"when\" trigger should be the completion event, not each phase.
+
+Writing Specs from Code
+  When inferring specs from existing source code:
+  1. Read the code to understand the domain — then stop reading code
+  2. Ask: \"What does a user/caller observe before and after?\"
+  3. Write behaviors answering ONLY that question
+  4. If a behavior mentions an internal component name (Lambda, queue,
+     database table, cache key, worker function), it's a smell — rewrite
+  Technical constraints found in code (retry counts, timeout values,
+  ID formats, token limits, model names) go in NFR files, not FR behaviors.
+
+Entity Format Guidance
+  Entity names (@repo, @user, @input) aid readability — keep them.
+  Entity field shapes risk prescribing the data model. Rules:
+  - Use domain-meaningful field names (id, repositoryId), not
+    implementation names (mongoId, coreId, executionArn)
+  - Keep entity shapes minimal — only fields referenced in when/then
+  - If a field name maps to a specific technology, abstract it:
+    Bad:  {{ repositoryMongoId: \"repo-789\" }}
+    Good: {{ id: \"repo-789\" }}"
 }
 
 /// Condensed requirements smell detection reference for the guide tool.
@@ -439,7 +467,28 @@ Missing NFR References
 
 Implementation Leakage
   Signal: Spec describes HOW not WHAT (\"uses HashMap\", \"calls REST\").
-  Action: Rewrite at behavioral level — describe observable outcomes."
+  Detection: Apply three tests to each behavior:
+
+  Observer Test — ask \"who observes this outcome?\"
+    Valid: API caller, end user, ops team (via dashboards → NFR).
+    Invalid: internal function, downstream step, queue consumer, DB trigger.
+    If only internal components observe it → collapse into user-observable
+    outcome, move to NFR, or drop.
+
+  Swap Test — ask \"if I replaced the technology, would this behavior break?\"
+    \"SQS fan-out\" → swap to HTTP → breaks → SMELL
+    \"All documents searchable\" → swap anything → holds → GOOD
+    If swapping implementation breaks the description, it's a leak.
+
+  Action: Rewrite at behavioral level — describe observable outcomes.
+
+Phase Leak
+  Signal: Sequential behaviors matching internal processing phases
+  (e.g., paginate-records, process-batch, purge-stale).
+  Action: Collapse into one behavior per user-observable end-state.
+  The \"when\" trigger is the completion event, not each phase.
+  Bad: paginate-generates-batches, worker-processes-batch, purge-deletes-stale
+  Good: all-documents-indexed, stale-documents-removed"
 }
 
 /// Condensed context management protocol reference for the guide tool.
@@ -555,6 +604,21 @@ FR/NFR Classification
   Requirements with both FR and NFR characteristics (auth, encryption,
   accessibility) should be decomposed: behavior in FR spec, quality
   constraint in NFR spec.
+
+
+FR/NFR Decision Tree
+
+  Is this a constraint on HOW the system works?
+    YES → Does it apply to a single behavior?
+      YES → NFR constraint pinned to that behavior
+      NO  → NFR constraint at spec level
+    NO → Is the outcome observable by the API caller or end user?
+      YES → FR behavior
+      NO  → Either NFR or drop it
+
+  Technical constraints from code (retry counts, timeout values, ID
+  formats, token limits, model names, dimension counts) are NFR
+  material, not FR behaviors.
 
 
 Override Rules
@@ -700,6 +764,9 @@ mod tests {
         assert!(text.contains("Too Fine"));
         assert!(text.contains("API"));
         assert!(text.contains("CLI"));
+        assert!(text.contains("Phase Collapse"));
+        assert!(text.contains("Writing Specs from Code"));
+        assert!(text.contains("Entity Format"));
     }
 
     /// content: guide-smells-contains-smell-types
@@ -712,6 +779,9 @@ mod tests {
         assert!(text.contains("Implementation"));
         assert!(text.contains("Signal"));
         assert!(text.contains("Action"));
+        assert!(text.contains("Observer Test"));
+        assert!(text.contains("Swap Test"));
+        assert!(text.contains("Phase Leak"));
     }
 
     /// content: guide-nfr-contains-sections
@@ -736,6 +806,8 @@ mod tests {
         assert!(text.contains("Coverage"));
         // Classification
         assert!(text.contains("Classification"));
+        // Decision tree
+        assert!(text.contains("Decision Tree"));
     }
 
     /// content: guide-context-contains-sections

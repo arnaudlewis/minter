@@ -118,6 +118,9 @@ behavior guide-spec-authoring [happy_path]
     assert content describes classification of work types
     assert content describes too-coarse and too-fine signals
     assert content describes project type calibration
+    assert content describes phase collapse rule
+    assert content describes writing specs from code
+    assert content describes entity format guidance
 
 
 behavior guide-requirements-smells [happy_path]
@@ -134,6 +137,8 @@ behavior guide-requirements-smells [happy_path]
     assert content describes NASA forbidden words
     assert content describes compound behavior smell
     assert content describes implementation leakage smell
+    assert content describes Observer Test and Swap Test detection methods
+    assert content describes phase leak smell
     assert each smell has signal and action
 
 
@@ -152,6 +157,7 @@ behavior guide-nfr-design [happy_path]
     assert content describes three-level referencing
     assert content describes coverage gap detection by concern
     assert content describes FR/NFR classification axes
+    assert content describes FR/NFR decision tree
     assert content describes override rules
 
 

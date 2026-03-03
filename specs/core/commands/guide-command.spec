@@ -256,6 +256,9 @@ behavior guide-authoring-topic [happy_path]
 
   then emits stdout
     assert output contains "Right Granularity"
+    assert output contains "Phase Collapse"
+    assert output contains "Writing Specs from Code"
+    assert output contains "Entity Format"
 
   then emits process_exit
     assert code == 0
@@ -271,6 +274,9 @@ behavior guide-smells-topic [happy_path]
 
   then emits stdout
     assert output contains "Ambiguity"
+    assert output contains "Observer Test"
+    assert output contains "Swap Test"
+    assert output contains "Phase Leak"
 
   then emits process_exit
     assert code == 0
@@ -286,6 +292,7 @@ behavior guide-nfr-topic [happy_path]
 
   then emits stdout
     assert output contains "Seven Fixed Categories"
+    assert output contains "Decision Tree"
 
   then emits process_exit
     assert code == 0
