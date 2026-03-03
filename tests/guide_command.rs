@@ -259,6 +259,22 @@ fn guide_context_topic() {
         .stdout(predicate::str::contains("Lazy Loading Sequence"));
 }
 
+/// guide-command.spec: guide-coverage-topic
+#[test]
+fn guide_coverage_topic() {
+    minter()
+        .args(&["guide", "coverage"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Coverage Tagging"))
+        .stdout(predicate::str::contains("@minter"))
+        .stdout(predicate::str::contains("unit"))
+        .stdout(predicate::str::contains("e2e"))
+        .stdout(predicate::str::contains("benchmark"))
+        .stdout(predicate::str::contains("Qualified Names"))
+        .stdout(predicate::str::contains("Common Mistakes"));
+}
+
 // ═══════════════════════════════════════════════════════════════
 // Error cases (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════

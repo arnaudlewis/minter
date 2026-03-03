@@ -1,4 +1,4 @@
-spec mcp-agent-guidance v1.2.0
+spec mcp-agent-guidance v1.3.0
 title "MCP Agent Guidance"
 
 description
@@ -177,6 +177,23 @@ behavior guide-context-management [happy_path]
     assert content describes structure before content principle
 
 
+behavior guide-coverage-tagging [happy_path]
+  "Return condensed coverage tagging guide for linking tests to spec behaviors"
+
+  given
+    The agent needs to understand how to tag tests for coverage tracking
+
+  when tools/call guide
+    topic = "coverage"
+
+  then returns tool_result
+    assert content describes tag format for behavioral and benchmark tags
+    assert content describes valid test types
+    assert content describes qualified names for disambiguation
+    assert content describes common tagging mistakes
+    assert content describes when NFR coverage is derived automatically
+
+
 behavior guide-unknown-topic [error_case]
   "Return error listing valid topics when given an unknown topic"
 
@@ -194,6 +211,7 @@ behavior guide-unknown-topic [error_case]
     assert error message lists "smells" as valid topic
     assert error message lists "nfr" as valid topic
     assert error message lists "context" as valid topic
+    assert error message lists "coverage" as valid topic
     assert error message lists "methodology" as valid topic
 
 

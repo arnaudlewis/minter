@@ -630,6 +630,70 @@ Override Rules
   - Overrides are behavior-level only (not spec-level)"
 }
 
+/// Coverage tagging guide for the guide tool.
+pub fn guide_coverage() -> &'static str {
+    "\
+Coverage Tagging Guide
+======================
+
+Purpose
+  The @minter tag links a test to the spec behaviors it covers. Minter's
+  coverage command scans these tags and cross-references them against the
+  spec graph to produce a coverage report. Tags are declarations — they
+  state \"this test covers this behavior,\" nothing more.
+
+Tag Format
+  Behavioral:   // @minter:<type> <behavior> [<behavior>...]
+  Benchmark:    // @minter:benchmark #<category>#<constraint> [...]
+  Types: unit, integration, e2e, benchmark
+  Comment styles: // (C-family, Rust, Go) or # (Python, Ruby, Shell)
+
+Placement
+  Place the tag immediately above the test block it annotates.
+  One tag per test block. If a describe has sub-describes with different
+  coverage, use separate tags on each.
+
+Behavioral Tags (unit, integration, e2e)
+  Reference behavior names from specs. Space-separated, no commas.
+  Do NOT add NFR refs — NFR coverage is derived automatically from the
+  spec graph.
+  // @minter:unit validate-valid-spec
+  // @minter:e2e report-full-coverage report-partial-coverage
+  # @minter:integration reject-unknown-behavior-id
+
+Benchmark Tags
+  Reference NFR constraints only. Format: #category#constraint.
+  Do NOT add behavior IDs.
+  // @minter:benchmark #performance#validation-latency
+
+Choosing the Type
+  unit         — tests a single function or module in isolation
+  integration  — tests multiple components working together
+  e2e          — tests the full system from the user's entry point
+  benchmark    — measures an NFR constraint (latency, throughput, scaling)
+
+Qualified Names
+  If two specs share a behavior name, qualify with spec-name/behavior-name:
+    // @minter:unit billing-webhooks/handle-error
+
+Discovering Behavior Names
+  minter inspect specs/my-feature.spec   — lists all behavior names
+  minter graph specs/                    — shows the full spec tree
+
+When to Tag
+  Tag every test that exercises a spec behavior. Tests that don't map to
+  a spec behavior should not be tagged. When spec behaviors change,
+  update the tags.
+
+Common Mistakes
+  NFR on behavioral tag  — redundant, coverage is derived automatically
+  Behavior on benchmark  — benchmarks are for NFR constraints only
+  Missing colon          — @minter unit (wrong) vs @minter:unit (right)
+  Using commas           — @minter:unit a, b (wrong) vs @minter:unit a b
+  Invented names         — IDs must match spec behavior names exactly
+  Tagging everything     — only tag tests that map to spec behaviors"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -821,5 +885,18 @@ mod tests {
         assert!(text.contains("NFR"));
         assert!(text.contains("Never load the full project graph"));
         assert!(text.contains("Structure before content"));
+    }
+
+    /// content: guide-coverage-contains-sections
+    #[test]
+    fn guide_coverage_contains_sections() {
+        let text = guide_coverage();
+        assert!(text.contains("Coverage Tagging"));
+        assert!(text.contains("@minter"));
+        assert!(text.contains("unit"));
+        assert!(text.contains("e2e"));
+        assert!(text.contains("benchmark"));
+        assert!(text.contains("Qualified Names"));
+        assert!(text.contains("Common Mistakes"));
     }
 }

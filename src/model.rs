@@ -274,6 +274,7 @@ pub const VALID_GUIDE_TOPICS: &[&str] = &[
     "nfr",
     "context",
     "methodology",
+    "coverage",
 ];
 
 /// Guide topics available in the CLI via `minter guide <topic>`.
@@ -285,6 +286,7 @@ pub enum GuideTopic {
     Nfr,
     Context,
     Methodology,
+    Coverage,
 }
 
 impl GuideTopic {
@@ -296,6 +298,7 @@ impl GuideTopic {
             GuideTopic::Nfr => "nfr",
             GuideTopic::Context => "context",
             GuideTopic::Methodology => "methodology",
+            GuideTopic::Coverage => "coverage",
         }
     }
 }
@@ -441,13 +444,14 @@ mod tests {
     // ── VALID_GUIDE_TOPICS ────────────────────────────────
 
     #[test]
-    fn guide_topics_contains_all_six() {
+    fn guide_topics_contains_all_seven() {
         assert!(VALID_GUIDE_TOPICS.contains(&"workflow"));
         assert!(VALID_GUIDE_TOPICS.contains(&"authoring"));
         assert!(VALID_GUIDE_TOPICS.contains(&"smells"));
         assert!(VALID_GUIDE_TOPICS.contains(&"nfr"));
         assert!(VALID_GUIDE_TOPICS.contains(&"context"));
         assert!(VALID_GUIDE_TOPICS.contains(&"methodology"));
-        assert_eq!(VALID_GUIDE_TOPICS.len(), 6);
+        assert!(VALID_GUIDE_TOPICS.contains(&"coverage"));
+        assert_eq!(VALID_GUIDE_TOPICS.len(), 7);
     }
 }

@@ -1,4 +1,4 @@
-spec guide-command v1.0.0
+spec guide-command v1.1.0
 title "Guide Command"
 
 description
@@ -308,6 +308,27 @@ behavior guide-context-topic [happy_path]
 
   then emits stdout
     assert output contains "Lazy Loading Sequence"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior guide-coverage-topic [happy_path]
+  "Return the condensed coverage tagging guide"
+
+  given
+    The guide subcommand is invoked with topic coverage
+
+  when minter guide coverage
+
+  then emits stdout
+    assert output contains "Coverage Tagging"
+    assert output contains "@minter"
+    assert output contains "unit"
+    assert output contains "e2e"
+    assert output contains "benchmark"
+    assert output contains "Qualified Names"
+    assert output contains "Common Mistakes"
 
   then emits process_exit
     assert code == 0

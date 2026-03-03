@@ -11,6 +11,7 @@ pub fn run_guide_topic(topic: &str) -> Result<String, String> {
         "nfr" => Ok(content::guide_nfr().to_string()),
         "context" => Ok(content::guide_context().to_string()),
         "methodology" => Ok(content::methodology().to_string()),
+        "coverage" => Ok(content::guide_coverage().to_string()),
         other => Err(format!(
             "Unknown topic '{}'. Valid topics: {}",
             other,

@@ -1622,6 +1622,36 @@ fn guide_unknown_topic() {
         text.contains("methodology"),
         "should list methodology as valid topic"
     );
+    assert!(
+        text.contains("coverage"),
+        "should list coverage as valid topic"
+    );
+}
+
+#[test]
+/// mcp-agent-guidance: guide-coverage-tagging
+fn guide_coverage_tagging() {
+    let mut client = McpClient::new();
+    let result = client.call_tool("guide", json!({ "topic": "coverage" }));
+    assert!(!is_error(&result));
+    let text = text_content(&result);
+
+    assert!(
+        text.contains("Coverage Tagging"),
+        "should contain Coverage Tagging heading"
+    );
+    assert!(text.contains("@minter"), "should reference @minter tag");
+    assert!(text.contains("unit"), "should mention unit type");
+    assert!(text.contains("e2e"), "should mention e2e type");
+    assert!(text.contains("benchmark"), "should mention benchmark type");
+    assert!(
+        text.contains("Qualified Names"),
+        "should describe qualified names"
+    );
+    assert!(
+        text.contains("Common Mistakes"),
+        "should list common mistakes"
+    );
 }
 
 #[test]
