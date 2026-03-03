@@ -1,12 +1,10 @@
-use std::collections::HashMap;
 use std::path::Path;
 
 use rmcp::model::*;
 
-use crate::core::parser;
-use crate::core::parser::nfr as nfr_parser;
-use crate::core::validation::{crossref as nfr_crossref, nfr_semantic, semantic};
-use crate::core::{deps, discover};
+use crate::core::commands::validate_core;
+use crate::core::graph::discover_and_parse_nfrs;
+use crate::core::{discover, parser::fr::ParseError, validation::semantic::SemanticError};
 use crate::mcp::{next_steps, response};
 
 use super::{MAX_FILE_SIZE, format_dep_constraint, mcp_error, read_file_checked, tool_error};
@@ -129,9 +127,11 @@ fn single_result_response(result: response::ValidateResult) -> Result<CallToolRe
     Ok(CallToolResult::success(vec![Content::text(json)]))
 }
 
+// ── Error converters ──────────────────────────────────
+
 /// Convert parse errors into `ValidationError` vec.
 fn parse_errors_to_validation(
-    errors: &[crate::core::parser::fr::ParseError],
+    errors: &[ParseError],
     file: Option<String>,
 ) -> Vec<response::ValidationError> {
     errors
@@ -146,7 +146,7 @@ fn parse_errors_to_validation(
 
 /// Convert semantic errors into `ValidationError` vec.
 fn semantic_errors_to_validation(
-    errors: &[impl ToString],
+    errors: &[SemanticError],
     file: Option<String>,
 ) -> Vec<response::ValidationError> {
     errors
@@ -159,18 +159,19 @@ fn semantic_errors_to_validation(
         .collect()
 }
 
-/// Discover and parse all NFR files in a directory into a category→spec map.
-fn discover_nfr_map(dir: &Path) -> HashMap<String, crate::model::NfrSpec> {
-    let nfr_files = discover::discover_nfr_files(dir);
-    let mut map = HashMap::new();
-    for nfr_path in &nfr_files {
-        if let Ok(source) = read_file_checked(nfr_path)
-            && let Ok(nfr) = nfr_parser::parse_nfr(&source)
-        {
-            map.insert(nfr.category.clone(), nfr);
-        }
-    }
-    map
+/// Convert ToString errors into `ValidationError` vec.
+fn errors_to_validation(
+    errors: &[impl ToString],
+    file: Option<String>,
+) -> Vec<response::ValidationError> {
+    errors
+        .iter()
+        .map(|e| response::ValidationError {
+            file: file.clone(),
+            line: 0,
+            message: e.to_string(),
+        })
+        .collect()
 }
 
 // ── Validate helpers ───────────────────────────────────
@@ -188,48 +189,12 @@ pub(super) fn validate_inline(
     let ct = content_type.unwrap_or("spec");
     match ct {
         "spec" => {
-            let spec = match parser::parse(content_str) {
-                Ok(s) => s,
-                Err(errors) => {
-                    let result =
-                        make_fail_result(None, "spec", parse_errors_to_validation(&errors, None));
-                    return single_result_response(result);
-                }
-            };
-
-            let (status, errors) = match semantic::validate(&spec) {
-                Ok(()) => ("pass", vec![]),
-                Err(sem_errors) => ("fail", semantic_errors_to_validation(&sem_errors, None)),
-            };
-
-            let result = ResultBuilder::new(None, spec.name.clone(), spec.version.clone(), "spec")
-                .status(status)
-                .behavior_count(spec.behaviors.len())
-                .errors(errors)
-                .build();
-            single_result_response(result)
+            let v = validate_core::validate_spec(content_str, None, None, None);
+            single_result_response(spec_validation_to_result(v, None, false))
         }
         "nfr" => {
-            let nfr = match nfr_parser::parse_nfr(content_str) {
-                Ok(n) => n,
-                Err(errors) => {
-                    let result =
-                        make_fail_result(None, "nfr", parse_errors_to_validation(&errors, None));
-                    return single_result_response(result);
-                }
-            };
-
-            let (status, errors) = match nfr_semantic::validate(&nfr) {
-                Ok(()) => ("pass", vec![]),
-                Err(sem_errors) => ("fail", semantic_errors_to_validation(&sem_errors, None)),
-            };
-
-            let result = ResultBuilder::new(None, nfr.category.clone(), nfr.version.clone(), "nfr")
-                .status(status)
-                .constraint_count(nfr.constraints.len())
-                .errors(errors)
-                .build();
-            single_result_response(result)
+            let v = validate_core::validate_nfr(content_str);
+            single_result_response(nfr_validation_to_result(v, None))
         }
         other => Ok(tool_error(format!(
             "Unknown content_type '{}'. Valid types: spec, nfr",
@@ -238,46 +203,87 @@ pub(super) fn validate_inline(
     }
 }
 
-/// Deep-mode resolution: resolve deps, cross-validate NFRs, append results.
-fn resolve_deep_mode(
+pub(super) fn validate_file(
     path: &Path,
     path_str: &str,
-    spec: &crate::model::Spec,
-    results: &mut Vec<response::ValidateResult>,
-) {
-    let tree_root = path.parent().unwrap_or(Path::new("."));
-    let siblings = discover::discover_specs(tree_root, Some(path));
-    let mut res_ctx = deps::ResolutionContext {
-        siblings,
-        resolved: HashMap::new(),
-        stack: vec![spec.name.clone()],
-        errors: Vec::new(),
-    };
-    deps::resolve_and_collect(&spec.dependencies, &mut res_ctx, 0);
+    deep: bool,
+) -> Result<CallToolResult, ErrorData> {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
-    // NFR cross-validation
-    let nfr_specs_map = discover_nfr_map(tree_root);
-    let has_nfr_refs =
-        !spec.nfr_refs.is_empty() || spec.behaviors.iter().any(|b| !b.nfr_refs.is_empty());
-    if has_nfr_refs
-        && let Err(crossref_errors) = nfr_crossref::cross_validate(spec, &nfr_specs_map)
-        && let Some(first) = results.first_mut()
-    {
-        first.status = "fail".to_string();
-        for ce in &crossref_errors {
-            first.errors.push(response::ValidationError {
-                file: Some(path_str.to_string()),
+    if ext == "nfr" {
+        return validate_nfr_file(path, path_str);
+    }
+
+    let source = match read_file_checked(path) {
+        Ok(s) => s,
+        Err(msg) => return Ok(tool_error(msg)),
+    };
+
+    let (siblings, nfr_specs_map) = if deep {
+        let tree_root = path.parent().unwrap_or(Path::new("."));
+        let siblings = discover::discover_specs(tree_root, Some(path));
+        let nfr_discovery = discover_and_parse_nfrs(tree_root);
+        (Some(siblings), Some(nfr_discovery.specs))
+    } else {
+        (None, None)
+    };
+
+    let v = validate_core::validate_spec(&source, None, siblings.as_ref(), nfr_specs_map.as_ref());
+
+    if !deep {
+        return single_result_response(spec_validation_to_result(
+            v,
+            Some(path_str.to_string()),
+            false,
+        ));
+    }
+
+    // Deep mode: build multi-result response (main spec + resolved deps)
+    let file = Some(path_str.to_string());
+
+    // Spec didn't parse or has semantic errors — no deep resolution happened
+    if v.spec.is_none() || !v.semantic_errors.is_empty() {
+        return single_result_response(spec_validation_to_result(v, file, true));
+    }
+
+    let spec = v.spec.as_ref().unwrap();
+    let mut errors = Vec::new();
+    let mut status = "pass";
+
+    if !v.crossref_errors.is_empty() {
+        status = "fail";
+        errors.extend(errors_to_validation(&v.crossref_errors, file.clone()));
+    }
+    if !v.dep_errors.is_empty() {
+        status = "fail";
+        for err in &v.dep_errors {
+            errors.push(response::ValidationError {
+                file: file.clone(),
                 line: 0,
-                message: ce.to_string(),
+                message: err.clone(),
             });
         }
     }
 
-    // Append resolved deps
-    for (dep_name, rd) in &res_ctx.resolved {
-        let dep_path = res_ctx
-            .siblings
-            .get(dep_name)
+    let mut results = vec![
+        ResultBuilder::new(file, spec.name.clone(), spec.version.clone(), "spec")
+            .status(status)
+            .behavior_count(spec.behaviors.len())
+            .errors(errors)
+            .dependencies(
+                spec.dependencies
+                    .iter()
+                    .map(format_dep_constraint)
+                    .collect(),
+            )
+            .build(),
+    ];
+
+    // Append resolved dep entries
+    let siblings_ref = siblings.as_ref();
+    for (dep_name, rd) in &v.resolved_deps {
+        let dep_path = siblings_ref
+            .and_then(|s| s.get(dep_name))
             .map(|p| p.display().to_string())
             .unwrap_or_default();
         results.push(
@@ -300,84 +306,6 @@ fn resolve_deep_mode(
         );
     }
 
-    // Append resolution errors
-    if !res_ctx.errors.is_empty()
-        && let Some(first) = results.first_mut()
-    {
-        first.status = "fail".to_string();
-        for err_msg in &res_ctx.errors {
-            first.errors.push(response::ValidationError {
-                file: Some(path_str.to_string()),
-                line: 0,
-                message: err_msg.clone(),
-            });
-        }
-    }
-}
-
-pub(super) fn validate_file(
-    path: &Path,
-    path_str: &str,
-    deep: bool,
-) -> Result<CallToolResult, ErrorData> {
-    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-
-    if ext == "nfr" {
-        return validate_nfr_file(path, path_str);
-    }
-
-    let source = match read_file_checked(path) {
-        Ok(s) => s,
-        Err(msg) => return Ok(tool_error(msg)),
-    };
-
-    let spec = match parser::parse(&source) {
-        Ok(s) => s,
-        Err(errors) => {
-            let result = make_fail_result(
-                Some(path_str.to_string()),
-                "spec",
-                parse_errors_to_validation(&errors, Some(path_str.to_string())),
-            );
-            return single_result_response(result);
-        }
-    };
-
-    let (status, errors) = match semantic::validate(&spec) {
-        Ok(()) => ("pass", vec![]),
-        Err(sem_errors) => (
-            "fail",
-            semantic_errors_to_validation(&sem_errors, Some(path_str.to_string())),
-        ),
-    };
-
-    let mut results = vec![];
-
-    let is_pass = status == "pass";
-    let mut builder = ResultBuilder::new(
-        Some(path_str.to_string()),
-        spec.name.clone(),
-        spec.version.clone(),
-        "spec",
-    )
-    .status(status)
-    .behavior_count(spec.behaviors.len())
-    .errors(errors);
-    if deep {
-        builder = builder.dependencies(
-            spec.dependencies
-                .iter()
-                .map(format_dep_constraint)
-                .collect(),
-        );
-    }
-    results.push(builder.build());
-
-    // Deep mode: resolve dependencies + cross-validate NFRs
-    if deep && is_pass {
-        resolve_deep_mode(path, path_str, &spec, &mut results);
-    }
-
     results_to_response(results)
 }
 
@@ -387,171 +315,8 @@ pub(super) fn validate_nfr_file(path: &Path, path_str: &str) -> Result<CallToolR
         Err(msg) => return Ok(tool_error(msg)),
     };
 
-    let nfr = match nfr_parser::parse_nfr(&source) {
-        Ok(n) => n,
-        Err(errors) => {
-            let result = make_fail_result(
-                Some(path_str.to_string()),
-                "nfr",
-                parse_errors_to_validation(&errors, Some(path_str.to_string())),
-            );
-            return single_result_response(result);
-        }
-    };
-
-    let (status, errors) = match nfr_semantic::validate(&nfr) {
-        Ok(()) => ("pass", vec![]),
-        Err(sem_errors) => (
-            "fail",
-            semantic_errors_to_validation(&sem_errors, Some(path_str.to_string())),
-        ),
-    };
-
-    let result = ResultBuilder::new(
-        Some(path_str.to_string()),
-        nfr.category.clone(),
-        nfr.version.clone(),
-        "nfr",
-    )
-    .status(status)
-    .constraint_count(nfr.constraints.len())
-    .errors(errors)
-    .build();
-    single_result_response(result)
-}
-
-/// Validate a single NFR file in directory context.
-fn validate_nfr_entry(file_path: &Path, file_str: String) -> response::ValidateResult {
-    let source = match read_file_checked(file_path) {
-        Ok(s) => s,
-        Err(e) => {
-            return make_fail_result(
-                Some(file_str.clone()),
-                "nfr",
-                vec![response::ValidationError {
-                    file: Some(file_str),
-                    line: 0,
-                    message: format!("Cannot read file: {}", e),
-                }],
-            );
-        }
-    };
-
-    let nfr = match nfr_parser::parse_nfr(&source) {
-        Ok(n) => n,
-        Err(errors) => {
-            return make_fail_result(
-                Some(file_str.clone()),
-                "nfr",
-                parse_errors_to_validation(&errors, Some(file_str)),
-            );
-        }
-    };
-
-    let (status, errors) = match nfr_semantic::validate(&nfr) {
-        Ok(()) => ("pass", vec![]),
-        Err(sem_errors) => (
-            "fail",
-            semantic_errors_to_validation(&sem_errors, Some(file_str.clone())),
-        ),
-    };
-
-    ResultBuilder::new(Some(file_str), nfr.category, nfr.version, "nfr")
-        .status(status)
-        .constraint_count(nfr.constraints.len())
-        .errors(errors)
-        .build()
-}
-
-/// Validate a single spec file in directory context (always deep).
-fn validate_spec_entry(
-    file_path: &Path,
-    file_str: String,
-    dir: &Path,
-    nfr_specs_map: &HashMap<String, crate::model::NfrSpec>,
-) -> response::ValidateResult {
-    let source = match read_file_checked(file_path) {
-        Ok(s) => s,
-        Err(e) => {
-            return make_fail_result(
-                Some(file_str.clone()),
-                "spec",
-                vec![response::ValidationError {
-                    file: Some(file_str),
-                    line: 0,
-                    message: format!("Cannot read file: {}", e),
-                }],
-            );
-        }
-    };
-
-    let spec = match parser::parse(&source) {
-        Ok(s) => s,
-        Err(errors) => {
-            return make_fail_result(
-                Some(file_str.clone()),
-                "spec",
-                parse_errors_to_validation(&errors, Some(file_str)),
-            );
-        }
-    };
-
-    let (status, mut errors) = match semantic::validate(&spec) {
-        Ok(()) => ("pass", vec![]),
-        Err(sem_errors) => (
-            "fail",
-            semantic_errors_to_validation(&sem_errors, Some(file_str.clone())),
-        ),
-    };
-
-    // Directory validation is always deep — cross-validate NFRs
-    let mut final_status = status.to_string();
-    let has_nfr_refs =
-        !spec.nfr_refs.is_empty() || spec.behaviors.iter().any(|b| !b.nfr_refs.is_empty());
-    if has_nfr_refs && let Err(crossref_errors) = nfr_crossref::cross_validate(&spec, nfr_specs_map)
-    {
-        final_status = "fail".to_string();
-        for ce in &crossref_errors {
-            errors.push(response::ValidationError {
-                file: Some(file_str.clone()),
-                line: 0,
-                message: ce.to_string(),
-            });
-        }
-    }
-
-    // Resolve deps (always deep for directory)
-    let siblings = discover::discover_specs(dir, Some(file_path));
-    let mut res_ctx = deps::ResolutionContext {
-        siblings,
-        resolved: HashMap::new(),
-        stack: vec![spec.name.clone()],
-        errors: Vec::new(),
-    };
-    deps::resolve_and_collect(&spec.dependencies, &mut res_ctx, 0);
-    if !res_ctx.errors.is_empty() {
-        final_status = "fail".to_string();
-        for err_msg in &res_ctx.errors {
-            errors.push(response::ValidationError {
-                file: Some(file_str.clone()),
-                line: 0,
-                message: err_msg.clone(),
-            });
-        }
-    }
-
-    let deps_list: Vec<response::DependencyRef> = spec
-        .dependencies
-        .iter()
-        .map(format_dep_constraint)
-        .collect();
-
-    ResultBuilder::new(Some(file_str), spec.name, spec.version, "spec")
-        .status(&final_status)
-        .behavior_count(spec.behaviors.len())
-        .errors(errors)
-        .dependencies(deps_list)
-        .build()
+    let v = validate_core::validate_nfr(&source);
+    single_result_response(nfr_validation_to_result(v, Some(path_str.to_string())))
 }
 
 pub(super) fn validate_directory(dir: &Path, path_str: &str) -> Result<CallToolResult, ErrorData> {
@@ -567,7 +332,8 @@ pub(super) fn validate_directory(dir: &Path, path_str: &str) -> Result<CallToolR
         )));
     }
 
-    let nfr_specs_map = discover_nfr_map(dir);
+    let nfr_discovery = discover_and_parse_nfrs(dir);
+    let nfr_specs_map = nfr_discovery.specs;
 
     let mut results = Vec::new();
     for file_path in &files {
@@ -575,16 +341,136 @@ pub(super) fn validate_directory(dir: &Path, path_str: &str) -> Result<CallToolR
         let file_str = file_path.display().to_string();
 
         if ext == "nfr" {
-            results.push(validate_nfr_entry(file_path, file_str));
+            let source = match read_file_checked(file_path) {
+                Ok(s) => s,
+                Err(e) => {
+                    results.push(make_fail_result(
+                        Some(file_str.clone()),
+                        "nfr",
+                        vec![response::ValidationError {
+                            file: Some(file_str),
+                            line: 0,
+                            message: format!("Cannot read file: {}", e),
+                        }],
+                    ));
+                    continue;
+                }
+            };
+            let v = validate_core::validate_nfr(&source);
+            results.push(nfr_validation_to_result(v, Some(file_str)));
         } else {
-            results.push(validate_spec_entry(
-                file_path,
-                file_str,
-                dir,
-                &nfr_specs_map,
-            ));
+            let source = match read_file_checked(file_path) {
+                Ok(s) => s,
+                Err(e) => {
+                    results.push(make_fail_result(
+                        Some(file_str.clone()),
+                        "spec",
+                        vec![response::ValidationError {
+                            file: Some(file_str),
+                            line: 0,
+                            message: format!("Cannot read file: {}", e),
+                        }],
+                    ));
+                    continue;
+                }
+            };
+            let siblings = discover::discover_specs(dir, Some(file_path));
+            let v =
+                validate_core::validate_spec(&source, None, Some(&siblings), Some(&nfr_specs_map));
+            results.push(spec_validation_to_result(v, Some(file_str), true));
         }
     }
 
     results_to_response(results)
+}
+
+// ── Converters: validate_core result → MCP response ──
+
+/// Convert a spec validation result into an MCP ValidateResult.
+fn spec_validation_to_result(
+    v: validate_core::SpecValidation,
+    file: Option<String>,
+    include_deps: bool,
+) -> response::ValidateResult {
+    if v.spec.is_none() {
+        return make_fail_result(
+            file.clone(),
+            "spec",
+            parse_errors_to_validation(&v.parse_errors, file),
+        );
+    }
+    let spec = v.spec.as_ref().unwrap();
+
+    let mut errors = Vec::new();
+    let mut status = "pass";
+
+    if !v.semantic_errors.is_empty() {
+        status = "fail";
+        errors.extend(semantic_errors_to_validation(
+            &v.semantic_errors,
+            file.clone(),
+        ));
+    }
+
+    if !v.crossref_errors.is_empty() {
+        status = "fail";
+        errors.extend(errors_to_validation(&v.crossref_errors, file.clone()));
+    }
+
+    if !v.dep_errors.is_empty() {
+        status = "fail";
+        for err in &v.dep_errors {
+            errors.push(response::ValidationError {
+                file: file.clone(),
+                line: 0,
+                message: err.clone(),
+            });
+        }
+    }
+
+    let mut builder = ResultBuilder::new(file, spec.name.clone(), spec.version.clone(), "spec")
+        .status(status)
+        .behavior_count(spec.behaviors.len())
+        .errors(errors);
+
+    if include_deps {
+        builder = builder.dependencies(
+            spec.dependencies
+                .iter()
+                .map(format_dep_constraint)
+                .collect(),
+        );
+    }
+
+    builder.build()
+}
+
+/// Convert an NFR validation result into an MCP ValidateResult.
+fn nfr_validation_to_result(
+    v: validate_core::NfrValidation,
+    file: Option<String>,
+) -> response::ValidateResult {
+    if v.nfr.is_none() {
+        return make_fail_result(
+            file.clone(),
+            "nfr",
+            parse_errors_to_validation(&v.parse_errors, file),
+        );
+    }
+    let nfr = v.nfr.as_ref().unwrap();
+
+    let (status, errors) = if !v.semantic_errors.is_empty() {
+        (
+            "fail",
+            semantic_errors_to_validation(&v.semantic_errors, file.clone()),
+        )
+    } else {
+        ("pass", vec![])
+    };
+
+    ResultBuilder::new(file, nfr.category.clone(), nfr.version.clone(), "nfr")
+        .status(status)
+        .constraint_count(nfr.constraints.len())
+        .errors(errors)
+        .build()
 }

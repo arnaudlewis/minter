@@ -376,14 +376,16 @@ fn print_nfr_node(
 }
 
 /// BFS to find all specs transitively impacted by changes to a given spec.
-fn find_spec_dependents(specs: &[SpecNode], target: &str) -> Vec<String> {
+///
+/// Each element in `specs` is `(name, dep_names)`.
+pub fn find_spec_dependents(specs: &[(String, Vec<String>)], target: &str) -> Vec<String> {
     let mut reverse_deps: HashMap<&str, Vec<&str>> = HashMap::new();
-    for s in specs {
-        for dep in &s.deps {
+    for (name, deps) in specs {
+        for dep in deps {
             reverse_deps
                 .entry(dep.as_str())
                 .or_default()
-                .push(s.name.as_str());
+                .push(name.as_str());
         }
     }
 
@@ -442,7 +444,11 @@ fn print_impacted(
     target: &str,
 ) -> i32 {
     if by_name.contains_key(target) {
-        let mut impacted = find_spec_dependents(specs, target);
+        let bfs_input: Vec<(String, Vec<String>)> = specs
+            .iter()
+            .map(|s| (s.name.clone(), s.deps.clone()))
+            .collect();
+        let mut impacted = find_spec_dependents(&bfs_input, target);
         let target_node = &specs[by_name[target]];
         let label = target_node.label();
         print_impacted_list(
@@ -481,20 +487,17 @@ fn print_impacted(
 mod tests {
     use super::*;
 
-    fn make_spec_node(name: &str, deps: Vec<&str>) -> SpecNode {
-        SpecNode {
-            name: name.to_string(),
-            version: "1.0.0".to_string(),
-            behavior_count: 1,
-            deps: deps.into_iter().map(String::from).collect(),
-            nfr_refs: BTreeMap::new(),
-        }
+    fn node(name: &str, deps: Vec<&str>) -> (String, Vec<String>) {
+        (
+            name.to_string(),
+            deps.into_iter().map(String::from).collect(),
+        )
     }
 
     #[test]
     /// graph: bfs_no_dependents
     fn bfs_no_dependents() {
-        let specs = vec![make_spec_node("a", vec![]), make_spec_node("b", vec![])];
+        let specs = vec![node("a", vec![]), node("b", vec![])];
         let result = find_spec_dependents(&specs, "a");
         assert!(result.is_empty());
     }
@@ -503,9 +506,9 @@ mod tests {
     /// graph: bfs_direct_dependents
     fn bfs_direct_dependents() {
         let specs = vec![
-            make_spec_node("target", vec![]),
-            make_spec_node("a", vec!["target"]),
-            make_spec_node("b", vec!["target"]),
+            node("target", vec![]),
+            node("a", vec!["target"]),
+            node("b", vec!["target"]),
         ];
         let mut result = find_spec_dependents(&specs, "target");
         result.sort();
@@ -516,9 +519,9 @@ mod tests {
     /// graph: bfs_transitive_chain
     fn bfs_transitive_chain() {
         let specs = vec![
-            make_spec_node("target", vec![]),
-            make_spec_node("b", vec!["target"]),
-            make_spec_node("a", vec!["b"]),
+            node("target", vec![]),
+            node("b", vec!["target"]),
+            node("a", vec!["b"]),
         ];
         let mut result = find_spec_dependents(&specs, "target");
         result.sort();
@@ -529,10 +532,10 @@ mod tests {
     /// graph: bfs_diamond
     fn bfs_diamond() {
         let specs = vec![
-            make_spec_node("target", vec![]),
-            make_spec_node("a", vec!["target"]),
-            make_spec_node("b", vec!["target"]),
-            make_spec_node("c", vec!["a", "b"]),
+            node("target", vec![]),
+            node("a", vec!["target"]),
+            node("b", vec!["target"]),
+            node("c", vec!["a", "b"]),
         ];
         let mut result = find_spec_dependents(&specs, "target");
         result.sort();
@@ -542,7 +545,7 @@ mod tests {
     #[test]
     /// graph: bfs_empty_graph
     fn bfs_empty_graph() {
-        let specs: Vec<SpecNode> = vec![];
+        let specs: Vec<(String, Vec<String>)> = vec![];
         let result = find_spec_dependents(&specs, "nonexistent");
         assert!(result.is_empty());
     }

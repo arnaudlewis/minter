@@ -1,7 +1,6 @@
-use std::collections::HashMap;
-
 use rmcp::model::*;
 
+use crate::core::commands::graph::find_spec_dependents;
 use crate::mcp::{next_steps, response};
 
 use super::{mcp_error, tool_error};
@@ -42,7 +41,7 @@ pub(super) fn graph_impacted(
     spec_nodes: &[(String, String, String, Vec<crate::model::Dependency>)],
     target: &str,
 ) -> Result<CallToolResult, ErrorData> {
-    let by_name: HashMap<&str, usize> = spec_nodes
+    let by_name: std::collections::HashMap<&str, usize> = spec_nodes
         .iter()
         .enumerate()
         .map(|(i, (name, ..))| (name.as_str(), i))
@@ -55,34 +54,16 @@ pub(super) fn graph_impacted(
         )));
     }
 
-    // Build reverse dependency map
-    let mut reverse_deps: HashMap<&str, Vec<&str>> = HashMap::new();
-    for (name, _, _, deps) in spec_nodes {
-        for dep in deps {
-            reverse_deps
-                .entry(dep.spec_name.as_str())
-                .or_default()
-                .push(name.as_str());
-        }
-    }
-
-    // BFS to find all transitive reverse dependencies
-    let mut impacted: Vec<String> = Vec::new();
-    let mut visited: std::collections::HashSet<&str> = std::collections::HashSet::new();
-    let mut queue: Vec<&str> = vec![target];
-    visited.insert(target);
-
-    while let Some(current) = queue.pop() {
-        if let Some(dependents) = reverse_deps.get(current) {
-            for &dep in dependents {
-                if visited.insert(dep) {
-                    impacted.push(dep.to_string());
-                    queue.push(dep);
-                }
-            }
-        }
-    }
-
+    let bfs_input: Vec<(String, Vec<String>)> = spec_nodes
+        .iter()
+        .map(|(name, _, _, deps)| {
+            (
+                name.clone(),
+                deps.iter().map(|d| d.spec_name.clone()).collect(),
+            )
+        })
+        .collect();
+    let mut impacted = find_spec_dependents(&bfs_input, target);
     impacted.sort();
 
     let impacted_entries: Vec<response::GraphSpecEntry> = impacted

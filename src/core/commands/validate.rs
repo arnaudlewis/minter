@@ -1,12 +1,12 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
+use super::validate_core;
 use crate::cli::display::{self, TreeContext};
 use crate::core::deps::{self, ResolutionContext};
 use crate::core::graph::{self, CachedEntry, GraphCache, GraphState, discover_and_parse_nfrs};
 use crate::core::io;
-use crate::core::parser::nfr as nfr_parser;
-use crate::core::validation::{crossref as nfr_crossref, nfr_semantic, semantic};
+use crate::core::validation::{crossref as nfr_crossref, semantic};
 use crate::core::{discover, parser};
 use crate::model::{NfrSpec, Spec};
 
@@ -214,26 +214,26 @@ fn validate_nfr_file(path: &Path) -> bool {
         }
     };
 
-    let nfr = match nfr_parser::parse_nfr(&source) {
-        Ok(nfr) => nfr,
-        Err(errors) => {
-            for e in &errors {
-                eprintln!("{}: {}", filename, e);
-            }
-            return false;
-        }
-    };
+    let v = validate_core::validate_nfr(&source);
 
-    if let Err(errors) = nfr_semantic::validate(&nfr) {
-        display::print_nfr_failure(&nfr);
-        let filename = path.display();
-        for e in &errors {
+    if v.nfr.is_none() {
+        for e in &v.parse_errors {
             eprintln!("{}: {}", filename, e);
         }
         return false;
     }
 
-    display::print_nfr_success(&nfr);
+    let nfr = v.nfr.as_ref().unwrap();
+
+    if !v.semantic_errors.is_empty() {
+        display::print_nfr_failure(nfr);
+        for e in &v.semantic_errors {
+            eprintln!("{}: {}", filename, e);
+        }
+        return false;
+    }
+
+    display::print_nfr_success(nfr);
     true
 }
 
