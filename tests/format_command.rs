@@ -7,7 +7,7 @@ use predicates::prelude::*;
 // Happy paths (format-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// format-command.spec: display-spec-grammar
+// @minter:e2e display-spec-grammar
 #[test]
 fn display_spec_grammar() {
     minter()
@@ -30,7 +30,7 @@ fn display_spec_grammar() {
         .stdout(predicate::str::contains("override"));
 }
 
-/// format-command.spec: display-nfr-grammar
+// @minter:e2e display-nfr-grammar
 #[test]
 fn display_nfr_grammar() {
     minter()
@@ -57,7 +57,7 @@ fn display_nfr_grammar() {
 // Error cases (format-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// format-command.spec: reject-unknown-format-type
+// @minter:e2e reject-unknown-format-type
 #[test]
 fn reject_unknown_format_type() {
     minter()
@@ -70,7 +70,7 @@ fn reject_unknown_format_type() {
         .stderr(predicate::str::contains("nfr"));
 }
 
-/// format-command.spec: reject-missing-format-type
+// @minter:e2e reject-missing-format-type
 #[test]
 fn reject_missing_format_type() {
     minter()

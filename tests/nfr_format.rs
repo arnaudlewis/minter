@@ -81,7 +81,7 @@ fn minimal_rule_body() -> String {
 // Header section (nfr-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// nfr-grammar.spec: parse-nfr-declaration
+// @minter:e2e parse-nfr-declaration
 #[test]
 fn parse_nfr_declaration() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
@@ -95,7 +95,7 @@ fn parse_nfr_declaration() {
         .stdout(predicate::str::contains("1.0.0"));
 }
 
-/// nfr-grammar.spec: parse-nfr-category-validated
+// @minter:e2e parse-nfr-category-validated
 #[test]
 fn parse_nfr_category_validated() {
     let categories = [
@@ -138,7 +138,7 @@ constraint test-constraint [rule]
     }
 }
 
-/// nfr-grammar.spec: reject-invalid-nfr-category
+// @minter:e2e reject-invalid-nfr-category
 #[test]
 fn reject_invalid_nfr_category() {
     let content = "\
@@ -175,7 +175,7 @@ constraint c [rule]
         .stderr(predicate::str::contains("category"));
 }
 
-/// nfr-grammar.spec: parse-nfr-title
+// @minter:e2e parse-nfr-title
 #[test]
 fn parse_nfr_title() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
@@ -188,21 +188,21 @@ fn parse_nfr_title() {
         .stdout(predicate::str::contains("performance"));
 }
 
-/// nfr-grammar.spec: parse-nfr-description-block
+// @minter:e2e parse-nfr-description-block
 #[test]
 fn parse_nfr_description_block() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-nfr-motivation-block
+// @minter:e2e parse-nfr-motivation-block
 #[test]
 fn parse_nfr_motivation_block() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: reject-nfr-missing-version
+// @minter:e2e reject-nfr-missing-version
 #[test]
 fn reject_nfr_missing_version() {
     let content = "\
@@ -242,7 +242,7 @@ constraint c [rule]
 // Constraint declaration (nfr-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// nfr-grammar.spec: parse-metric-constraint-declaration
+// @minter:e2e parse-metric-constraint-declaration
 #[test]
 fn parse_metric_constraint_declaration() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
@@ -255,7 +255,7 @@ fn parse_metric_constraint_declaration() {
         .stdout(predicate::str::contains("1 constraint"));
 }
 
-/// nfr-grammar.spec: parse-rule-constraint-declaration
+// @minter:e2e parse-rule-constraint-declaration
 #[test]
 fn parse_rule_constraint_declaration() {
     let content = valid_nfr_with_rule_constraint(&minimal_rule_body());
@@ -269,7 +269,7 @@ fn parse_rule_constraint_declaration() {
         .stdout(predicate::str::contains("1 constraint"));
 }
 
-/// nfr-grammar.spec: reject-unknown-constraint-type
+// @minter:e2e reject-unknown-constraint-type
 #[test]
 fn reject_unknown_constraint_type() {
     let content = "\
@@ -307,7 +307,7 @@ constraint my-constraint [banana]
         .stderr(predicate::str::contains("banana"));
 }
 
-/// nfr-grammar.spec: reject-constraint-without-description
+// @minter:e2e reject-constraint-without-description
 #[test]
 fn reject_constraint_without_description() {
     let content = "\
@@ -343,7 +343,7 @@ constraint my-constraint [metric]
         .stderr(predicate::str::is_empty().not());
 }
 
-/// nfr-grammar.spec: reject-non-kebab-constraint-name
+// @minter:e2e reject-non-kebab-constraint-name
 #[test]
 fn reject_non_kebab_constraint_name() {
     let content = "\
@@ -384,7 +384,7 @@ constraint MyConstraint [rule]
 // Metric fields (nfr-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// nfr-grammar.spec: parse-metric-field
+// @minter:e2e parse-metric-field
 #[test]
 fn parse_metric_field() {
     let body = minimal_metric_body();
@@ -393,7 +393,7 @@ fn parse_metric_field() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-threshold-less-than
+// @minter:e2e parse-threshold-less-than
 #[test]
 fn parse_threshold_less_than() {
     let body = "\
@@ -409,7 +409,7 @@ fn parse_threshold_less_than() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-threshold-greater-than
+// @minter:e2e parse-threshold-greater-than
 #[test]
 fn parse_threshold_greater_than() {
     let body = "\
@@ -425,7 +425,7 @@ fn parse_threshold_greater_than() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-threshold-less-or-equal
+// @minter:e2e parse-threshold-less-or-equal
 #[test]
 fn parse_threshold_less_or_equal() {
     let body = "\
@@ -441,7 +441,7 @@ fn parse_threshold_less_or_equal() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-threshold-greater-or-equal
+// @minter:e2e parse-threshold-greater-or-equal
 #[test]
 fn parse_threshold_greater_or_equal() {
     let body = "\
@@ -457,7 +457,7 @@ fn parse_threshold_greater_or_equal() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-threshold-equals
+// @minter:e2e parse-threshold-equals
 #[test]
 fn parse_threshold_equals() {
     let body = "\
@@ -473,7 +473,7 @@ fn parse_threshold_equals() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: reject-threshold-invalid-operator
+// @minter:e2e reject-threshold-invalid-operator
 #[test]
 fn reject_threshold_invalid_operator() {
     let body = "\
@@ -496,7 +496,7 @@ fn reject_threshold_invalid_operator() {
         .stderr(predicate::str::contains("operator"));
 }
 
-/// nfr-grammar.spec: parse-metric-verification-block
+// @minter:e2e parse-metric-verification-block
 #[test]
 fn parse_metric_verification_block() {
     let body = "\
@@ -513,7 +513,7 @@ fn parse_metric_verification_block() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-metric-verification-without-dataset
+// @minter:e2e parse-metric-verification-without-dataset
 #[test]
 fn parse_metric_verification_without_dataset() {
     let body = "\
@@ -533,7 +533,7 @@ fn parse_metric_verification_without_dataset() {
 // Rule fields (nfr-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// nfr-grammar.spec: parse-rule-text-block
+// @minter:e2e parse-rule-text-block
 #[test]
 fn parse_rule_text_block() {
     let content = valid_nfr_with_rule_constraint(&minimal_rule_body());
@@ -541,7 +541,7 @@ fn parse_rule_text_block() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-rule-verification-static-only
+// @minter:e2e parse-rule-verification-static-only
 #[test]
 fn parse_rule_verification_static_only() {
     let body = "\
@@ -555,7 +555,7 @@ fn parse_rule_verification_static_only() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-rule-verification-runtime-only
+// @minter:e2e parse-rule-verification-runtime-only
 #[test]
 fn parse_rule_verification_runtime_only() {
     let body = "\
@@ -569,7 +569,7 @@ fn parse_rule_verification_runtime_only() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-rule-verification-both
+// @minter:e2e parse-rule-verification-both
 #[test]
 fn parse_rule_verification_both() {
     let body = "\
@@ -584,7 +584,7 @@ fn parse_rule_verification_both() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: reject-rule-verification-empty
+// @minter:e2e reject-rule-verification-empty
 #[test]
 fn reject_rule_verification_empty() {
     let content = "\
@@ -623,7 +623,7 @@ constraint no-n-plus-one [rule]
 // Shared fields (nfr-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// nfr-grammar.spec: parse-violation-severity
+// @minter:e2e parse-violation-severity
 #[test]
 fn parse_violation_severity() {
     for severity in &["critical", "high", "medium", "low"] {
@@ -657,7 +657,7 @@ constraint test-constraint [rule]
     }
 }
 
-/// nfr-grammar.spec: reject-invalid-violation-severity
+// @minter:e2e reject-invalid-violation-severity
 #[test]
 fn reject_invalid_violation_severity() {
     let content = "\
@@ -694,7 +694,7 @@ constraint test-constraint [rule]
         .stderr(predicate::str::contains("violation"));
 }
 
-/// nfr-grammar.spec: parse-overridable-values
+// @minter:e2e parse-overridable-values
 #[test]
 fn parse_overridable_values() {
     for val in &["yes", "no"] {
@@ -728,7 +728,7 @@ constraint test-constraint [rule]
     }
 }
 
-/// nfr-grammar.spec: reject-invalid-overridable-value
+// @minter:e2e reject-invalid-overridable-value
 #[test]
 fn reject_invalid_overridable_value() {
     let content = "\
@@ -769,7 +769,7 @@ constraint test-constraint [rule]
 // Structural errors (nfr-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// nfr-grammar.spec: reject-missing-nfr-declaration
+// @minter:e2e reject-missing-nfr-declaration
 #[test]
 fn reject_missing_nfr_declaration() {
     let content = "\
@@ -804,7 +804,7 @@ constraint c [rule]
         .stderr(predicate::str::is_empty().not());
 }
 
-/// nfr-grammar.spec: reject-nfr-missing-title
+// @minter:e2e reject-nfr-missing-title
 #[test]
 fn reject_nfr_missing_title() {
     let content = "\
@@ -839,7 +839,7 @@ constraint c [rule]
         .stderr(predicate::str::contains("title"));
 }
 
-/// nfr-grammar.spec: reject-nfr-missing-description
+// @minter:e2e reject-nfr-missing-description
 #[test]
 fn reject_nfr_missing_description() {
     let content = "\
@@ -872,7 +872,7 @@ constraint c [rule]
         .stderr(predicate::str::contains("description"));
 }
 
-/// nfr-grammar.spec: reject-nfr-missing-motivation
+// @minter:e2e reject-nfr-missing-motivation
 #[test]
 fn reject_nfr_missing_motivation() {
     let content = "\
@@ -905,7 +905,7 @@ constraint c [rule]
         .stderr(predicate::str::contains("motivation"));
 }
 
-/// nfr-grammar.spec: reject-nfr-no-constraints
+// @minter:e2e reject-nfr-no-constraints
 #[test]
 fn reject_nfr_no_constraints() {
     let content = "\
@@ -928,7 +928,7 @@ motivation
         .stderr(predicate::str::contains("constraint"));
 }
 
-/// nfr-grammar.spec: reject-duplicate-constraint-names
+// @minter:e2e reject-duplicate-constraint-names
 #[test]
 fn reject_duplicate_constraint_names() {
     let content = "\
@@ -978,7 +978,7 @@ constraint api-response-time [rule]
         .stderr(predicate::str::contains("Duplicate"));
 }
 
-/// nfr-grammar.spec: reject-metric-missing-required-fields
+// @minter:e2e reject-metric-missing-required-fields
 #[test]
 fn reject_metric_missing_required_fields() {
     let content = "\
@@ -1010,7 +1010,7 @@ constraint api-response-time [metric]
         .stderr(predicate::str::is_empty().not());
 }
 
-/// nfr-grammar.spec: reject-metric-verification-missing-required
+// @minter:e2e reject-metric-verification-missing-required
 #[test]
 fn reject_metric_verification_missing_required() {
     let content = "\
@@ -1046,7 +1046,7 @@ constraint api-response-time [metric]
         .stderr(predicate::str::is_empty().not());
 }
 
-/// nfr-grammar.spec: reject-rule-missing-required-fields
+// @minter:e2e reject-rule-missing-required-fields
 #[test]
 fn reject_rule_missing_required_fields() {
     let content = "\
@@ -1079,7 +1079,7 @@ constraint no-n-plus-one [rule]
         .stderr(predicate::str::is_empty().not());
 }
 
-/// nfr-grammar.spec: reject-nfr-tab-indentation
+// @minter:e2e reject-nfr-tab-indentation
 #[test]
 fn reject_nfr_tab_indentation() {
     let content = "nfr performance v1.0.0\ntitle \"Perf\"\n\ndescription\n\tD.\n\nmotivation\n  M.\n\nconstraint c [rule]\n  \"C\"\n\n  rule\n    R.\n\n  verification\n    static \"S\"\n\n  violation low\n  overridable no\n";
@@ -1097,7 +1097,7 @@ fn reject_nfr_tab_indentation() {
 // Edge cases (nfr-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// nfr-grammar.spec: parse-multiple-constraints
+// @minter:e2e parse-multiple-constraints
 #[test]
 fn parse_multiple_constraints() {
     let content = "\
@@ -1163,7 +1163,7 @@ constraint rule-one [rule]
         .stdout(predicate::str::contains("3 constraints"));
 }
 
-/// nfr-grammar.spec: parse-multiple-verification-lines
+// @minter:e2e parse-multiple-verification-lines
 #[test]
 fn parse_multiple_verification_lines() {
     let body = "\
@@ -1182,7 +1182,7 @@ fn parse_multiple_verification_lines() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: parse-environment-all
+// @minter:e2e parse-environment-all
 #[test]
 fn parse_environment_all() {
     let body = "\
@@ -1198,7 +1198,7 @@ fn parse_environment_all() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: ignore-nfr-comments
+// @minter:e2e ignore-nfr-comments
 #[test]
 fn ignore_nfr_comments() {
     let content = "\
@@ -1231,7 +1231,7 @@ constraint test-constraint [rule]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// nfr-grammar.spec: ignore-nfr-blank-lines
+// @minter:e2e ignore-nfr-blank-lines
 #[test]
 fn ignore_nfr_blank_lines() {
     let content = "\

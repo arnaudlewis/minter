@@ -62,7 +62,7 @@ fn spawn_line_reader(reader: impl std::io::Read + Send + 'static) -> mpsc::Recei
 // Happy paths (cli.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli.spec: show-help
+// @minter:e2e show-help
 #[test]
 fn show_help() {
     // --help flag prints usage with all eight commands
@@ -87,7 +87,7 @@ fn show_help() {
         .stdout(predicate::str::contains("minter"));
 }
 
-/// cli.spec: show-version
+// @minter:e2e show-version
 #[test]
 fn show_version() {
     minter()
@@ -97,14 +97,14 @@ fn show_version() {
         .stdout(predicate::str::is_match(r"\d+\.\d+\.\d+").unwrap());
 }
 
-/// cli.spec: route-validate-file — routes to validate with file args
+// @minter:e2e route-validate-file
 #[test]
 fn validate_command_routing() {
     let (_dir, path) = temp_spec("valid", VALID_SPEC);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// cli.spec: route-validate-file-deep — routes to validate with --deep
+// @minter:e2e route-validate-file-deep
 #[test]
 fn validate_deep_flag_routing() {
     let (_dir, path) = temp_spec("valid", VALID_SPEC);
@@ -120,7 +120,7 @@ fn validate_deep_flag_routing() {
 // Error cases (cli.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli.spec: reject-unknown-command
+// @minter:e2e reject-unknown-command
 #[test]
 fn reject_unknown_command() {
     // clap reports the unknown command name; it does not list all valid commands
@@ -131,7 +131,7 @@ fn reject_unknown_command() {
         .stderr(predicate::str::contains("frobnicate"));
 }
 
-/// cli.spec: reject-missing-required-argument
+// @minter:e2e reject-missing-required-argument
 #[test]
 fn reject_no_files() {
     minter()
@@ -142,7 +142,7 @@ fn reject_no_files() {
         .stderr(predicate::str::contains("validate"));
 }
 
-/// cli.spec: reject-non-spec-extension
+// @minter:e2e reject-non-spec-extension
 #[test]
 fn reject_non_spec_extension() {
     let (_dir, path) = common::temp_file("readme.md", "not a spec");
@@ -154,7 +154,7 @@ fn reject_non_spec_extension() {
         .stderr(predicate::str::contains(".spec"));
 }
 
-/// cli.spec: route-validate-nfr-file
+// @minter:e2e route-validate-nfr-file
 #[test]
 fn route_validate_nfr_file() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
@@ -166,7 +166,7 @@ fn route_validate_nfr_file() {
         .stdout(predicate::str::contains("performance"));
 }
 
-/// cli.spec: route-inspect-nfr
+// @minter:e2e route-inspect-nfr
 #[test]
 fn route_inspect_nfr() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
@@ -179,7 +179,7 @@ fn route_inspect_nfr() {
         .stdout(predicate::str::contains("constraint"));
 }
 
-/// cli.spec: reject-unknown-flag
+// @minter:e2e reject-unknown-flag
 #[test]
 fn reject_unknown_flag() {
     minter()
@@ -195,7 +195,7 @@ fn reject_unknown_flag() {
 // Edge cases (cli.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli.spec: handle-mixed-valid-invalid-files
+// @minter:e2e handle-mixed-valid-invalid-files
 #[test]
 fn handle_mixed_valid_invalid_files() {
     let (_dir, path) = temp_spec("valid", VALID_SPEC);
@@ -212,7 +212,7 @@ fn handle_mixed_valid_invalid_files() {
 // New command routing tests (cli.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli.spec: route-validate-folder
+// @minter:e2e route-validate-folder
 #[test]
 fn route_validate_folder() {
     let (_dir, dir_path) = temp_dir_with_specs(&[("route-val", VALID_SPEC)]);
@@ -224,7 +224,7 @@ fn route_validate_folder() {
         .stdout(predicate::str::contains("test-spec"));
 }
 
-/// cli.spec: route-format
+// @minter:e2e route-format
 #[test]
 fn route_format() {
     minter()
@@ -237,7 +237,7 @@ fn route_format() {
         .stdout(predicate::str::contains("given"));
 }
 
-/// cli.spec: route-scaffold-spec
+// @minter:e2e route-scaffold-spec
 #[test]
 fn route_scaffold_spec() {
     minter()
@@ -250,7 +250,7 @@ fn route_scaffold_spec() {
         .stdout(predicate::str::contains("behavior"));
 }
 
-/// cli.spec: route-scaffold-nfr
+// @minter:e2e route-scaffold-nfr
 #[test]
 fn route_scaffold_nfr() {
     minter()
@@ -262,7 +262,7 @@ fn route_scaffold_nfr() {
         .stdout(predicate::str::contains("performance"));
 }
 
-/// cli.spec: route-inspect
+// @minter:e2e route-inspect
 #[test]
 fn route_inspect() {
     let spec = "\
@@ -317,7 +317,7 @@ behavior three [error_case]
         .stdout(predicate::str::contains("3 behaviors"));
 }
 
-/// cli.spec: route-graph
+// @minter:e2e route-graph
 #[test]
 fn route_graph() {
     let spec_a = "\
@@ -372,7 +372,7 @@ behavior do-b [happy_path]
         .stdout(predicate::str::contains("graph-b"));
 }
 
-/// cli.spec: route-graph-impacted
+// @minter:e2e route-graph-impacted
 #[test]
 fn route_graph_impacted() {
     let spec_a = "\
@@ -430,7 +430,7 @@ behavior do-b [happy_path]
         .stdout(predicate::str::contains("imp-a"));
 }
 
-/// cli.spec: accept-deep-on-folder-as-noop
+// @minter:e2e accept-deep-on-folder-as-noop
 #[test]
 fn accept_deep_on_folder_as_noop() {
     let (_dir, dir_path) = temp_dir_with_specs(&[("deep-noop", VALID_SPEC)]);
@@ -442,7 +442,7 @@ fn accept_deep_on_folder_as_noop() {
         .success();
 }
 
-/// cli.spec: route-watch-folder
+// @minter:e2e route-watch-folder
 #[test]
 fn route_watch_folder() {
     let (_dir, dir_path) = temp_dir_with_specs(&[("watch-route", VALID_SPEC)]);
@@ -476,7 +476,7 @@ fn route_watch_folder() {
     let _ = child.wait();
 }
 
-/// cli.spec: route-validate-mixed-directory
+// @minter:e2e route-validate-mixed-directory
 #[test]
 fn route_validate_mixed_directory() {
     let spec_content = "\
@@ -524,7 +524,7 @@ behavior do-thing [happy_path]
     );
 }
 
-/// cli.spec: route-watch-file
+// @minter:e2e route-watch-file
 #[test]
 fn route_watch_file() {
     let (_dir, path) = temp_spec("watch-file-route", VALID_SPEC);
@@ -563,7 +563,7 @@ fn route_watch_file() {
     let _ = child.wait();
 }
 
-/// cli.spec: route-guide
+// @minter:e2e route-guide
 #[test]
 fn route_guide() {
     minter()
@@ -574,7 +574,7 @@ fn route_guide() {
         .stdout(predicate::str::contains("NFR"));
 }
 
-/// cli.spec: route-coverage-directory
+// @minter:e2e route-coverage-directory
 #[test]
 fn route_coverage_directory() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -616,7 +616,7 @@ behavior do-thing [happy_path]
         .stdout(predicate::str::contains("do-thing"));
 }
 
-/// cli.spec: route-coverage-file
+// @minter:e2e route-coverage-file
 #[test]
 fn route_coverage_file() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -657,7 +657,7 @@ behavior do-thing [happy_path]
         .stdout(predicate::str::contains("do-thing"));
 }
 
-/// cli.spec: route-coverage-with-scan
+// @minter:e2e route-coverage-with-scan
 #[test]
 fn route_coverage_with_scan() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -704,7 +704,7 @@ behavior do-thing [happy_path]
         .stdout(predicate::str::contains("unit"));
 }
 
-/// cli.spec: route-coverage-with-format
+// @minter:e2e route-coverage-with-format
 #[test]
 fn route_coverage_with_format() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -748,7 +748,7 @@ behavior do-thing [happy_path]
         .stdout(predicate::str::contains("total_behaviors"));
 }
 
-/// cli.spec: route-watch-nfr-file
+// @minter:e2e route-watch-nfr-file
 #[test]
 fn route_watch_nfr_file() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);

@@ -5,6 +5,8 @@ use std::time::Instant;
 
 use common::{minter, spec_with_deps_and_behaviors, spec_with_n_behaviors, temp_dir_with_specs};
 
+// @minter:benchmark #performance#large-tree-validation-scaling
+
 /// performance.nfr: large-tree-validation-scaling
 /// Validation of large spec trees must remain practical for CI pipelines.
 /// Threshold: p95 < 5s for 500 specs across 10 cold-cache runs.

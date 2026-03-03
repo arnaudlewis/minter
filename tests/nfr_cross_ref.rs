@@ -364,6 +364,7 @@ constraint {constraint_name} [rule]
 // Spec-level nfr section parsing (behaviors 1-6)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e parse-spec-level-whole-file-ref
 /// nfr-cross-reference: parse-spec-level-whole-file-ref
 #[test]
 fn parse_spec_level_whole_file_ref() {
@@ -377,6 +378,7 @@ fn parse_spec_level_whole_file_ref() {
         .stdout(predicates::str::contains("test-spec"));
 }
 
+// @minter:e2e parse-spec-level-anchor-ref
 /// nfr-cross-reference: parse-spec-level-anchor-ref
 #[test]
 fn parse_spec_level_anchor_ref() {
@@ -390,6 +392,7 @@ fn parse_spec_level_anchor_ref() {
         .stdout(predicates::str::contains("test-spec"));
 }
 
+// @minter:e2e parse-spec-level-mixed-refs
 /// nfr-cross-reference: parse-spec-level-mixed-refs
 #[test]
 fn parse_spec_level_mixed_refs() {
@@ -403,6 +406,7 @@ fn parse_spec_level_mixed_refs() {
         .stdout(predicates::str::contains("test-spec"));
 }
 
+// @minter:e2e parse-spec-level-nfr-optional
 /// nfr-cross-reference: parse-spec-level-nfr-optional
 #[test]
 fn parse_spec_level_nfr_optional() {
@@ -410,6 +414,7 @@ fn parse_spec_level_nfr_optional() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
+// @minter:e2e parse-spec-level-nfr-position
 /// nfr-cross-reference: parse-spec-level-nfr-position
 #[test]
 fn parse_spec_level_nfr_position() {
@@ -424,6 +429,7 @@ fn parse_spec_level_nfr_position() {
         .stdout(predicates::str::contains("test-spec"));
 }
 
+// @minter:e2e reject-spec-level-override
 /// nfr-cross-reference: reject-spec-level-override
 #[test]
 fn reject_spec_level_override() {
@@ -442,6 +448,7 @@ fn reject_spec_level_override() {
 // Behavior-level nfr section parsing (behaviors 7-11, 26-27)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e parse-behavior-level-anchor-ref
 /// nfr-cross-reference: parse-behavior-level-anchor-ref
 #[test]
 fn parse_behavior_level_anchor_ref() {
@@ -455,6 +462,7 @@ fn parse_behavior_level_anchor_ref() {
         .stdout(predicates::str::contains("test-spec"));
 }
 
+// @minter:e2e parse-behavior-level-override
 /// nfr-cross-reference: parse-behavior-level-override
 #[test]
 fn parse_behavior_level_override() {
@@ -468,6 +476,7 @@ fn parse_behavior_level_override() {
         .stdout(predicates::str::contains("test-spec"));
 }
 
+// @minter:e2e parse-behavior-level-multiple-refs
 /// nfr-cross-reference: parse-behavior-level-multiple-refs
 #[test]
 fn parse_behavior_level_multiple_refs() {
@@ -481,6 +490,7 @@ fn parse_behavior_level_multiple_refs() {
         .stdout(predicates::str::contains("test-spec"));
 }
 
+// @minter:e2e parse-behavior-level-nfr-position
 /// nfr-cross-reference: parse-behavior-level-nfr-position
 #[test]
 fn parse_behavior_level_nfr_position() {
@@ -495,6 +505,7 @@ fn parse_behavior_level_nfr_position() {
         .stdout(predicates::str::contains("test-spec"));
 }
 
+// @minter:e2e parse-behavior-level-nfr-optional
 /// nfr-cross-reference: parse-behavior-level-nfr-optional
 #[test]
 fn parse_behavior_level_nfr_optional() {
@@ -502,6 +513,7 @@ fn parse_behavior_level_nfr_optional() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
+// @minter:e2e reject-behavior-level-whole-file-ref
 /// nfr-cross-reference: reject-behavior-level-whole-file-ref
 #[test]
 fn reject_behavior_level_whole_file_ref() {
@@ -516,6 +528,7 @@ fn reject_behavior_level_whole_file_ref() {
         .stderr(predicates::str::contains(path.to_str().unwrap()));
 }
 
+// @minter:e2e accept-behavior-level-anchor-only
 /// nfr-cross-reference: accept-behavior-level-anchor-only
 #[test]
 fn accept_behavior_level_anchor_only() {
@@ -528,6 +541,7 @@ fn accept_behavior_level_anchor_only() {
 // Cross-validation rule 1: Category exists (behaviors 12-13)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e resolve-category-to-nfr-file
 /// nfr-cross-reference: resolve-category-to-nfr-file
 #[test]
 fn resolve_category_to_nfr_file() {
@@ -539,6 +553,7 @@ fn resolve_category_to_nfr_file() {
     minter().arg("validate").arg(&dir_path).assert().success();
 }
 
+// @minter:e2e reject-missing-nfr-category-file
 /// nfr-cross-reference: reject-missing-nfr-category-file
 #[test]
 fn reject_missing_nfr_category_file() {
@@ -558,6 +573,7 @@ fn reject_missing_nfr_category_file() {
 // Cross-validation rule 2: Anchor exists (behaviors 14-15)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e resolve-anchor-to-constraint
 /// nfr-cross-reference: resolve-anchor-to-constraint
 #[test]
 fn resolve_anchor_to_constraint() {
@@ -569,6 +585,7 @@ fn resolve_anchor_to_constraint() {
     minter().arg("validate").arg(&dir_path).assert().success();
 }
 
+// @minter:e2e reject-missing-anchor
 /// nfr-cross-reference: reject-missing-anchor
 #[test]
 fn reject_missing_anchor() {
@@ -592,6 +609,7 @@ fn reject_missing_anchor() {
 // Cross-validation rule 3: Containment (behaviors 16-17)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e containment-satisfied
 /// nfr-cross-reference: containment-satisfied
 #[test]
 fn containment_satisfied() {
@@ -603,6 +621,7 @@ fn containment_satisfied() {
     minter().arg("validate").arg(&dir_path).assert().success();
 }
 
+// @minter:e2e reject-containment-violation
 /// nfr-cross-reference: reject-containment-violation
 #[test]
 fn reject_containment_violation() {
@@ -627,6 +646,7 @@ fn reject_containment_violation() {
 // Cross-validation rule 4: Overridable check (behaviors 18-19)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e override-allowed-on-overridable-yes
 /// nfr-cross-reference: override-allowed-on-overridable-yes
 #[test]
 fn override_allowed_on_overridable_yes() {
@@ -639,6 +659,7 @@ fn override_allowed_on_overridable_yes() {
     minter().arg("validate").arg(&dir_path).assert().success();
 }
 
+// @minter:e2e reject-override-on-overridable-no
 /// nfr-cross-reference: reject-override-on-overridable-no
 #[test]
 fn reject_override_on_overridable_no() {
@@ -660,6 +681,7 @@ fn reject_override_on_overridable_no() {
 // Cross-validation rule 5: Metric only (behaviors 20-21)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e override-allowed-on-metric
 /// nfr-cross-reference: override-allowed-on-metric
 #[test]
 fn override_allowed_on_metric() {
@@ -672,6 +694,7 @@ fn override_allowed_on_metric() {
     minter().arg("validate").arg(&dir_path).assert().success();
 }
 
+// @minter:e2e reject-override-on-rule
 /// nfr-cross-reference: reject-override-on-rule
 #[test]
 fn reject_override_on_rule() {
@@ -692,6 +715,7 @@ fn reject_override_on_rule() {
 // Cross-validation rule 6: Same operator (behaviors 22-23)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e override-same-operator
 /// nfr-cross-reference: override-same-operator
 #[test]
 fn override_same_operator() {
@@ -704,6 +728,7 @@ fn override_same_operator() {
     minter().arg("validate").arg(&dir_path).assert().success();
 }
 
+// @minter:e2e reject-override-mismatched-operator
 /// nfr-cross-reference: reject-override-mismatched-operator
 #[test]
 fn reject_override_mismatched_operator() {
@@ -729,6 +754,7 @@ fn reject_override_mismatched_operator() {
 // Cross-validation rule 7: Stricter value (behaviors 24-25)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e override-stricter-value
 /// nfr-cross-reference: override-stricter-value
 #[test]
 fn override_stricter_value() {
@@ -741,6 +767,7 @@ fn override_stricter_value() {
     minter().arg("validate").arg(&dir_path).assert().success();
 }
 
+// @minter:e2e reject-override-relaxed-value
 /// nfr-cross-reference: reject-override-relaxed-value
 #[test]
 fn reject_override_relaxed_value() {

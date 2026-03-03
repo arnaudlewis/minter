@@ -7,14 +7,14 @@ use predicates::prelude::*;
 // Header parsing — happy paths (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-spec-declaration
+// @minter:e2e parse-spec-declaration
 #[test]
 fn parse_spec_declaration() {
     let (_dir, path) = temp_spec("my-feature", VALID_SPEC);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-title
+// @minter:e2e parse-title
 #[test]
 fn parse_title() {
     let spec = "\
@@ -42,7 +42,7 @@ behavior do-thing [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-description-block
+// @minter:e2e parse-description-block
 #[test]
 fn parse_description_block() {
     let spec = "\
@@ -72,7 +72,7 @@ behavior do-thing [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-motivation-block
+// @minter:e2e parse-motivation-block
 #[test]
 fn parse_motivation_block() {
     let spec = "\
@@ -106,21 +106,21 @@ behavior do-thing [happy_path]
 // Behavior blocks — happy paths (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-behavior-declaration
+// @minter:e2e parse-behavior-declaration
 #[test]
 fn parse_behavior_declaration() {
     let (_dir, path) = temp_spec("behavior-test", VALID_SPEC);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-category-happy-path
+// @minter:e2e parse-category-happy-path
 #[test]
 fn parse_category_happy_path() {
     let (_dir, path) = temp_spec("cat-happy", VALID_SPEC);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-category-error-case
+// @minter:e2e parse-category-error-case
 #[test]
 fn parse_category_error_case() {
     let spec = "\
@@ -159,7 +159,7 @@ behavior fail-thing [error_case]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-category-edge-case
+// @minter:e2e parse-category-edge-case
 #[test]
 fn parse_category_edge_case() {
     let spec = "\
@@ -202,14 +202,14 @@ behavior weird-thing [edge_case]
 // Given section — happy paths (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-given-prose
+// @minter:e2e parse-given-prose
 #[test]
 fn parse_given_prose() {
     let (_dir, path) = temp_spec("given-prose", VALID_SPEC);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-given-alias-declaration
+// @minter:e2e parse-given-alias-declaration
 #[test]
 fn parse_given_alias_declaration() {
     let spec = "\
@@ -237,7 +237,7 @@ behavior with-alias [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-given-multiple-preconditions
+// @minter:e2e parse-given-multiple-preconditions
 #[test]
 fn parse_given_multiple_preconditions() {
     let spec = "\
@@ -270,7 +270,7 @@ behavior with-multi-given [happy_path]
 // When section — happy paths (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-when-action
+// @minter:e2e parse-when-action
 #[test]
 fn parse_when_action() {
     let spec = "\
@@ -298,7 +298,7 @@ behavior with-action [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-when-inputs
+// @minter:e2e parse-when-inputs
 #[test]
 fn parse_when_inputs() {
     let spec = "\
@@ -328,7 +328,7 @@ behavior with-inputs [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-when-alias-reference
+// @minter:e2e parse-when-alias-reference
 #[test]
 fn parse_when_alias_reference() {
     let spec = "\
@@ -361,7 +361,7 @@ behavior with-alias-ref [happy_path]
 // Then section — postcondition kinds (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-then-returns
+// @minter:e2e parse-then-returns
 #[test]
 fn parse_then_returns() {
     let spec = "\
@@ -390,14 +390,14 @@ behavior with-returns [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-then-emits
+// @minter:e2e parse-then-emits
 #[test]
 fn parse_then_emits() {
     let (_dir, path) = temp_spec("then-emits", VALID_SPEC);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-then-emits-process-exit
+// @minter:e2e parse-then-emits-process-exit
 #[test]
 fn parse_then_emits_process_exit() {
     let spec = "\
@@ -425,7 +425,7 @@ behavior with-exit [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-then-side-effect
+// @minter:e2e parse-then-side-effect
 #[test]
 fn parse_then_side_effect() {
     let spec = "\
@@ -453,7 +453,7 @@ behavior with-side-effect [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-multiple-then-blocks
+// @minter:e2e parse-multiple-then-blocks
 #[test]
 fn parse_multiple_then_blocks() {
     let spec = "\
@@ -488,7 +488,7 @@ behavior with-multi-then [happy_path]
 // Assertions — happy paths (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-assert-equals
+// @minter:e2e parse-assert-equals
 #[test]
 fn parse_assert_equals() {
     let spec = "\
@@ -516,7 +516,7 @@ behavior with-equals [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-assert-is-present
+// @minter:e2e parse-assert-is-present
 #[test]
 fn parse_assert_is_present() {
     let spec = "\
@@ -544,14 +544,14 @@ behavior with-is-present [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-assert-contains
+// @minter:e2e parse-assert-contains
 #[test]
 fn parse_assert_contains() {
     let (_dir, path) = temp_spec("assert-contains", VALID_SPEC);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-assert-in-range
+// @minter:e2e parse-assert-in-range
 #[test]
 fn parse_assert_in_range() {
     let spec = "\
@@ -579,7 +579,7 @@ behavior with-range [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-assert-matches-pattern
+// @minter:e2e parse-assert-matches-pattern
 #[test]
 fn parse_assert_matches_pattern() {
     let spec = "\
@@ -607,7 +607,7 @@ behavior with-pattern [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-assert-equals-ref
+// @minter:e2e parse-assert-equals-ref
 #[test]
 fn parse_assert_equals_ref() {
     let spec = "\
@@ -635,7 +635,7 @@ behavior with-ref-assert [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-assert-greater-or-equal
+// @minter:e2e parse-assert-greater-or-equal
 #[test]
 fn parse_assert_greater_or_equal() {
     let spec = "\
@@ -667,7 +667,7 @@ behavior with-gte [happy_path]
 // Dependencies — happy paths (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-depends-on
+// @minter:e2e parse-depends-on
 #[test]
 fn parse_depends_on() {
     let spec = "\
@@ -697,7 +697,7 @@ depends on user-auth >= 1.0.0
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-multiple-dependencies
+// @minter:e2e parse-multiple-dependencies
 #[test]
 fn parse_multiple_dependencies() {
     let spec = "\
@@ -732,7 +732,7 @@ depends on billing >= 2.0.0
 // Assertions — prose (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-assert-prose
+// @minter:e2e parse-assert-prose
 #[test]
 fn parse_assert_prose() {
     let spec = "\
@@ -765,7 +765,7 @@ behavior do-thing [happy_path]
 // Comments and structure — happy paths (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: ignore-comments
+// @minter:e2e ignore-comments
 #[test]
 fn ignore_comments() {
     let spec = "\
@@ -808,7 +808,7 @@ behavior another-thing [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: ignore-blank-lines
+// @minter:e2e ignore-blank-lines
 #[test]
 fn ignore_blank_lines() {
     let spec = "\
@@ -845,7 +845,7 @@ behavior do-thing [happy_path]
 // Format errors — error cases (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: reject-behavior-without-given
+// @minter:e2e reject-behavior-without-given
 #[test]
 fn reject_behavior_without_given() {
     let spec = "\
@@ -876,7 +876,7 @@ behavior bad [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-behavior-without-when
+// @minter:e2e reject-behavior-without-when
 #[test]
 fn reject_behavior_without_when() {
     let spec = "\
@@ -908,7 +908,7 @@ behavior bad [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-behavior-without-then
+// @minter:e2e reject-behavior-without-then
 #[test]
 fn reject_behavior_without_then() {
     let spec = "\
@@ -939,7 +939,7 @@ behavior bad [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-wrong-section-order
+// @minter:e2e reject-wrong-section-order
 #[test]
 fn reject_wrong_section_order() {
     let spec = "\
@@ -973,7 +973,7 @@ behavior bad [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-assert-without-field
+// @minter:e2e reject-assert-without-field
 #[test]
 fn reject_assert_without_field() {
     let spec = "\
@@ -1007,7 +1007,7 @@ behavior bad [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-unknown-assertion-operator
+// @minter:e2e reject-unknown-assertion-operator
 #[test]
 fn reject_unknown_assertion_operator() {
     let spec = "\
@@ -1041,7 +1041,7 @@ behavior bad [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-alias-without-entity
+// @minter:e2e reject-alias-without-entity
 #[test]
 fn reject_alias_without_entity() {
     let spec = "\
@@ -1075,7 +1075,7 @@ behavior bad [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-malformed-alias-reference
+// @minter:e2e reject-malformed-alias-reference
 #[test]
 fn reject_malformed_alias_reference() {
     let spec = "\
@@ -1110,7 +1110,7 @@ behavior bad [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-depends-on-without-version
+// @minter:e2e reject-depends-on-without-version
 #[test]
 fn reject_depends_on_without_version() {
     let spec = "\
@@ -1150,7 +1150,7 @@ depends on user-auth
 // Edge cases — header parsing (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-empty-description
+// @minter:e2e parse-empty-description
 #[test]
 fn parse_empty_description() {
     let spec = "\
@@ -1178,7 +1178,7 @@ behavior do-thing [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-unicode-in-quoted-strings
+// @minter:e2e parse-unicode-in-quoted-strings
 #[test]
 fn parse_unicode_in_quoted_strings() {
     let spec = "\
@@ -1206,7 +1206,7 @@ behavior do-thing [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-trailing-whitespace
+// @minter:e2e parse-trailing-whitespace
 #[test]
 fn parse_trailing_whitespace() {
     let spec = "spec test-spec v1.0.0\ntitle \"Test\"\n\ndescription\n  This has trailing spaces   \n  And more trailing spaces  \n\nmotivation\n  Test.\n\nbehavior do-thing [happy_path]\n  \"Do it\"\n\n  given\n    Ready\n\n  when act\n\n  then emits stdout\n    assert output contains \"done\"\n";
@@ -1214,7 +1214,7 @@ fn parse_trailing_whitespace() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: accept-two-space-indentation
+// @minter:e2e accept-two-space-indentation
 #[test]
 fn accept_two_space_indentation() {
     let spec = "\
@@ -1246,7 +1246,7 @@ behavior do-thing [happy_path]
 // Edge cases — given aliases (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-given-alias-single-property
+// @minter:e2e parse-given-alias-single-property
 #[test]
 fn parse_given_alias_single_property() {
     let spec = "\
@@ -1274,7 +1274,7 @@ behavior with-single-prop [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-given-alias-zero-properties
+// @minter:e2e parse-given-alias-zero-properties
 #[test]
 fn parse_given_alias_zero_properties() {
     let spec = "\
@@ -1306,7 +1306,7 @@ behavior with-empty-alias [happy_path]
 // Then section — plain (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: parse-then-plain
+// @minter:e2e parse-then-plain
 #[test]
 fn parse_then_plain() {
     let spec = "\
@@ -1339,7 +1339,7 @@ behavior with-plain-then [happy_path]
 // Format errors — structural rejections (spec-grammar.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: reject-tab-indentation
+// @minter:e2e reject-tab-indentation
 #[test]
 fn reject_tab_indentation() {
     let spec = "spec test-spec v1.0.0\ntitle \"Test\"\n\ndescription\n\tTab indented content.\n\nmotivation\n  Test.\n\nbehavior do-thing [happy_path]\n  \"Do it\"\n\n  given\n    Ready\n\n  when act\n\n  then emits stdout\n    assert output contains \"done\"\n";
@@ -1353,7 +1353,7 @@ fn reject_tab_indentation() {
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-missing-spec-declaration
+// @minter:e2e reject-missing-spec-declaration
 #[test]
 fn reject_missing_spec_declaration() {
     let spec = "\
@@ -1386,7 +1386,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-missing-title
+// @minter:e2e reject-missing-title
 #[test]
 fn reject_missing_title() {
     let spec = "\
@@ -1419,7 +1419,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-missing-description
+// @minter:e2e reject-missing-description
 #[test]
 fn reject_missing_description() {
     let spec = "\
@@ -1450,7 +1450,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-missing-motivation
+// @minter:e2e reject-missing-motivation
 #[test]
 fn reject_missing_motivation() {
     let spec = "\
@@ -1481,7 +1481,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: reject-behavior-without-description
+// @minter:e2e reject-behavior-without-description
 #[test]
 fn reject_behavior_without_description() {
     let spec = "\
@@ -1513,7 +1513,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// spec-grammar.spec: parse-spec-level-nfr-section
+// @minter:e2e parse-spec-level-nfr-section
 #[test]
 fn parse_spec_level_nfr_section() {
     let spec = "\
@@ -1545,7 +1545,7 @@ behavior do-thing [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: parse-behavior-level-nfr-section
+// @minter:e2e parse-behavior-level-nfr-section
 #[test]
 fn parse_behavior_level_nfr_section() {
     let spec = "\
@@ -1580,7 +1580,7 @@ behavior do-thing [happy_path]
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// spec-grammar.spec: reject-zero-indent-in-block
+// @minter:e2e reject-zero-indent-in-block
 #[test]
 fn reject_zero_indent_in_block() {
     let spec = "\

@@ -5,6 +5,8 @@ use std::time::Instant;
 
 use common::{minter, spec_with_n_behaviors, temp_dir_with_specs};
 
+// @minter:benchmark #performance#directory-validation-scaling
+
 /// performance.nfr: directory-validation-scaling
 /// Directory validation time must scale linearly with spec count.
 /// Benchmark: validate directories with 10 and 50 spec files, measure per-spec marginal cost.

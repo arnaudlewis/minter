@@ -7,7 +7,7 @@ use predicates::prelude::*;
 // Methodology topic (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// guide-command.spec: guide-methodology-prints-methodology
+// @minter:e2e guide-methodology-prints-methodology
 #[test]
 fn guide_methodology_prints_methodology() {
     minter()
@@ -20,7 +20,7 @@ fn guide_methodology_prints_methodology() {
         .stdout(predicate::str::contains("constraint"));
 }
 
-/// guide-command.spec: guide-methodology-describes-spec-role
+// @minter:e2e guide-methodology-describes-spec-role
 #[test]
 fn guide_methodology_describes_spec_role() {
     minter()
@@ -33,7 +33,7 @@ fn guide_methodology_describes_spec_role() {
         .stdout(predicate::str::contains("1 test").or(predicate::str::contains("one test")));
 }
 
-/// guide-command.spec: guide-methodology-describes-nfr-constraints
+// @minter:e2e guide-methodology-describes-nfr-constraints
 #[test]
 fn guide_methodology_describes_nfr_constraints() {
     minter()
@@ -46,7 +46,7 @@ fn guide_methodology_describes_nfr_constraints() {
         .stdout(predicate::str::contains("rule"));
 }
 
-/// guide-command.spec: guide-methodology-lists-nfr-categories
+// @minter:e2e guide-methodology-lists-nfr-categories
 #[test]
 fn guide_methodology_lists_nfr_categories() {
     minter()
@@ -66,7 +66,7 @@ fn guide_methodology_lists_nfr_categories() {
 // Cross-reference binding (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// guide-command.spec: guide-methodology-describes-spec-level-binding
+// @minter:e2e guide-methodology-describes-spec-level-binding
 #[test]
 fn guide_methodology_describes_spec_level_binding() {
     minter()
@@ -77,7 +77,7 @@ fn guide_methodology_describes_spec_level_binding() {
         .stdout(predicate::str::contains("all behaviors"));
 }
 
-/// guide-command.spec: guide-methodology-describes-behavior-level-binding
+// @minter:e2e guide-methodology-describes-behavior-level-binding
 #[test]
 fn guide_methodology_describes_behavior_level_binding() {
     minter()
@@ -88,7 +88,7 @@ fn guide_methodology_describes_behavior_level_binding() {
         .stdout(predicate::str::contains("anchor"));
 }
 
-/// guide-command.spec: guide-methodology-describes-whole-file-vs-anchor
+// @minter:e2e guide-methodology-describes-whole-file-vs-anchor
 #[test]
 fn guide_methodology_describes_whole_file_vs_anchor() {
     minter()
@@ -104,7 +104,7 @@ fn guide_methodology_describes_whole_file_vs_anchor() {
 // Validation rules (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// guide-command.spec: guide-methodology-describes-containment-rule
+// @minter:e2e guide-methodology-describes-containment-rule
 #[test]
 fn guide_methodology_describes_containment_rule() {
     minter()
@@ -115,7 +115,7 @@ fn guide_methodology_describes_containment_rule() {
         .stdout(predicate::str::contains("spec-level"));
 }
 
-/// guide-command.spec: guide-methodology-describes-override-rules
+// @minter:e2e guide-methodology-describes-override-rules
 #[test]
 fn guide_methodology_describes_override_rules() {
     minter()
@@ -132,7 +132,7 @@ fn guide_methodology_describes_override_rules() {
 // Test generation (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// guide-command.spec: guide-methodology-describes-test-emission
+// @minter:e2e guide-methodology-describes-test-emission
 #[test]
 fn guide_methodology_describes_test_emission() {
     minter()
@@ -147,7 +147,7 @@ fn guide_methodology_describes_test_emission() {
 // Reference syntax (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// guide-command.spec: guide-methodology-shows-reference-syntax
+// @minter:e2e guide-methodology-shows-reference-syntax
 #[test]
 fn guide_methodology_shows_reference_syntax() {
     minter()
@@ -165,7 +165,7 @@ fn guide_methodology_shows_reference_syntax() {
 // Workflow (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// guide-command.spec: guide-methodology-describes-workflow-phases
+// @minter:e2e guide-methodology-describes-workflow-phases
 #[test]
 fn guide_methodology_describes_workflow_phases() {
     minter()
@@ -179,7 +179,7 @@ fn guide_methodology_describes_workflow_phases() {
         .stdout(predicate::str::contains("Phase 5"));
 }
 
-/// guide-command.spec: guide-methodology-specs-before-code
+// @minter:e2e guide-methodology-specs-before-code
 #[test]
 fn guide_methodology_specs_before_code() {
     minter()
@@ -190,7 +190,7 @@ fn guide_methodology_specs_before_code() {
         .stdout(predicate::str::contains("implementation").or(predicate::str::contains("code")));
 }
 
-/// guide-command.spec: guide-methodology-red-tests
+// @minter:e2e guide-methodology-red-tests
 #[test]
 fn guide_methodology_red_tests() {
     minter()
@@ -208,7 +208,7 @@ fn guide_methodology_red_tests() {
 // Topic-specific guides (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// guide-command.spec: guide-workflow-topic
+// @minter:e2e guide-workflow-topic
 #[test]
 fn guide_workflow_topic() {
     minter()
@@ -219,7 +219,7 @@ fn guide_workflow_topic() {
         .stdout(predicate::str::contains("Phase 5"));
 }
 
-/// guide-command.spec: guide-authoring-topic
+// @minter:e2e guide-authoring-topic
 #[test]
 fn guide_authoring_topic() {
     minter()
@@ -229,7 +229,7 @@ fn guide_authoring_topic() {
         .stdout(predicate::str::contains("Right Granularity"));
 }
 
-/// guide-command.spec: guide-smells-topic
+// @minter:e2e guide-smells-topic
 #[test]
 fn guide_smells_topic() {
     minter()
@@ -239,7 +239,7 @@ fn guide_smells_topic() {
         .stdout(predicate::str::contains("Ambiguity"));
 }
 
-/// guide-command.spec: guide-nfr-topic
+// @minter:e2e guide-nfr-topic
 #[test]
 fn guide_nfr_topic() {
     minter()
@@ -249,7 +249,7 @@ fn guide_nfr_topic() {
         .stdout(predicate::str::contains("Seven Fixed Categories"));
 }
 
-/// guide-command.spec: guide-context-topic
+// @minter:e2e guide-context-topic
 #[test]
 fn guide_context_topic() {
     minter()
@@ -259,7 +259,7 @@ fn guide_context_topic() {
         .stdout(predicate::str::contains("Lazy Loading Sequence"));
 }
 
-/// guide-command.spec: guide-coverage-topic
+// @minter:e2e guide-coverage-topic
 #[test]
 fn guide_coverage_topic() {
     minter()
@@ -279,7 +279,7 @@ fn guide_coverage_topic() {
 // Error cases (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// guide-command.spec: guide-unknown-topic
+// @minter:e2e guide-command/guide-unknown-topic
 #[test]
 fn guide_unknown_topic() {
     minter()
@@ -289,7 +289,7 @@ fn guide_unknown_topic() {
         .stderr(predicate::str::contains("banana"));
 }
 
-/// guide-command.spec: guide-missing-topic
+// @minter:e2e guide-missing-topic
 #[test]
 fn guide_missing_topic() {
     minter()

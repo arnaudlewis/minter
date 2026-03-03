@@ -7,7 +7,7 @@ use predicates::prelude::*;
 // Happy paths (scaffold-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// scaffold-command.spec: scaffold-spec
+// @minter:e2e scaffold-spec
 #[test]
 fn scaffold_spec() {
     minter()
@@ -26,7 +26,7 @@ fn scaffold_spec() {
         .stdout(predicate::str::contains("nfr"));
 }
 
-/// scaffold-command.spec: scaffold-nfr-with-category
+// @minter:e2e scaffold-nfr-with-category
 #[test]
 fn scaffold_nfr_with_category() {
     minter()
@@ -43,7 +43,7 @@ fn scaffold_nfr_with_category() {
         .stdout(predicate::str::contains("overridable"));
 }
 
-/// scaffold-command.spec: scaffold-nfr-all-categories
+// @minter:e2e scaffold-nfr-all-categories
 #[test]
 fn scaffold_nfr_all_categories() {
     minter()
@@ -59,7 +59,7 @@ fn scaffold_nfr_all_categories() {
 // Error cases (scaffold-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// scaffold-command.spec: reject-unknown-nfr-category
+// @minter:e2e reject-unknown-nfr-category
 #[test]
 fn reject_unknown_nfr_category() {
     minter()
@@ -76,7 +76,7 @@ fn reject_unknown_nfr_category() {
         .stderr(predicate::str::contains("operability"));
 }
 
-/// scaffold-command.spec: reject-nfr-missing-category
+// @minter:e2e reject-nfr-missing-category
 #[test]
 fn reject_nfr_missing_category() {
     minter()
@@ -87,7 +87,7 @@ fn reject_nfr_missing_category() {
         .stderr(predicate::str::contains("category"));
 }
 
-/// scaffold-command.spec: reject-unknown-scaffold-type
+// @minter:e2e reject-unknown-scaffold-type
 #[test]
 fn reject_unknown_scaffold_type() {
     minter()
@@ -100,7 +100,7 @@ fn reject_unknown_scaffold_type() {
         .stderr(predicate::str::contains("nfr"));
 }
 
-/// scaffold-command.spec: scaffold-nfr-output-is-parseable
+// @minter:e2e scaffold-nfr-output-is-parseable
 #[test]
 fn scaffold_nfr_output_is_parseable() {
     let output = minter()
@@ -118,7 +118,7 @@ fn scaffold_nfr_output_is_parseable() {
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// scaffold-command.spec: scaffold-output-is-parseable
+// @minter:e2e scaffold-output-is-parseable
 #[test]
 fn scaffold_output_is_parseable() {
     // Run scaffold spec and capture the output

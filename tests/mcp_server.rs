@@ -560,6 +560,7 @@ constraint no-blocking-io [rule]
 // Server lifecycle tests (mcp-server.spec)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e initialize-server
 #[test]
 /// mcp-server: initialize-server
 fn initialize_server() {
@@ -579,6 +580,7 @@ fn initialize_server() {
     );
 }
 
+// @minter:e2e list-tools
 #[test]
 /// mcp-server: list-tools
 fn list_tools() {
@@ -616,6 +618,7 @@ fn list_tools() {
 // Validate tool tests (mcp-server.spec + mcp-response-format.spec)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e validate-file-pass
 #[test]
 /// mcp-server: validate-file-pass
 fn validate_file_pass() {
@@ -632,6 +635,7 @@ fn validate_file_pass() {
     assert!(data["results"][0]["errors"].as_array().unwrap().is_empty());
 }
 
+// @minter:e2e validate-file-fail
 #[test]
 /// mcp-server: validate-file-fail
 fn validate_file_fail() {
@@ -646,6 +650,7 @@ fn validate_file_fail() {
     assert!(!data["results"][0]["errors"].as_array().unwrap().is_empty());
 }
 
+// @minter:e2e validate-directory
 #[test]
 /// mcp-server: validate-directory
 fn validate_directory() {
@@ -667,6 +672,7 @@ fn validate_directory() {
     assert!(names.contains(&"performance"));
 }
 
+// @minter:e2e validate-deep-mode
 #[test]
 /// mcp-server: validate-deep-mode
 fn validate_deep_mode() {
@@ -692,6 +698,7 @@ fn validate_deep_mode() {
     assert!(names.contains(&"b-spec"), "should contain b-spec");
 }
 
+// @minter:e2e validate-nfr-file
 #[test]
 /// mcp-server: validate-nfr-file
 fn validate_nfr_file() {
@@ -707,6 +714,7 @@ fn validate_nfr_file() {
     assert!(data["results"][0]["constraint_count"].as_u64().unwrap() > 0);
 }
 
+// @minter:e2e validate-inline-content
 #[test]
 /// mcp-server: validate-inline-content
 fn validate_inline_content() {
@@ -721,6 +729,7 @@ fn validate_inline_content() {
     assert_eq!(data["results"][0]["name"], "test-spec");
 }
 
+// @minter:e2e validate-nonexistent-path
 #[test]
 /// mcp-server: validate-nonexistent-path
 fn validate_nonexistent_path() {
@@ -731,6 +740,7 @@ fn validate_nonexistent_path() {
     assert!(text.contains("nonexistent"), "error should mention path");
 }
 
+// @minter:e2e validate-mixed-results
 #[test]
 /// mcp-server: validate-mixed-results
 fn validate_mixed_results() {
@@ -752,6 +762,7 @@ fn validate_mixed_results() {
 
 // ── Validate result structure (mcp-response-format.spec) ────
 
+// @minter:e2e validate-pass-result-fields
 #[test]
 /// mcp-response-format: validate-pass-result-fields
 fn validate_pass_result_fields() {
@@ -775,6 +786,7 @@ fn validate_pass_result_fields() {
     assert!(r["errors"].as_array().unwrap().is_empty());
 }
 
+// @minter:e2e validate-nfr-result-fields
 #[test]
 /// mcp-response-format: validate-nfr-result-fields
 fn validate_nfr_result_fields() {
@@ -798,6 +810,7 @@ fn validate_nfr_result_fields() {
     assert!(r.get("behavior_count").is_none() || r["behavior_count"].is_null());
 }
 
+// @minter:e2e validate-summary-fields
 #[test]
 /// mcp-response-format: validate-summary-fields
 fn validate_summary_fields() {
@@ -816,6 +829,7 @@ fn validate_summary_fields() {
     assert_eq!(summary["failed"].as_u64().unwrap(), 1);
 }
 
+// @minter:e2e validate-deep-dependency-fields
 #[test]
 /// mcp-response-format: validate-deep-dependency-fields
 fn validate_deep_dependency_fields() {
@@ -842,6 +856,7 @@ fn validate_deep_dependency_fields() {
     assert!(b_deps.is_empty(), "b should have empty dependencies");
 }
 
+// @minter:e2e validate-inline-result-omits-file
 #[test]
 /// mcp-response-format: validate-inline-result-omits-file
 fn validate_inline_result_omits_file() {
@@ -863,6 +878,7 @@ fn validate_inline_result_omits_file() {
 
 // ── Error object structure (mcp-response-format.spec) ────
 
+// @minter:e2e error-object-fields
 #[test]
 /// mcp-response-format: error-object-fields
 fn error_object_fields() {
@@ -880,6 +896,7 @@ fn error_object_fields() {
     assert!(err["message"].is_string(), "error should have message");
 }
 
+// @minter:e2e error-object-includes-file-path
 #[test]
 /// mcp-response-format: error-object-includes-file-path
 fn error_object_includes_file_path() {
@@ -899,6 +916,7 @@ fn error_object_includes_file_path() {
     );
 }
 
+// @minter:e2e validate-fail-result-fields
 #[test]
 /// mcp-response-format: validate-fail-result-fields
 fn validate_fail_result_fields() {
@@ -941,6 +959,7 @@ behavior only-error [error_case]
     );
 }
 
+// @minter:e2e tool-error-structure
 #[test]
 /// mcp-response-format: tool-error-structure
 fn tool_error_structure() {
@@ -955,6 +974,7 @@ fn tool_error_structure() {
     );
 }
 
+// @minter:e2e tool-error-lists-valid-options
 #[test]
 /// mcp-response-format: tool-error-lists-valid-options
 fn tool_error_lists_valid_options() {
@@ -980,6 +1000,7 @@ fn tool_error_lists_valid_options() {
 // Inspect tool tests (mcp-server.spec + mcp-response-format.spec)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e inspect-spec-file
 #[test]
 /// mcp-server: inspect-spec-file
 fn inspect_spec_file() {
@@ -996,6 +1017,7 @@ fn inspect_spec_file() {
     assert!(data["dependencies"].is_array());
 }
 
+// @minter:e2e inspect-nfr-file
 #[test]
 /// mcp-server: inspect-nfr-file
 fn inspect_nfr_file() {
@@ -1012,6 +1034,7 @@ fn inspect_nfr_file() {
     assert_eq!(data["types"]["rule"].as_u64().unwrap(), 1);
 }
 
+// @minter:e2e inspect-inline-content
 #[test]
 /// mcp-server: inspect-inline-content
 fn inspect_inline_content() {
@@ -1025,6 +1048,7 @@ fn inspect_inline_content() {
     assert_eq!(data["name"], "test-spec");
 }
 
+// @minter:e2e inspect-invalid-file
 #[test]
 /// mcp-server: inspect-invalid-file
 fn inspect_invalid_file() {
@@ -1039,8 +1063,8 @@ fn inspect_invalid_file() {
     );
 }
 
+// @minter:e2e mcp-server/inspect-nonexistent-file
 #[test]
-/// mcp-server: inspect-nonexistent-file
 fn inspect_nonexistent_file() {
     let mut client = McpClient::new();
     let result = client.call_tool("inspect", json!({ "path": "/nonexistent/missing.spec" }));
@@ -1051,6 +1075,7 @@ fn inspect_nonexistent_file() {
 
 // ── Inspect result structure (mcp-response-format.spec) ────
 
+// @minter:e2e inspect-spec-result-fields
 #[test]
 /// mcp-response-format: inspect-spec-result-fields
 fn inspect_spec_result_fields() {
@@ -1082,6 +1107,7 @@ fn inspect_spec_result_fields() {
     assert!(at_strings.contains(&"is_present"));
 }
 
+// @minter:e2e inspect-nfr-result-fields
 #[test]
 /// mcp-response-format: inspect-nfr-result-fields
 fn inspect_nfr_result_fields() {
@@ -1100,6 +1126,7 @@ fn inspect_nfr_result_fields() {
     assert_eq!(data["types"]["rule"].as_u64().unwrap(), 1);
 }
 
+// @minter:e2e inspect-no-dependencies-field
 #[test]
 /// mcp-response-format: inspect-no-dependencies-field
 fn inspect_no_dependencies_field() {
@@ -1120,6 +1147,7 @@ fn inspect_no_dependencies_field() {
 // Scaffold tool tests (mcp-server.spec)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e scaffold-spec-template
 #[test]
 /// mcp-server: scaffold-spec-template
 fn scaffold_spec_template() {
@@ -1137,6 +1165,7 @@ fn scaffold_spec_template() {
     );
 }
 
+// @minter:e2e scaffold-nfr-template
 #[test]
 /// mcp-server: scaffold-nfr-template
 fn scaffold_nfr_template() {
@@ -1157,6 +1186,7 @@ fn scaffold_nfr_template() {
     );
 }
 
+// @minter:e2e scaffold-unknown-category
 #[test]
 /// mcp-server: scaffold-unknown-category
 fn scaffold_unknown_category() {
@@ -1173,6 +1203,7 @@ fn scaffold_unknown_category() {
 // Format tool tests (mcp-server.spec)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e format-spec-grammar
 #[test]
 /// mcp-server: format-spec-grammar
 fn format_spec_grammar() {
@@ -1190,6 +1221,7 @@ fn format_spec_grammar() {
     );
 }
 
+// @minter:e2e format-nfr-grammar
 #[test]
 /// mcp-server: format-nfr-grammar
 fn format_nfr_grammar() {
@@ -1207,6 +1239,7 @@ fn format_nfr_grammar() {
     );
 }
 
+// @minter:e2e format-unknown-type
 #[test]
 /// mcp-server: format-unknown-type
 fn format_unknown_type() {
@@ -1222,6 +1255,7 @@ fn format_unknown_type() {
 // Graph tool tests (mcp-server.spec + mcp-response-format.spec)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e graph-full-dependencies
 #[test]
 /// mcp-server: graph-full-dependencies
 fn graph_full_dependencies() {
@@ -1252,6 +1286,7 @@ fn graph_full_dependencies() {
     assert!(has_b_to_c, "should have edge from b to c");
 }
 
+// @minter:e2e graph-impacted-specs
 #[test]
 /// mcp-server: graph-impacted-specs
 fn graph_impacted_specs() {
@@ -1279,6 +1314,7 @@ fn graph_impacted_specs() {
     assert!(impacted.contains(&"c-spec"));
 }
 
+// @minter:e2e graph-unknown-spec
 #[test]
 /// mcp-server: graph-unknown-spec
 fn graph_unknown_spec() {
@@ -1296,6 +1332,7 @@ fn graph_unknown_spec() {
     assert!(text.contains("nonexistent"));
 }
 
+// @minter:e2e graph-empty-directory
 #[test]
 /// mcp-server: graph-empty-directory
 fn graph_empty_directory() {
@@ -1310,6 +1347,7 @@ fn graph_empty_directory() {
 
 // ── Graph result structure (mcp-response-format.spec) ────
 
+// @minter:e2e graph-full-result-fields
 #[test]
 /// mcp-response-format: graph-full-result-fields
 fn graph_full_result_fields() {
@@ -1346,6 +1384,7 @@ fn graph_full_result_fields() {
     assert_eq!(a_to_b["constraint"], ">= 1.0.0");
 }
 
+// @minter:e2e graph-impacted-result-fields
 #[test]
 /// mcp-response-format: graph-impacted-result-fields
 fn graph_impacted_result_fields() {
@@ -1369,6 +1408,7 @@ fn graph_impacted_result_fields() {
     }
 }
 
+// @minter:e2e graph-no-edges-result
 #[test]
 /// mcp-response-format: graph-no-edges-result
 fn graph_no_edges_result() {
@@ -1389,6 +1429,7 @@ fn graph_no_edges_result() {
 // Agent guidance tests (mcp-agent-guidance.spec)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e initialize-includes-methodology-instructions
 #[test]
 /// mcp-agent-guidance: initialize-includes-methodology-instructions
 fn initialize_includes_methodology_instructions() {
@@ -1406,6 +1447,7 @@ fn initialize_includes_methodology_instructions() {
     );
 }
 
+// @minter:e2e initialize-minter-returns-full-methodology
 #[test]
 /// mcp-agent-guidance: initialize-minter-returns-full-methodology
 fn initialize_minter_returns_full_methodology() {
@@ -1421,6 +1463,7 @@ fn initialize_minter_returns_full_methodology() {
     assert!(text.to_lowercase().contains("tdd"), "should mention TDD");
 }
 
+// @minter:e2e initialize-minter-lists-available-tools
 #[test]
 /// mcp-agent-guidance: initialize-minter-lists-available-tools
 fn initialize_minter_lists_available_tools() {
@@ -1435,6 +1478,7 @@ fn initialize_minter_lists_available_tools() {
     assert!(text.contains("graph"), "should list graph tool");
 }
 
+// @minter:e2e guide-workflow-phases
 #[test]
 /// mcp-agent-guidance: guide-workflow-phases
 fn guide_workflow_phases() {
@@ -1448,6 +1492,7 @@ fn guide_workflow_phases() {
     assert!(text.contains("test") || text.contains("Test"));
 }
 
+// @minter:e2e guide-spec-authoring
 #[test]
 /// mcp-agent-guidance: guide-spec-authoring
 fn guide_spec_authoring() {
@@ -1476,6 +1521,7 @@ fn guide_spec_authoring() {
     );
 }
 
+// @minter:e2e guide-requirements-smells
 #[test]
 /// mcp-agent-guidance: guide-requirements-smells
 fn guide_requirements_smells() {
@@ -1505,6 +1551,7 @@ fn guide_requirements_smells() {
     assert!(text.contains("Action") || text.contains("action"));
 }
 
+// @minter:e2e guide-nfr-design
 #[test]
 /// mcp-agent-guidance: guide-nfr-design
 fn guide_nfr_design() {
@@ -1576,6 +1623,7 @@ fn guide_nfr_design() {
     );
 }
 
+// @minter:e2e guide-context-management
 #[test]
 /// mcp-agent-guidance: guide-context-management
 fn guide_context_management() {
@@ -1602,8 +1650,8 @@ fn guide_context_management() {
     );
 }
 
+// @minter:e2e mcp-agent-guidance/guide-unknown-topic
 #[test]
-/// mcp-agent-guidance: guide-unknown-topic
 fn guide_unknown_topic() {
     let mut client = McpClient::new();
     let result = client.call_tool("guide", json!({ "topic": "banana" }));
@@ -1628,6 +1676,7 @@ fn guide_unknown_topic() {
     );
 }
 
+// @minter:e2e guide-coverage-tagging
 #[test]
 /// mcp-agent-guidance: guide-coverage-tagging
 fn guide_coverage_tagging() {
@@ -1654,6 +1703,7 @@ fn guide_coverage_tagging() {
     );
 }
 
+// @minter:e2e list-tools-includes-agent-guidance
 #[test]
 /// mcp-agent-guidance: list-tools-includes-agent-guidance
 fn list_tools_includes_agent_guidance() {
@@ -1692,6 +1742,7 @@ fn list_tools_includes_agent_guidance() {
 // Next-steps tests (mcp-agent-guidance.spec)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e next-steps-after-scaffold
 #[test]
 /// mcp-agent-guidance: next-steps-after-scaffold
 fn next_steps_after_scaffold() {
@@ -1709,6 +1760,7 @@ fn next_steps_after_scaffold() {
     );
 }
 
+// @minter:e2e next-steps-after-validate-pass
 #[test]
 /// mcp-agent-guidance: next-steps-after-validate-pass
 fn next_steps_after_validate_pass() {
@@ -1725,6 +1777,7 @@ fn next_steps_after_validate_pass() {
     assert!(steps.contains(&"tests must fail (red) before implementation"));
 }
 
+// @minter:e2e next-steps-after-validate-fail
 #[test]
 /// mcp-agent-guidance: next-steps-after-validate-fail
 fn next_steps_after_validate_fail() {
@@ -1741,6 +1794,7 @@ fn next_steps_after_validate_fail() {
     assert!(steps.contains(&"re-validate"));
 }
 
+// @minter:e2e next-steps-after-format
 #[test]
 /// mcp-agent-guidance: next-steps-after-format
 fn next_steps_after_format() {
@@ -1750,6 +1804,7 @@ fn next_steps_after_format() {
     assert!(text.contains("use this grammar to write your spec"));
 }
 
+// @minter:e2e next-steps-after-inspect
 #[test]
 /// mcp-agent-guidance: next-steps-after-inspect
 fn next_steps_after_inspect() {
@@ -1766,6 +1821,7 @@ fn next_steps_after_inspect() {
     assert!(steps.contains(&"add error_case behaviors for each happy path"));
 }
 
+// @minter:e2e next-steps-after-nfr-scaffold
 #[test]
 /// mcp-agent-guidance: next-steps-after-nfr-scaffold
 fn next_steps_after_nfr_scaffold() {
@@ -1784,6 +1840,7 @@ fn next_steps_after_nfr_scaffold() {
 // Cross-cutting format rules (mcp-response-format.spec)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e no-ansi-in-responses
 #[test]
 /// mcp-response-format: no-ansi-in-responses
 fn no_ansi_in_responses() {
@@ -1824,6 +1881,7 @@ fn no_ansi_in_responses() {
     );
 }
 
+// @minter:e2e snake-case-field-names
 #[test]
 /// mcp-response-format: snake-case-field-names
 fn snake_case_field_names() {
@@ -1860,6 +1918,7 @@ fn snake_case_field_names() {
     check_keys(&data);
 }
 
+// @minter:e2e consistent-count-field-naming
 #[test]
 /// mcp-response-format: consistent-count-field-naming
 fn consistent_count_naming() {
@@ -1889,6 +1948,7 @@ fn consistent_count_naming() {
     );
 }
 
+// @minter:e2e text-content-format
 #[test]
 /// mcp-response-format: text-content-format
 fn text_content_format() {
@@ -1915,6 +1975,7 @@ fn text_content_format() {
 // Security hardening tests (mcp-server.spec v1.3.0)
 // ════════════════════════════════════════════════════════
 
+// @minter:e2e validate-reject-non-spec-extension
 #[test]
 /// mcp-server: validate-reject-non-spec-extension
 fn validate_reject_non_spec_extension() {
@@ -1932,6 +1993,7 @@ fn validate_reject_non_spec_extension() {
     );
 }
 
+// @minter:e2e validate-reject-oversized-file
 #[test]
 /// mcp-server: validate-reject-oversized-file
 fn validate_reject_oversized_file() {
@@ -1948,6 +2010,7 @@ fn validate_reject_oversized_file() {
     assert!(text.contains("10MB"), "error should mention 10MB limit");
 }
 
+// @minter:e2e validate-reject-oversized-content
 #[test]
 /// mcp-server: validate-reject-oversized-content
 fn validate_reject_oversized_content() {
@@ -1963,6 +2026,7 @@ fn validate_reject_oversized_content() {
     assert!(text.contains("10MB"), "error should mention 10MB limit");
 }
 
+// @minter:e2e validate-reject-unreadable-file
 #[test]
 #[cfg(unix)]
 /// mcp-server: validate-reject-unreadable-file
@@ -1986,6 +2050,7 @@ fn validate_reject_unreadable_file() {
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
 }
 
+// @minter:e2e validate-content-takes-precedence
 #[test]
 /// mcp-server: validate-content-takes-precedence
 fn validate_content_takes_precedence() {
@@ -2031,6 +2096,7 @@ behavior do-override [happy_path]
     );
 }
 
+// @minter:e2e validate-reject-unknown-content-type
 #[test]
 /// mcp-server: validate-reject-unknown-content-type
 fn validate_reject_unknown_content_type() {
@@ -2047,6 +2113,7 @@ fn validate_reject_unknown_content_type() {
     );
 }
 
+// @minter:e2e validate-require-path-or-content
 #[test]
 /// mcp-server: validate-require-path-or-content
 fn validate_require_path_or_content() {
@@ -2060,6 +2127,7 @@ fn validate_require_path_or_content() {
 
 // ── Inspect security tests ─────────────────────────────
 
+// @minter:e2e inspect-reject-non-spec-extension
 #[test]
 /// mcp-server: inspect-reject-non-spec-extension
 fn inspect_reject_non_spec_extension() {
@@ -2077,6 +2145,7 @@ fn inspect_reject_non_spec_extension() {
     );
 }
 
+// @minter:e2e inspect-reject-oversized-file
 #[test]
 /// mcp-server: inspect-reject-oversized-file
 fn inspect_reject_oversized_file() {
@@ -2094,6 +2163,7 @@ fn inspect_reject_oversized_file() {
 
 // ── Scaffold edge case tests ───────────────────────────
 
+// @minter:e2e scaffold-nfr-missing-category
 #[test]
 /// mcp-server: scaffold-nfr-missing-category
 fn scaffold_nfr_missing_category() {
@@ -2104,6 +2174,7 @@ fn scaffold_nfr_missing_category() {
     assert!(text.contains("category"), "error should mention category");
 }
 
+// @minter:e2e scaffold-unknown-type
 #[test]
 /// mcp-server: scaffold-unknown-type
 fn scaffold_unknown_type() {
@@ -2116,6 +2187,7 @@ fn scaffold_unknown_type() {
 
 // ── Graph edge case tests ──────────────────────────────
 
+// @minter:e2e graph-impacted-transitive
 #[test]
 /// mcp-server: graph-impacted-transitive
 fn graph_impacted_transitive() {
@@ -2148,6 +2220,7 @@ fn graph_impacted_transitive() {
     );
 }
 
+// @minter:e2e graph-nonexistent-directory
 #[test]
 /// mcp-server: graph-nonexistent-directory
 fn graph_nonexistent_directory() {

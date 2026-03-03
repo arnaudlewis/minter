@@ -10,7 +10,7 @@ use predicates::prelude::*;
 // Happy paths (validate-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// validate-command.spec: validate-valid-spec
+// @minter:e2e validate-valid-spec
 #[test]
 fn validate_valid_spec() {
     let (_dir, path) = temp_spec("test-spec", VALID_SPEC);
@@ -22,7 +22,7 @@ fn validate_valid_spec() {
         .stdout(predicate::str::contains("test-spec"));
 }
 
-/// validate-command.spec: validate-multiple-files-all-valid
+// @minter:e2e validate-multiple-files-all-valid
 #[test]
 fn validate_multiple_files_all_valid() {
     let second_spec = "\
@@ -55,7 +55,7 @@ behavior other-thing [happy_path]
         .success();
 }
 
-/// validate-command.spec: validate-single-file-is-isolated
+// @minter:e2e validate-single-file-is-isolated
 #[test]
 fn validate_single_file_is_isolated() {
     let spec_a = "\
@@ -90,7 +90,7 @@ depends on b >= 1.0.0
         .stdout(predicate::str::contains("a"));
 }
 
-/// validate-command.spec: validate-deep-single-file
+// @minter:e2e validate-deep-single-file
 #[test]
 fn validate_deep_single_file() {
     let spec_a = "\
@@ -152,7 +152,7 @@ behavior do-thing [happy_path]
     );
 }
 
-/// validate-command.spec: validate-directory-is-always-deep
+// @minter:e2e validate-directory-is-always-deep
 #[test]
 fn validate_directory_is_always_deep() {
     let spec_a = "\
@@ -209,7 +209,7 @@ behavior do-thing [happy_path]
     );
 }
 
-/// validate-command.spec: discover-specs-in-directory
+// @minter:e2e discover-specs-in-directory
 #[test]
 fn discover_specs_in_directory() {
     let spec_a = "\
@@ -268,7 +268,7 @@ behavior do-thing [happy_path]
 // Error cases — semantic validation (validate-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// validate-command.spec: reject-duplicate-behavior-names
+// @minter:e2e reject-duplicate-behavior-names
 #[test]
 fn reject_duplicate_behavior_names() {
     let spec = "\
@@ -314,7 +314,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// validate-command.spec: reject-unresolved-alias
+// @minter:e2e reject-unresolved-alias
 #[test]
 fn reject_unresolved_alias() {
     let spec = "\
@@ -349,7 +349,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// validate-command.spec: reject-duplicate-aliases
+// @minter:e2e reject-duplicate-aliases
 #[test]
 fn reject_duplicate_aliases() {
     let spec = "\
@@ -385,7 +385,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// validate-command.spec: reject-invalid-identity-name
+// @minter:e2e reject-invalid-identity-name
 #[test]
 fn reject_invalid_identity_name() {
     let spec = "\
@@ -419,7 +419,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// validate-command.spec: reject-invalid-semver
+// @minter:e2e reject-invalid-semver
 #[test]
 fn reject_invalid_semver() {
     let spec = "\
@@ -453,7 +453,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains(path.to_str().unwrap()));
 }
 
-/// validate-command.spec: reject-no-happy-path
+// @minter:e2e reject-no-happy-path
 #[test]
 fn reject_no_happy_path() {
     let spec = "\
@@ -491,7 +491,7 @@ behavior fail-thing [error_case]
 // Edge cases (validate-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// validate-command.spec: reject-nonexistent-file
+// @minter:e2e reject-nonexistent-file
 #[test]
 fn handle_nonexistent_file() {
     minter()
@@ -502,7 +502,7 @@ fn handle_nonexistent_file() {
         .stderr(predicate::str::contains("minter_nonexistent_file.spec"));
 }
 
-/// validate-command.spec: reject-unreadable-file
+// @minter:e2e reject-unreadable-file
 #[test]
 fn handle_unreadable_file() {
     let (_dir, path) = temp_spec("unreadable", VALID_SPEC);
@@ -523,7 +523,7 @@ fn handle_unreadable_file() {
         .stderr(predicate::str::contains("permission").or(predicate::str::contains("Permission")));
 }
 
-/// validate-command.spec: reject-empty-file
+// @minter:e2e reject-empty-file
 #[test]
 fn handle_empty_file() {
     let (_dir, path) = temp_spec("empty", "");
@@ -535,7 +535,7 @@ fn handle_empty_file() {
         .stderr(predicate::str::is_empty().not());
 }
 
-/// validate-command.spec: report-all-errors
+// @minter:e2e report-all-errors
 #[test]
 fn report_all_errors() {
     // Three independent semantic errors: bad name, bad version, no happy_path
@@ -579,7 +579,7 @@ behavior fail-thing [error_case]
     );
 }
 
-/// validate-command.spec: skip-semantic-when-parse-fails
+// @minter:e2e skip-semantic-when-parse-fails
 #[test]
 fn skip_semantic_when_parse_fails() {
     // Has a parse error (unknown keyword) AND would fail semantics
@@ -623,7 +623,7 @@ behavior fail-thing [error_case]
     );
 }
 
-/// validate-command.spec: exit-1-when-any-file-invalid
+// @minter:e2e exit-1-when-any-file-invalid
 #[test]
 fn exit_1_when_any_file_invalid() {
     let invalid_spec = "\
@@ -657,7 +657,7 @@ behavior fail-thing [error_case]
         .stderr(predicate::str::contains("happy_path"));
 }
 
-/// validate-command.spec: validate-all-files-independently
+// @minter:e2e validate-all-files-independently
 #[test]
 fn validate_all_files_independently() {
     let invalid_spec = "\
@@ -704,7 +704,7 @@ behavior fail-thing [error_case]
     );
 }
 
-/// validate-command.spec: validate-directory-with-invalid
+// @minter:e2e validate-directory-with-invalid
 #[test]
 fn validate_directory_with_invalid() {
     let invalid_spec = "\
@@ -750,7 +750,7 @@ behavior fail-thing [error_case]
     );
 }
 
-/// validate-command.spec: reject-empty-directory
+// @minter:e2e reject-empty-directory
 #[test]
 fn handle_empty_directory() {
     let dir = tempfile::TempDir::new().expect("create temp dir");
@@ -763,7 +763,7 @@ fn handle_empty_directory() {
         .stderr(predicate::str::contains("no .spec").or(predicate::str::contains("no spec files")));
 }
 
-/// validate-command.spec: reject-nonexistent-directory
+// @minter:e2e reject-nonexistent-directory
 #[test]
 fn handle_nonexistent_directory() {
     let nonexistent = "/tmp/minter_nonexistent_dir_test";
@@ -779,14 +779,14 @@ fn handle_nonexistent_directory() {
 // NFR validation (validate-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// validate-command.spec: validate-valid-nfr
+// @minter:e2e validate-valid-nfr
 #[test]
 fn validate_valid_nfr() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
     minter().arg("validate").arg(&path).assert().success();
 }
 
-/// validate-command.spec: validate-nfr-single-file-is-isolated
+// @minter:e2e validate-nfr-single-file-is-isolated
 #[test]
 fn validate_nfr_single_file_is_isolated() {
     // NFR files have no dependency graph — always isolated
@@ -799,7 +799,7 @@ fn validate_nfr_single_file_is_isolated() {
         .success();
 }
 
-/// validate-command.spec: reject-invalid-nfr
+// @minter:e2e reject-invalid-nfr
 #[test]
 fn reject_invalid_nfr() {
     let content = "\
@@ -834,7 +834,7 @@ constraint c [rule]
         .stderr(predicate::str::contains("Invalid category"));
 }
 
-/// validate-command.spec: discover-nfr-in-directory
+// @minter:e2e discover-nfr-in-directory
 #[test]
 fn discover_nfr_in_directory() {
     let dir = tempfile::TempDir::new().expect("create temp dir");
@@ -849,7 +849,7 @@ fn discover_nfr_in_directory() {
         .stdout(predicate::str::contains("performance"));
 }
 
-/// validate-command.spec: validate-cross-references-in-directory
+// @minter:e2e validate-cross-references-in-directory
 #[test]
 fn validate_cross_references_in_directory() {
     let spec_content = "\
@@ -897,7 +897,7 @@ behavior do-thing [happy_path]
     );
 }
 
-/// validate-command.spec: reject-broken-cross-reference
+// @minter:e2e reject-broken-cross-reference
 #[test]
 fn reject_broken_cross_reference() {
     let spec_content = "\
@@ -936,7 +936,7 @@ behavior do-thing [happy_path]
         .stderr(predicate::str::contains("reliability"));
 }
 
-/// validate-command.spec: validate-mixed-spec-and-nfr-directory
+// @minter:e2e validate-mixed-spec-and-nfr-directory
 #[test]
 fn validate_mixed_spec_and_nfr_directory() {
     let dir = tempfile::TempDir::new().expect("create temp dir");
@@ -963,7 +963,6 @@ fn validate_mixed_spec_and_nfr_directory() {
     );
 }
 
-/// validate-command.spec: validate-file-exceeds-max-size
 #[test]
 fn validate_file_exceeds_max_size() {
     let dir = tempfile::TempDir::new().expect("create temp dir");
@@ -981,7 +980,6 @@ fn validate_file_exceeds_max_size() {
         ));
 }
 
-/// dependency-resolution.spec: reject-excessive-depth
 #[test]
 fn reject_excessive_depth() {
     let dir = tempfile::TempDir::new().expect("create temp dir");

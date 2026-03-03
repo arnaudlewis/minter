@@ -79,7 +79,7 @@ fn spec_with_dep(name: &str, version: &str, deps: &[(&str, &str)]) -> String {
 // Success output (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: display-success-line
+// @minter:e2e display-success-line
 #[test]
 fn display_success_line() {
     let spec = spec_with_behaviors("my-feature", "1.2.0", 12);
@@ -95,7 +95,7 @@ fn display_success_line() {
         ));
 }
 
-/// cli-display.spec: display-singular-behavior-count
+// @minter:e2e display-singular-behavior-count
 #[test]
 fn display_singular_behavior_count() {
     let spec = spec_with_behaviors("single-case", "1.0.0", 1);
@@ -115,7 +115,7 @@ fn display_singular_behavior_count() {
 // Failure output (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: display-failure-line
+// @minter:e2e display-failure-line
 #[test]
 fn display_failure_line() {
     let spec = failing_spec("broken-feature", "2.0.0");
@@ -129,7 +129,7 @@ fn display_failure_line() {
         .stdout(predicate::str::contains("✗ broken-feature v2.0.0"));
 }
 
-/// cli-display.spec: display-errors-on-stderr
+// @minter:e2e display-errors-on-stderr
 #[test]
 fn display_errors_on_stderr() {
     let spec = failing_spec("broken-feature", "2.0.0");
@@ -156,7 +156,7 @@ fn display_errors_on_stderr() {
 // Dependency tree (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: display-dependency-tree
+// @minter:e2e display-dependency-tree
 #[test]
 fn display_dependency_tree() {
     let a = spec_with_dep("a", "1.0.0", &[("b", "1.0.0")]);
@@ -186,7 +186,7 @@ fn display_dependency_tree() {
     assert!(stdout.contains("c"), "Missing 'c' in tree output: {stdout}");
 }
 
-/// cli-display.spec: display-first-occurrence-expanded
+// @minter:e2e display-first-occurrence-expanded
 #[test]
 fn display_first_occurrence_expanded() {
     let a = spec_with_dep("a", "1.0.0", &[("b", "1.0.0")]);
@@ -210,7 +210,7 @@ fn display_first_occurrence_expanded() {
     );
 }
 
-/// cli-display.spec: display-repeated-dep-dimmed
+// @minter:e2e display-repeated-dep-dimmed
 /// b is expanded at depth 1 (shallowest), dimmed at depth 2 under c.
 /// Dep order is c before b to ensure shallowest wins over traversal order.
 #[test]
@@ -258,7 +258,7 @@ fn display_repeated_dep_dimmed() {
     );
 }
 
-/// cli-display.spec: display-repeated-dep-preserves-status
+// @minter:e2e display-repeated-dep-preserves-status
 #[test]
 fn display_repeated_dep_preserves_status() {
     // a depends on b and c; c also depends on b; b fails validation
@@ -290,7 +290,7 @@ fn display_repeated_dep_preserves_status() {
     );
 }
 
-/// cli-display.spec: display-tree-error-on-stderr
+// @minter:e2e display-tree-error-on-stderr
 #[test]
 fn display_tree_error_on_stderr() {
     let a = spec_with_dep("a", "1.0.0", &[("b", "1.0.0")]);
@@ -317,7 +317,7 @@ fn display_tree_error_on_stderr() {
 // Channel separation (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: separate-result-and-errors
+// @minter:e2e separate-result-and-errors
 #[test]
 fn separate_result_and_errors() {
     let (_dir, path) = temp_spec("test-spec", VALID_SPEC);
@@ -343,7 +343,7 @@ fn separate_result_and_errors() {
 // Directory tree output (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: skip-already-shown-root
+// @minter:e2e skip-already-shown-root
 #[test]
 fn skip_already_shown_root() {
     // a depends on b; b has no deps. Both are files in the directory.
@@ -393,7 +393,7 @@ fn skip_already_shown_root() {
 // ANSI color output (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: color-success-checkmark-green
+// @minter:e2e color-success-checkmark-green
 #[test]
 fn color_success_checkmark_green() {
     let spec = spec_with_behaviors("valid", "1.0.0", 1);
@@ -416,7 +416,7 @@ fn color_success_checkmark_green() {
     );
 }
 
-/// cli-display.spec: color-failure-cross-red
+// @minter:e2e color-failure-cross-red
 #[test]
 fn color_failure_cross_red() {
     let spec = failing_spec("broken", "1.0.0");
@@ -443,7 +443,7 @@ fn color_failure_cross_red() {
 // No-color mode (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: no-color-mode
+// @minter:e2e no-color-mode
 #[test]
 fn no_color_mode() {
     let spec = spec_with_behaviors("plain", "1.0.0", 1);
@@ -474,7 +474,7 @@ fn no_color_mode() {
 // Dependency count (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: display-dependency-count
+// @minter:e2e display-dependency-count
 #[test]
 fn display_dependency_count() {
     let a = spec_with_dep("a", "1.0.0", &[("b", "1.0.0"), ("c", "1.0.0")]);
@@ -503,7 +503,7 @@ fn display_dependency_count() {
 // Long spec name (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: display-long-spec-name
+// @minter:e2e display-long-spec-name
 #[test]
 fn display_long_spec_name() {
     let long_name = "my-very-long-feature-name-that-exceeds-typical-width";
@@ -524,7 +524,7 @@ fn display_long_spec_name() {
 // NFR display output (cli-display.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// cli-display.spec: display-nfr-success-line
+// @minter:e2e display-nfr-success-line
 #[test]
 fn display_nfr_success_line() {
     let content = "\
@@ -605,7 +605,7 @@ constraint c4 [rule]
         ));
 }
 
-/// cli-display.spec: display-nfr-singular-constraint-count
+// @minter:e2e display-nfr-singular-constraint-count
 #[test]
 fn display_nfr_singular_constraint_count() {
     let content = "\
@@ -641,7 +641,7 @@ constraint one-rule [rule]
         .stdout(predicate::str::contains("✓ security v1.0.0 (1 constraint)"));
 }
 
-/// cli-display.spec: display-nfr-failure-line
+// @minter:e2e display-nfr-failure-line
 #[test]
 fn display_nfr_failure_line() {
     // NFR with non-kebab constraint name triggers semantic error

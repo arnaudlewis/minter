@@ -39,7 +39,7 @@ behavior do-thing [happy_path]
 // dependency-resolution.spec: incremental validation behaviors
 // ═══════════════════════════════════════════════════════════════
 
-/// dependency-resolution.spec: cache-integrates-new-files
+// @minter:e2e cache-integrates-new-files
 #[test]
 fn integrate_new_spec_file() {
     let (dir, dir_path) = temp_dir_with_specs(&[("a", &valid_spec("a", "1.0.0", None))]);

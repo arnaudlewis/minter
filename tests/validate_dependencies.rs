@@ -63,7 +63,7 @@ behavior do-thing [happy_path]
 // Happy paths (dependency-resolution.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dependency-resolution.spec: resolve-direct-dependencies
+// @minter:e2e resolve-direct-dependencies
 #[test]
 fn validate_spec_then_resolve_deps() {
     let (_dir, paths) = temp_specs(&[
@@ -80,7 +80,7 @@ fn validate_spec_then_resolve_deps() {
         .stdout(predicate::str::contains("provider"));
 }
 
-/// dependency-resolution.spec: resolve-by-name-in-tree
+// @minter:e2e resolve-by-name-in-tree
 #[test]
 fn resolve_by_name_in_tree() {
     let (_dir, paths) = temp_specs(&[
@@ -95,7 +95,7 @@ fn resolve_by_name_in_tree() {
         .success();
 }
 
-/// dependency-resolution.spec: resolve-transitive-dependencies
+// @minter:e2e resolve-transitive-dependencies
 #[test]
 fn resolve_transitive_dependencies() {
     let a_spec = "\
@@ -174,7 +174,7 @@ behavior do-thing [happy_path]
         .success();
 }
 
-/// dependency-resolution.spec: version-constraint-satisfied
+// @minter:e2e version-constraint-satisfied
 #[test]
 fn version_constraint_satisfied() {
     let (_dir, paths) = temp_specs(&[
@@ -189,7 +189,7 @@ fn version_constraint_satisfied() {
         .success();
 }
 
-/// dependency-resolution.spec: version-constraint-exact-match
+// @minter:e2e version-constraint-exact-match
 #[test]
 fn version_constraint_exact_match() {
     let (_dir, paths) = temp_specs(&[
@@ -204,7 +204,7 @@ fn version_constraint_exact_match() {
         .success();
 }
 
-/// dependency-resolution.spec: version-constraint-patch-higher
+// @minter:e2e version-constraint-patch-higher
 #[test]
 fn version_constraint_patch_higher() {
     let (_dir, paths) = temp_specs(&[
@@ -219,7 +219,7 @@ fn version_constraint_patch_higher() {
         .success();
 }
 
-/// dependency-resolution.spec: reject-version-below-constraint
+// @minter:e2e reject-version-below-constraint
 #[test]
 fn reject_version_below_constraint() {
     let (_dir, paths) = temp_specs(&[
@@ -237,7 +237,7 @@ fn reject_version_below_constraint() {
         .stderr(predicate::str::contains("0.9.0"));
 }
 
-/// dependency-resolution.spec: reject-transitive-cycle
+// @minter:e2e reject-transitive-cycle
 #[test]
 fn reject_transitive_cycle() {
     let a_spec = "\
@@ -322,7 +322,7 @@ depends on a >= 1.0.0
         .stderr(predicate::str::contains("c"));
 }
 
-/// dependency-resolution.spec: folder-automatically-resolves-dependencies
+// @minter:e2e folder-automatically-resolves-dependencies
 #[test]
 fn folder_automatically_resolves_dependencies() {
     let a_spec = "\
@@ -383,7 +383,7 @@ behavior do-thing [happy_path]
 // Error cases (dependency-resolution.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dependency-resolution.spec: reject-missing-dependency
+// @minter:e2e reject-missing-dependency
 #[test]
 fn reject_missing_dependency() {
     let (_dir, path) = temp_spec("consumer", &consumer_spec("nonexistent", "1.0.0"));
@@ -396,7 +396,7 @@ fn reject_missing_dependency() {
         .stderr(predicate::str::contains("nonexistent"));
 }
 
-/// dependency-resolution.spec: reject-incompatible-version
+// @minter:e2e reject-incompatible-version
 #[test]
 fn reject_incompatible_version() {
     let (_dir, paths) = temp_specs(&[
@@ -413,7 +413,7 @@ fn reject_incompatible_version() {
         .stderr(predicate::str::contains("2.0.0").or(predicate::str::contains("1.5.0")));
 }
 
-/// dependency-resolution.spec: reject-cyclic-dependencies
+// @minter:e2e reject-cyclic-dependencies
 #[test]
 fn reject_cyclic_dependencies() {
     let a_spec = "\
@@ -472,7 +472,7 @@ depends on a >= 1.0.0
         .stderr(predicate::str::contains("cycle").or(predicate::str::contains("cycl")));
 }
 
-/// dependency-resolution.spec: reject-invalid-dependency-spec
+// @minter:e2e reject-invalid-dependency-spec
 #[test]
 fn reject_invalid_dependency_spec() {
     // Provider exists but has no happy_path (semantic error)
@@ -514,7 +514,7 @@ behavior fail-thing [error_case]
 // Edge cases (dependency-resolution.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dependency-resolution.spec: skip-deps-when-spec-invalid
+// @minter:e2e skip-deps-when-spec-invalid
 #[test]
 fn skip_deps_when_spec_invalid() {
     // Spec has a parse error — deps should not be checked
@@ -555,7 +555,7 @@ frobnicate something
     );
 }
 
-/// dependency-resolution.spec: handle-no-dependencies
+// @minter:e2e handle-no-dependencies
 #[test]
 fn handle_no_dependencies() {
     let spec = "\
@@ -589,7 +589,7 @@ behavior do-thing [happy_path]
         .stdout(predicate::str::contains("test-spec v1.0.0 (1 behavior)"));
 }
 
-/// dependency-resolution.spec: report-all-resolution-errors
+// @minter:e2e report-all-resolution-errors
 #[test]
 fn report_all_resolution_errors() {
     let spec = "\
@@ -639,7 +639,7 @@ depends on missing-three >= 1.0.0
 // Cross-directory and duplicate name tests (dependency-resolution.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dependency-resolution.spec: resolve-cross-directory-dependency
+// @minter:e2e resolve-cross-directory-dependency
 #[test]
 fn resolve_cross_directory_dependency() {
     let a_spec = "\
@@ -698,7 +698,7 @@ behavior do-thing [happy_path]
         .success();
 }
 
-/// dependency-resolution.spec: reject-duplicate-spec-names
+// @minter:e2e reject-duplicate-spec-names
 #[test]
 fn reject_duplicate_spec_names() {
     let spec_content = "\

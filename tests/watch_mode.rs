@@ -112,7 +112,7 @@ impl LineReceiver {
 // watch-mode.spec behaviors
 // ═══════════════════════════════════════════════════════════════
 
-/// watch-command.spec: watch-start-directory
+// @minter:e2e watch-start-directory
 #[test]
 fn watch_start() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -156,7 +156,7 @@ fn watch_start() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-revalidate-changed-file
+// @minter:e2e watch-revalidate-changed-file
 #[test]
 fn watch_incremental_revalidation() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -206,7 +206,7 @@ fn watch_incremental_revalidation() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-graceful-shutdown
+// @minter:e2e watch-graceful-shutdown
 #[test]
 fn watch_graceful_shutdown() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -262,7 +262,7 @@ fn watch_graceful_shutdown() {
     );
 }
 
-/// watch-command.spec: watch-integrate-new-file
+// @minter:e2e watch-integrate-new-file
 #[test]
 fn watch_detect_new_file() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -304,7 +304,7 @@ fn watch_detect_new_file() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-report-broken-deps-on-delete
+// @minter:e2e watch-report-broken-deps-on-delete
 #[test]
 fn watch_report_broken_deps_on_delete() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -364,7 +364,7 @@ fn watch_report_broken_deps_on_delete() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-debounce-rapid-changes
+// @minter:e2e watch-debounce-rapid-changes
 #[test]
 fn watch_debounce() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -426,7 +426,7 @@ fn watch_debounce() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-file-fixed-invalid-to-valid
+// @minter:e2e watch-file-fixed-invalid-to-valid
 #[test]
 fn watch_revalidate_after_fix() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -481,7 +481,7 @@ const ANSI_RED: &str = "\x1b[31m";
 const ANSI_YELLOW: &str = "\x1b[33m";
 const ANSI_CYAN: &str = "\x1b[36m";
 
-/// cli-display.spec: color-banner-cyan
+// @minter:e2e color-banner-cyan
 #[test]
 fn watch_color_banner_cyan() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -515,7 +515,7 @@ fn watch_color_banner_cyan() {
     let _ = child.wait();
 }
 
-/// cli-display.spec: color-changed-file-yellow
+// @minter:e2e color-changed-file-yellow
 #[test]
 fn watch_color_changed_file_yellow() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -555,7 +555,7 @@ fn watch_color_changed_file_yellow() {
     let _ = child.wait();
 }
 
-/// cli-display.spec: color-new-file-cyan
+// @minter:e2e color-new-file-cyan
 #[test]
 fn watch_color_new_file_cyan() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -598,7 +598,7 @@ fn watch_color_new_file_cyan() {
     let _ = child.wait();
 }
 
-/// cli-display.spec: color-deleted-file-red
+// @minter:e2e color-deleted-file-red
 #[test]
 fn watch_color_deleted_file_red() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -639,7 +639,7 @@ fn watch_color_deleted_file_red() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-revalidate-subdirectory
+// @minter:e2e watch-revalidate-subdirectory
 #[test]
 fn watch_subdirectory_changes() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -690,7 +690,7 @@ fn watch_subdirectory_changes() {
 // watch-command.spec behaviors (new tests)
 // ═══════════════════════════════════════════════════════════════
 
-/// watch-command.spec: watch-start-single-file
+// @minter:e2e watch-start-single-file
 #[test]
 fn watch_start_single_file() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -736,7 +736,7 @@ fn watch_start_single_file() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-initial-validation
+// @minter:e2e watch-initial-validation
 #[test]
 fn watch_initial_validation() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -790,7 +790,7 @@ fn watch_initial_validation() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-file-regresses-valid-to-invalid
+// @minter:e2e watch-file-regresses-valid-to-invalid
 #[test]
 fn watch_file_regresses_valid_to_invalid() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -841,7 +841,7 @@ fn watch_file_regresses_valid_to_invalid() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-dependency-added
+// @minter:e2e watch-dependency-added
 #[test]
 fn watch_dependency_added() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -894,7 +894,7 @@ fn watch_dependency_added() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-dependency-removed
+// @minter:e2e watch-dependency-removed
 #[test]
 fn watch_dependency_removed() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -940,7 +940,7 @@ fn watch_dependency_removed() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-multiple-files-changed
+// @minter:e2e watch-multiple-files-changed
 #[test]
 fn watch_multiple_files_changed() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -990,7 +990,7 @@ fn watch_multiple_files_changed() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-nonexistent-path
+// @minter:e2e watch-nonexistent-path
 #[test]
 fn watch_nonexistent_path() {
     let output = Command::new(minter_bin())
@@ -1008,7 +1008,7 @@ fn watch_nonexistent_path() {
     assert!(!output.status.success(), "should exit with non-zero code");
 }
 
-/// watch-command.spec: watch-empty-directory
+// @minter:e2e watch-empty-directory
 #[test]
 fn watch_empty_directory() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1032,7 +1032,7 @@ fn watch_empty_directory() {
     );
 }
 
-/// watch-command.spec: watch-permission-denied-on-directory
+// @minter:e2e watch-permission-denied-on-directory
 #[test]
 fn watch_permission_denied_on_directory() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1068,7 +1068,7 @@ fn watch_permission_denied_on_directory() {
     );
 }
 
-/// watch-command.spec: watch-file-becomes-unreadable
+// @minter:e2e watch-file-becomes-unreadable
 #[test]
 fn watch_file_becomes_unreadable() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1126,7 +1126,7 @@ fn watch_file_becomes_unreadable() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-graph-persist-failure-on-shutdown
+// @minter:e2e watch-graph-persist-failure-on-shutdown
 #[test]
 fn watch_graph_persist_failure_on_shutdown() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1221,7 +1221,7 @@ fn watch_graph_persist_failure_on_shutdown() {
     }
 }
 
-/// watch-command.spec: watch-rebuild-stale-graph-entries
+// @minter:e2e watch-rebuild-stale-graph-entries
 #[test]
 fn watch_rebuild_stale_graph_entries() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1303,7 +1303,7 @@ constraint sample-constraint [metric]
     )
 }
 
-/// watch-command.spec: watch-discover-nfr-files
+// @minter:e2e watch-discover-nfr-files
 #[test]
 fn watch_discover_nfr_files() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1351,7 +1351,7 @@ fn watch_discover_nfr_files() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-revalidate-changed-nfr
+// @minter:e2e watch-revalidate-changed-nfr
 #[test]
 fn watch_revalidate_changed_nfr() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1405,7 +1405,7 @@ fn watch_revalidate_changed_nfr() {
     let _ = child.wait();
 }
 
-/// watch-command.spec: watch-integrate-new-nfr-file
+// @minter:e2e watch-integrate-new-nfr-file
 #[test]
 fn watch_integrate_new_nfr_file() {
     let dir = tempfile::TempDir::new().unwrap();

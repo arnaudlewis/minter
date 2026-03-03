@@ -177,6 +177,7 @@ constraint api-latency [metric]
 // Happy paths (coverage-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e report-full-coverage
 /// coverage-command: report-full-coverage
 #[test]
 fn report_full_coverage() {
@@ -201,6 +202,7 @@ fn report_full_coverage() {
         .stdout(predicate::str::contains("100"));
 }
 
+// @minter:e2e report-partial-coverage
 /// coverage-command: report-partial-coverage
 #[test]
 fn report_partial_coverage() {
@@ -226,6 +228,7 @@ fn report_partial_coverage() {
         .stdout(predicate::str::contains("2/3"));
 }
 
+// @minter:e2e group-by-spec
 /// coverage-command: group-by-spec
 #[test]
 fn group_by_spec() {
@@ -260,6 +263,7 @@ fn group_by_spec() {
         .stdout(predicate::str::contains("b v2.0.0"));
 }
 
+// @minter:e2e show-test-types
 /// coverage-command: show-test-types
 #[test]
 fn show_test_types() {
@@ -286,6 +290,7 @@ fn show_test_types() {
         .stdout(predicate::str::contains("e2e"));
 }
 
+// @minter:e2e show-summary
 /// coverage-command: show-summary
 #[test]
 fn show_summary() {
@@ -315,6 +320,7 @@ fn show_summary() {
         .stdout(predicate::str::contains("e2e"));
 }
 
+// @minter:e2e multiple-ids-in-one-tag
 /// coverage-command: multiple-ids-in-one-tag
 #[test]
 fn multiple_ids_in_one_tag() {
@@ -341,6 +347,7 @@ fn multiple_ids_in_one_tag() {
         .stdout(predicate::str::contains("2/2"));
 }
 
+// @minter:e2e scan-double-slash-comments
 /// coverage-command: scan-double-slash-comments
 #[test]
 fn scan_double_slash_comments() {
@@ -365,6 +372,7 @@ fn scan_double_slash_comments() {
         .stdout(predicate::str::contains("unit"));
 }
 
+// @minter:e2e scan-hash-comments
 /// coverage-command: scan-hash-comments
 #[test]
 fn scan_hash_comments() {
@@ -393,6 +401,7 @@ fn scan_hash_comments() {
 // Scan scoping (coverage-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e scope-scan-with-flag
 /// coverage-command: scope-scan-with-flag
 #[test]
 fn scope_scan_with_flag() {
@@ -425,6 +434,7 @@ fn scope_scan_with_flag() {
         .stdout(predicate::str::contains("e2e").not());
 }
 
+// @minter:e2e multiple-scan-flags
 /// coverage-command: multiple-scan-flags
 #[test]
 fn multiple_scan_flags() {
@@ -460,6 +470,7 @@ fn multiple_scan_flags() {
         .stdout(predicate::str::contains("benchmark"));
 }
 
+// @minter:e2e single-spec-file
 /// coverage-command: single-spec-file
 #[test]
 fn single_spec_file() {
@@ -486,6 +497,7 @@ fn single_spec_file() {
         .stdout(predicate::str::contains("unrelated").not());
 }
 
+// @minter:e2e skip-gitignored-paths
 /// coverage-command: skip-gitignored-paths
 #[test]
 fn skip_gitignored_paths() {
@@ -523,6 +535,7 @@ fn skip_gitignored_paths() {
 // NFR derived coverage (coverage-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e derive-nfr-from-covered-behavior
 /// coverage-command: derive-nfr-from-covered-behavior
 #[test]
 fn derive_nfr_from_covered_behavior() {
@@ -544,6 +557,7 @@ fn derive_nfr_from_covered_behavior() {
         .stdout(predicate::str::contains("do-thing"));
 }
 
+// @minter:e2e derive-nfr-uncovered-from-uncovered-behavior
 /// coverage-command: derive-nfr-uncovered-from-uncovered-behavior
 #[test]
 fn derive_nfr_uncovered_from_uncovered_behavior() {
@@ -569,6 +583,7 @@ fn derive_nfr_uncovered_from_uncovered_behavior() {
 // Benchmark NFR coverage (coverage-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e report-benchmark-nfr
 /// coverage-command: report-benchmark-nfr
 #[test]
 fn report_benchmark_nfr() {
@@ -603,6 +618,7 @@ fn report_benchmark_nfr() {
 // JSON output (coverage-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e json-output
 /// coverage-command: json-output
 #[test]
 fn json_output() {
@@ -634,6 +650,7 @@ fn json_output() {
 // Tag validation — error cases (coverage-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e reject-unknown-behavior-id
 /// coverage-command: reject-unknown-behavior-id
 #[test]
 fn reject_unknown_behavior_id() {
@@ -663,6 +680,7 @@ fn reject_unknown_behavior_id() {
         .stderr(predicate::str::contains("unknown"));
 }
 
+// @minter:e2e reject-unknown-nfr-constraint
 /// coverage-command: reject-unknown-nfr-constraint
 #[test]
 fn reject_unknown_nfr_constraint() {
@@ -693,6 +711,7 @@ fn reject_unknown_nfr_constraint() {
         .stderr(predicate::str::contains("unknown"));
 }
 
+// @minter:e2e reject-missing-type
 /// coverage-command: reject-missing-type
 #[test]
 fn reject_missing_type() {
@@ -718,6 +737,7 @@ fn reject_missing_type() {
         .stderr(predicate::str::contains("type"));
 }
 
+// @minter:e2e reject-invalid-type
 /// coverage-command: reject-invalid-type
 #[test]
 fn reject_invalid_type() {
@@ -747,6 +767,7 @@ fn reject_invalid_type() {
         .stderr(predicate::str::contains("invalid"));
 }
 
+// @minter:e2e reject-behavior-in-benchmark
 /// coverage-command: reject-behavior-in-benchmark
 #[test]
 fn reject_behavior_in_benchmark() {
@@ -776,6 +797,7 @@ fn reject_behavior_in_benchmark() {
         .stderr(predicate::str::contains("benchmark"));
 }
 
+// @minter:e2e reject-nfr-in-behavioral-tag
 /// coverage-command: reject-nfr-in-behavioral-tag
 #[test]
 fn reject_nfr_in_behavioral_tag() {
@@ -805,6 +827,7 @@ fn reject_nfr_in_behavioral_tag() {
         .stderr(predicate::str::contains("benchmark"));
 }
 
+// @minter:e2e reject-nonexistent-spec-path
 /// coverage-command: reject-nonexistent-spec-path
 #[test]
 fn reject_nonexistent_spec_path() {
@@ -819,6 +842,7 @@ fn reject_nonexistent_spec_path() {
         .stderr(predicate::str::contains("nonexistent"));
 }
 
+// @minter:e2e reject-no-specs-in-path
 /// coverage-command: reject-no-specs-in-path
 #[test]
 fn reject_no_specs_in_path() {
@@ -836,6 +860,7 @@ fn reject_no_specs_in_path() {
         .stderr(predicate::str::contains("no spec files found"));
 }
 
+// @minter:e2e reject-nonexistent-scan-path
 /// coverage-command: reject-nonexistent-scan-path
 #[test]
 fn reject_nonexistent_scan_path() {
@@ -860,6 +885,7 @@ fn reject_nonexistent_scan_path() {
         .stderr(predicate::str::contains("nonexistent"));
 }
 
+// @minter:e2e reject-invalid-format
 /// coverage-command: reject-invalid-format
 #[test]
 fn reject_invalid_format() {
@@ -885,6 +911,7 @@ fn reject_invalid_format() {
         .stderr(predicate::str::contains("invalid"));
 }
 
+// @minter:e2e report-tag-errors-with-location
 /// coverage-command: report-tag-errors-with-location
 #[test]
 fn report_tag_errors_with_location() {
@@ -920,6 +947,7 @@ fn report_tag_errors_with_location() {
 // Edge cases (coverage-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
+// @minter:e2e warn-empty-tag
 /// coverage-command: warn-empty-tag
 #[test]
 fn warn_empty_tag() {
@@ -947,6 +975,7 @@ fn warn_empty_tag() {
         .stdout(predicate::str::contains("1/1"));
 }
 
+// @minter:e2e info-duplicate-coverage
 /// coverage-command: info-duplicate-coverage
 #[test]
 fn info_duplicate_coverage() {
@@ -977,6 +1006,7 @@ fn info_duplicate_coverage() {
         .stdout(predicate::str::contains("duplicate"));
 }
 
+// @minter:e2e no-tags-found
 /// coverage-command: no-tags-found
 #[test]
 fn no_tags_found() {
@@ -1001,6 +1031,7 @@ fn no_tags_found() {
         .stdout(predicate::str::contains("0/2"));
 }
 
+// @minter:e2e disambiguate-with-qualified-name
 /// coverage-command: disambiguate-with-qualified-name
 #[test]
 fn disambiguate_with_qualified_name() {
@@ -1035,6 +1066,7 @@ fn disambiguate_with_qualified_name() {
         .stdout(predicate::str::contains("unit"));
 }
 
+// @minter:e2e reject-ambiguous-unqualified-name
 /// coverage-command: reject-ambiguous-unqualified-name
 #[test]
 fn reject_ambiguous_unqualified_name() {
@@ -1069,6 +1101,7 @@ fn reject_ambiguous_unqualified_name() {
         .stderr(predicate::str::contains("ambiguous"));
 }
 
+// @minter:e2e report-all-tag-errors
 /// coverage-command: report-all-tag-errors
 #[test]
 fn report_all_tag_errors() {
@@ -1105,6 +1138,7 @@ fn report_all_tag_errors() {
         .stderr(predicate::str::contains("b.test.ts"));
 }
 
+// @minter:e2e json-errors
 /// coverage-command: json-errors
 #[test]
 fn json_errors() {
@@ -1136,6 +1170,7 @@ fn json_errors() {
         .stdout(predicate::str::contains("nonexistent-behavior"));
 }
 
+// @minter:e2e mixed-valid-and-invalid-tags
 /// coverage-command: mixed-valid-and-invalid-tags
 #[test]
 fn mixed_valid_and_invalid_tags() {

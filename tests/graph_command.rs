@@ -64,7 +64,7 @@ behavior do-thing [happy_path]
     )
 }
 
-/// graph-command.spec: display-summary-header
+// @minter:e2e display-summary-header
 #[test]
 fn display_summary_header() {
     let spec_a = "\
@@ -244,7 +244,7 @@ constraint input-validation [metric]
     );
 }
 
-/// graph-command.spec: display-full-graph
+// @minter:e2e display-full-graph
 #[test]
 fn display_full_graph() {
     let spec_a = spec_with_dep("spec-a", "spec-b");
@@ -278,7 +278,7 @@ fn display_full_graph() {
     );
 }
 
-/// graph-command.spec: display-impacted-specs
+// @minter:e2e display-impacted-specs
 #[test]
 fn display_impacted_specs() {
     let spec_a = spec_with_dep("spec-a", "spec-b");
@@ -310,7 +310,7 @@ fn display_impacted_specs() {
     );
 }
 
-/// graph-command.spec: display-transitive-impacted
+// @minter:e2e display-transitive-impacted
 #[test]
 fn display_transitive_impacted() {
     let spec_a = spec_with_dep("spec-a", "spec-b");
@@ -341,7 +341,7 @@ fn display_transitive_impacted() {
     );
 }
 
-/// graph-command.spec: graph-persists-cache
+// @minter:e2e graph-persists-cache
 #[test]
 fn graph_persists_cache() {
     let spec_a = spec_with_dep("spec-a", "spec-b");
@@ -384,7 +384,7 @@ fn graph_persists_cache() {
 // Error cases (graph-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// graph-command.spec: impacted-unknown-spec
+// @minter:e2e impacted-unknown-spec
 #[test]
 fn impacted_unknown_spec() {
     let spec_a = spec_no_deps("spec-a");
@@ -401,7 +401,7 @@ fn impacted_unknown_spec() {
         .stderr(predicate::str::contains("not found"));
 }
 
-/// graph-command.spec: graph-no-specs
+// @minter:e2e graph-no-specs
 #[test]
 fn graph_no_specs() {
     let dir = TempDir::new().expect("create temp dir");
@@ -413,7 +413,7 @@ fn graph_no_specs() {
         .stderr(predicate::str::contains("no spec files"));
 }
 
-/// graph-command.spec: graph-no-dependencies
+// @minter:e2e graph-no-dependencies
 #[test]
 fn graph_no_dependencies() {
     let spec_a = spec_no_deps("spec-a");
@@ -540,7 +540,7 @@ constraint api-response-time [metric]
     )
 }
 
-/// graph-command.spec: display-nfr-refs-in-tree
+// @minter:e2e display-nfr-refs-in-tree
 #[test]
 fn display_nfr_refs_in_tree() {
     // spec-a references two anchors in performance + whole-file reliability
@@ -695,7 +695,7 @@ constraint graceful-recovery [rule]
     }
 }
 
-/// graph-command.spec: display-nfr-refs-hidden-when-spec-dimmed
+// @minter:e2e display-nfr-refs-hidden-when-spec-dimmed
 #[test]
 fn display_nfr_refs_hidden_when_spec_dimmed() {
     let spec_a = spec_with_dep_and_nfr("spec-a", "spec-b", &[]);
@@ -735,7 +735,7 @@ fn display_nfr_refs_hidden_when_spec_dimmed() {
     );
 }
 
-/// graph-command.spec: display-nfr-anchors-show-referenced-count
+// @minter:e2e display-nfr-anchors-show-referenced-count
 #[test]
 fn display_nfr_anchors_show_referenced_count() {
     // NFR file with 4 constraints
@@ -852,7 +852,7 @@ constraint error-rate [metric]
     );
 }
 
-/// graph-command.spec: display-nfr-whole-file-absorbs-anchors
+// @minter:e2e display-nfr-whole-file-absorbs-anchors
 #[test]
 fn display_nfr_whole_file_absorbs_anchors() {
     // NFR file with 3 constraints
@@ -967,7 +967,7 @@ behavior do-thing [happy_path]
     );
 }
 
-/// graph-command.spec: impacted-by-nfr
+// @minter:e2e impacted-by-nfr
 #[test]
 fn impacted_by_nfr() {
     let spec_a = spec_with_nfr("spec-a", &["performance#api-response-time"]);
@@ -1000,6 +1000,7 @@ fn impacted_by_nfr() {
     assert!(stdout.contains("[nfr]"), "header should show [nfr] tag");
 }
 
+// @minter:e2e single-file-resolves-nfr-from-sibling-dirs
 /// graph-command: single-file-resolves-nfr-from-sibling-dirs
 #[test]
 fn single_file_resolves_nfr_from_sibling_dir() {

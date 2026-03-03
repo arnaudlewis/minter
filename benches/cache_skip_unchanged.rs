@@ -5,6 +5,8 @@ use std::time::Instant;
 
 use common::{minter, spec_with_n_behaviors, temp_dir_with_specs};
 
+// @minter:benchmark #performance#cache-skip-unchanged
+
 /// performance.nfr: cache-skip-unchanged
 /// Unchanged spec files must skip parsing when a valid graph cache exists.
 ///

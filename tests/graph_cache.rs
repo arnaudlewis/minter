@@ -40,7 +40,7 @@ behavior do-thing [happy_path]
 // graph-cache.spec behaviors
 // ═══════════════════════════════════════════════════════════════
 
-/// dependency-resolution.spec: cache-directory-location
+// @minter:e2e cache-directory-location
 #[test]
 fn minter_directory_at_cwd() {
     // Create a project structure: project_root/specs/a.spec
@@ -73,7 +73,7 @@ fn minter_directory_at_cwd() {
     );
 }
 
-/// dependency-resolution.spec: cache-cold-start-creates-directory
+// @minter:e2e cache-cold-start-creates-directory
 #[test]
 fn create_minter_directory() {
     let (dir, dir_path) = temp_dir_with_specs(&[("a", &valid_spec("a", "1.0.0", None))]);
@@ -99,7 +99,7 @@ fn create_minter_directory() {
     );
 }
 
-/// dependency-resolution.spec: cache-produces-correct-results
+// @minter:e2e cache-produces-correct-results
 #[test]
 fn load_cached_graph() {
     let (dir, dir_path) = temp_dir_with_specs(&[("a", &valid_spec("a", "1.0.0", None))]);
@@ -142,7 +142,7 @@ fn load_cached_graph() {
     );
 }
 
-/// dependency-resolution.spec: cache-revalidates-modified-and-dependents
+// @minter:e2e cache-revalidates-modified-and-dependents
 #[test]
 fn write_updated_graph() {
     let (dir, dir_path) = temp_dir_with_specs(&[("a", &valid_spec("a", "1.0.0", None))]);
@@ -190,7 +190,7 @@ fn write_updated_graph() {
     );
 }
 
-/// dependency-resolution.spec: validate-without-deep-ignores-graph
+// @minter:e2e validate-without-deep-ignores-graph
 #[test]
 fn validate_without_deps_ignores_graph() {
     let (dir, _dir_path) = temp_dir_with_specs(&[("a", &valid_spec("a", "1.0.0", None))]);
@@ -237,7 +237,7 @@ fn validate_without_deps_ignores_graph() {
     );
 }
 
-/// dependency-resolution.spec: rebuild-on-corrupted-graph
+// @minter:e2e rebuild-on-corrupted-graph
 #[test]
 fn rebuild_on_corrupted_graph() {
     let (dir, dir_path) = temp_dir_with_specs(&[("a", &valid_spec("a", "1.0.0", None))]);
@@ -263,7 +263,7 @@ fn rebuild_on_corrupted_graph() {
     );
 }
 
-/// dependency-resolution.spec: rebuild-on-schema-mismatch
+// @minter:e2e rebuild-on-schema-mismatch
 #[test]
 fn rebuild_on_schema_mismatch() {
     let (dir, dir_path) = temp_dir_with_specs(&[("a", &valid_spec("a", "1.0.0", None))]);
@@ -359,7 +359,7 @@ behavior do-thing [happy_path]
     )
 }
 
-/// dependency-resolution.spec: cache-tracks-nfr-files
+// @minter:e2e cache-tracks-nfr-files
 #[test]
 fn cache_tracks_nfr_files() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -418,7 +418,7 @@ fn cache_tracks_nfr_files() {
     );
 }
 
-/// dependency-resolution.spec: cache-revalidates-on-nfr-change
+// @minter:e2e cache-revalidates-on-nfr-change
 #[test]
 fn cache_revalidates_on_nfr_change() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -481,7 +481,7 @@ fn cache_revalidates_on_nfr_change() {
     );
 }
 
-/// dependency-resolution.spec: cache-integrates-new-nfr-files
+// @minter:e2e cache-integrates-new-nfr-files
 #[test]
 fn cache_integrates_new_nfr_files() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -525,7 +525,7 @@ fn cache_integrates_new_nfr_files() {
     );
 }
 
-/// dependency-resolution.spec: cache-prunes-deleted-nfr-files
+// @minter:e2e cache-prunes-deleted-nfr-files
 #[test]
 fn cache_prunes_deleted_nfr_files() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -571,7 +571,7 @@ fn cache_prunes_deleted_nfr_files() {
     );
 }
 
-/// dependency-resolution.spec: rebuild-on-schema-mismatch (v2 cache auto-rebuilds to v3)
+// @minter:e2e rebuild-on-schema-mismatch
 #[test]
 fn rebuild_v2_cache_to_v3() {
     let dir = tempfile::TempDir::new().unwrap();

@@ -5,6 +5,8 @@ use std::time::Instant;
 
 use common::{minter, spec_with_n_behaviors, temp_dir_with_nested_specs};
 
+// @minter:benchmark #performance#single-discovery-pass
+
 /// performance.nfr: single-discovery-pass
 /// File discovery must traverse the directory tree at most once per validation invocation.
 /// With single discovery, per-spec cost is constant. With per-spec discovery, it grows with N.

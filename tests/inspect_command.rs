@@ -7,7 +7,7 @@ use predicates::prelude::*;
 // Happy paths (inspect-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// inspect-command.spec: inspect-behavior-count
+// @minter:e2e inspect-behavior-count
 #[test]
 fn inspect_behavior_count() {
     let spec = "\
@@ -62,7 +62,7 @@ behavior edge [edge_case]
         .stdout(predicate::str::contains("3 behaviors"));
 }
 
-/// inspect-command.spec: inspect-category-distribution
+// @minter:e2e inspect-category-distribution
 #[test]
 fn inspect_category_distribution() {
     let spec = "\
@@ -168,7 +168,7 @@ behavior edge1 [edge_case]
     assert!(stdout.contains("1"));
 }
 
-/// inspect-command.spec: inspect-dependencies
+// @minter:e2e inspect-dependencies
 #[test]
 fn inspect_dependencies() {
     let spec = "\
@@ -207,7 +207,7 @@ depends on billing >= 2.0.0
         .stdout(predicate::str::contains("2.0.0"));
 }
 
-/// inspect-command.spec: inspect-assertion-types
+// @minter:e2e inspect-assertion-types
 #[test]
 fn inspect_assertion_types() {
     let spec = "\
@@ -248,7 +248,7 @@ behavior do-thing [happy_path]
 // Error cases (inspect-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// inspect-command.spec: inspect-invalid-spec
+// @minter:e2e inspect-invalid-spec
 #[test]
 fn inspect_invalid_spec() {
     let (_dir, path) = temp_spec("broken", "this is not a valid spec");
@@ -260,7 +260,7 @@ fn inspect_invalid_spec() {
         .stderr(predicate::str::is_empty().not());
 }
 
-/// inspect-command.spec: inspect-nonexistent-file
+// @minter:e2e inspect-command/inspect-nonexistent-file
 #[test]
 fn inspect_nonexistent_file() {
     minter()
@@ -271,7 +271,7 @@ fn inspect_nonexistent_file() {
         .stderr(predicate::str::contains("missing.spec"));
 }
 
-/// inspect-command.spec: inspect-no-dependencies
+// @minter:e2e inspect-no-dependencies
 #[test]
 fn inspect_no_dependencies() {
     let spec = "\
@@ -308,7 +308,7 @@ behavior do-thing [happy_path]
 // NFR inspection (inspect-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// inspect-command.spec: inspect-nfr-constraint-count
+// @minter:e2e inspect-nfr-constraint-count
 #[test]
 fn inspect_nfr_constraint_count() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
@@ -320,7 +320,7 @@ fn inspect_nfr_constraint_count() {
         .stdout(predicate::str::contains("1 constraint"));
 }
 
-/// inspect-command.spec: inspect-nfr-type-distribution
+// @minter:e2e inspect-nfr-type-distribution
 #[test]
 fn inspect_nfr_type_distribution() {
     let content = "\
@@ -373,7 +373,7 @@ constraint rule-one [rule]
     assert!(stdout.contains("rule: 1"));
 }
 
-/// inspect-command.spec: inspect-nfr-category
+// @minter:e2e inspect-nfr-category
 #[test]
 fn inspect_nfr_category() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);
@@ -385,7 +385,7 @@ fn inspect_nfr_category() {
         .stdout(predicate::str::contains("category: performance"));
 }
 
-/// inspect-command.spec: inspect-nfr-no-dependencies
+// @minter:e2e inspect-nfr-no-dependencies
 #[test]
 fn inspect_nfr_no_dependencies() {
     let (_dir, path) = temp_nfr("perf", VALID_NFR);

@@ -5,6 +5,8 @@ use std::time::Instant;
 
 use common::{minter, spec_with_n_behaviors, temp_spec};
 
+// @minter:benchmark #performance#validation-latency
+
 /// performance.nfr: validation-latency
 /// Single-file validation must complete within 200ms.
 /// Benchmark: validate a 50-behavior spec file, p95 < 200ms across 20 runs.
