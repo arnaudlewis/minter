@@ -65,7 +65,7 @@ fn spawn_line_reader(reader: impl std::io::Read + Send + 'static) -> mpsc::Recei
 /// cli.spec: show-help
 #[test]
 fn show_help() {
-    // --help flag prints usage with all seven commands
+    // --help flag prints usage with all eight commands
     minter()
         .arg("--help")
         .assert()
@@ -77,7 +77,8 @@ fn show_help() {
         .stdout(predicate::str::contains("scaffold"))
         .stdout(predicate::str::contains("inspect"))
         .stdout(predicate::str::contains("graph"))
-        .stdout(predicate::str::contains("guide"));
+        .stdout(predicate::str::contains("guide"))
+        .stdout(predicate::str::contains("coverage"));
 
     // No arguments also prints usage
     minter()
@@ -122,6 +123,7 @@ fn validate_deep_flag_routing() {
 /// cli.spec: reject-unknown-command
 #[test]
 fn reject_unknown_command() {
+    // clap reports the unknown command name; it does not list all valid commands
     minter()
         .arg("frobnicate")
         .assert()
@@ -570,6 +572,180 @@ fn route_guide() {
         .success()
         .stdout(predicate::str::contains("spec"))
         .stdout(predicate::str::contains("NFR"));
+}
+
+/// cli.spec: route-coverage-directory
+#[test]
+fn route_coverage_directory() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let spec_dir = dir.path().join("specs");
+    std::fs::create_dir(&spec_dir).unwrap();
+    std::fs::write(
+        spec_dir.join("a.spec"),
+        "\
+spec a v1.0.0
+title \"A\"
+
+description
+  A.
+
+motivation
+  A.
+
+behavior do-thing [happy_path]
+  \"Does a thing\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+",
+    )
+    .unwrap();
+    std::fs::write(dir.path().join("a.test.ts"), "// @minter:unit do-thing\n").unwrap();
+
+    minter()
+        .arg("coverage")
+        .arg(&spec_dir)
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("do-thing"));
+}
+
+/// cli.spec: route-coverage-file
+#[test]
+fn route_coverage_file() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let spec_path = dir.path().join("a.spec");
+    std::fs::write(
+        &spec_path,
+        "\
+spec a v1.0.0
+title \"A\"
+
+description
+  A.
+
+motivation
+  A.
+
+behavior do-thing [happy_path]
+  \"Does a thing\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+",
+    )
+    .unwrap();
+    std::fs::write(dir.path().join("a.test.ts"), "// @minter:unit do-thing\n").unwrap();
+
+    minter()
+        .arg("coverage")
+        .arg(&spec_path)
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("do-thing"));
+}
+
+/// cli.spec: route-coverage-with-scan
+#[test]
+fn route_coverage_with_scan() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let spec_dir = dir.path().join("specs");
+    std::fs::create_dir(&spec_dir).unwrap();
+    std::fs::write(
+        spec_dir.join("a.spec"),
+        "\
+spec a v1.0.0
+title \"A\"
+
+description
+  A.
+
+motivation
+  A.
+
+behavior do-thing [happy_path]
+  \"Does a thing\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+",
+    )
+    .unwrap();
+    let tests_dir = dir.path().join("tests");
+    std::fs::create_dir(&tests_dir).unwrap();
+    std::fs::write(tests_dir.join("a.test.ts"), "// @minter:unit do-thing\n").unwrap();
+
+    minter()
+        .arg("coverage")
+        .arg(&spec_dir)
+        .arg("--scan")
+        .arg(&tests_dir)
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("do-thing"))
+        .stdout(predicate::str::contains("unit"));
+}
+
+/// cli.spec: route-coverage-with-format
+#[test]
+fn route_coverage_with_format() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let spec_dir = dir.path().join("specs");
+    std::fs::create_dir(&spec_dir).unwrap();
+    std::fs::write(
+        spec_dir.join("a.spec"),
+        "\
+spec a v1.0.0
+title \"A\"
+
+description
+  A.
+
+motivation
+  A.
+
+behavior do-thing [happy_path]
+  \"Does a thing\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+",
+    )
+    .unwrap();
+    std::fs::write(dir.path().join("a.test.ts"), "// @minter:unit do-thing\n").unwrap();
+
+    minter()
+        .arg("coverage")
+        .arg(&spec_dir)
+        .arg("--format")
+        .arg("json")
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("total_behaviors"));
 }
 
 /// cli.spec: route-watch-nfr-file

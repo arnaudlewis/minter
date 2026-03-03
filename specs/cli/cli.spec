@@ -1,4 +1,4 @@
-spec cli v2.2.0
+spec cli v2.3.0
 title "CLI Interface"
 
 description
@@ -22,7 +22,7 @@ nfr
 # Help and version
 
 behavior show-help [happy_path]
-  "Print usage information listing all seven commands"
+  "Print usage information listing all eight commands"
 
   given
     No arguments provided, or --help flag is used
@@ -38,6 +38,7 @@ behavior show-help [happy_path]
     assert output contains "inspect"
     assert output contains "graph"
     assert output contains "guide"
+    assert output contains "coverage"
 
   then emits process_exit
     assert code == 0
@@ -265,10 +266,77 @@ behavior route-guide [happy_path]
     assert code == 0
 
 
+# Coverage routing
+
+behavior route-coverage-directory [happy_path]
+  "Route to the coverage command for a spec directory"
+
+  given
+    specs/a.spec has 1 behavior: do-thing
+    A file contains // @minter:unit do-thing
+
+  when minter coverage specs/
+
+  then emits stdout
+    assert output contains "do-thing"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior route-coverage-file [happy_path]
+  "Route to the coverage command for a single spec file"
+
+  given
+    specs/a.spec has 1 behavior: do-thing
+    A file contains // @minter:unit do-thing
+
+  when minter coverage specs/a.spec
+
+  then emits stdout
+    assert output contains "do-thing"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior route-coverage-with-scan [happy_path]
+  "Route to the coverage command with --scan flag"
+
+  given
+    specs/a.spec has 1 behavior: do-thing
+    tests/a.test.ts contains // @minter:unit do-thing
+
+  when minter coverage specs/ --scan tests/
+
+  then emits stdout
+    assert output contains "do-thing"
+    assert output contains "unit"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior route-coverage-with-format [happy_path]
+  "Route to the coverage command with --format json"
+
+  given
+    specs/a.spec has 1 behavior: do-thing
+    A file contains // @minter:unit do-thing
+
+  when minter coverage specs/ --format json
+
+  then emits stdout
+    assert output contains "total_behaviors"
+
+  then emits process_exit
+    assert code == 0
+
+
 # Error cases
 
 behavior reject-unknown-command [error_case]
-  "Print error for an unrecognized subcommand"
+  "Print error mentioning the unrecognized subcommand"
 
   given
     An unrecognized subcommand is provided
@@ -277,13 +345,6 @@ behavior reject-unknown-command [error_case]
 
   then emits stderr
     assert output contains "frobnicate"
-    assert output contains "validate"
-    assert output contains "watch"
-    assert output contains "format"
-    assert output contains "scaffold"
-    assert output contains "inspect"
-    assert output contains "graph"
-    assert output contains "guide"
 
   then emits process_exit
     assert code == 1
@@ -446,4 +507,5 @@ depends on scaffold-command >= 1.0.0
 depends on inspect-command >= 1.0.0
 depends on graph-command >= 1.0.0
 depends on guide-command >= 1.0.0
+depends on coverage-command >= 1.0.0
 depends on nfr-grammar >= 1.0.0
