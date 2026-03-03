@@ -90,7 +90,9 @@ Phase 2 — Write Documentation (optional)
 
 Phase 3 — Write Red Tests
   1 behavior = 1 test. Write all tests first. Every test must fail
-before any implementation begins.
+  before any implementation begins. Tag every test with @minter:<type>
+  to link it to its spec behavior. Run minter coverage to verify
+  completeness. See: minter guide coverage
 
 Phase 4 — Implement (TDD)
   Make one test green at a time. Do not skip ahead.
@@ -290,6 +292,8 @@ Phase 2 — Write Documentation (optional)
 
 Phase 3 — Write Red Tests
   Write one e2e test per behavior. Tests MUST fail (red).
+  Tag every test with @minter:<type> to link it to its spec behavior.
+  Run `coverage` to verify completeness. See: `guide` coverage topic.
   Do not write implementation code yet.
 
 Phase 4 — Implement (TDD)
@@ -334,6 +338,8 @@ Phase 2 — Write Documentation (optional)
 
 Phase 3 — Write Red Tests
   1 behavior = 1 test. All tests must fail before implementation.
+  Tag every test with @minter:<type>. Run minter coverage to verify.
+  See: minter guide coverage
 
 Phase 4 — Implement (TDD)
   Make one test green at a time. Unit tests are mandatory.
