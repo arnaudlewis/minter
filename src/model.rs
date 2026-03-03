@@ -267,7 +267,38 @@ pub const VALID_NFR_CATEGORIES: &[&str] = &[
     "operability",
 ];
 
-pub const VALID_GUIDE_TOPICS: &[&str] = &["workflow", "authoring", "smells", "nfr", "context"];
+pub const VALID_GUIDE_TOPICS: &[&str] = &[
+    "workflow",
+    "authoring",
+    "smells",
+    "nfr",
+    "context",
+    "methodology",
+];
+
+/// Guide topics available in the CLI via `minter guide <topic>`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum GuideTopic {
+    Workflow,
+    Authoring,
+    Smells,
+    Nfr,
+    Context,
+    Methodology,
+}
+
+impl GuideTopic {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            GuideTopic::Workflow => "workflow",
+            GuideTopic::Authoring => "authoring",
+            GuideTopic::Smells => "smells",
+            GuideTopic::Nfr => "nfr",
+            GuideTopic::Context => "context",
+            GuideTopic::Methodology => "methodology",
+        }
+    }
+}
 
 // ── Shared helpers ──────────────────────────────────────
 
@@ -410,12 +441,13 @@ mod tests {
     // ── VALID_GUIDE_TOPICS ────────────────────────────────
 
     #[test]
-    fn guide_topics_contains_all_five() {
+    fn guide_topics_contains_all_six() {
         assert!(VALID_GUIDE_TOPICS.contains(&"workflow"));
         assert!(VALID_GUIDE_TOPICS.contains(&"authoring"));
         assert!(VALID_GUIDE_TOPICS.contains(&"smells"));
         assert!(VALID_GUIDE_TOPICS.contains(&"nfr"));
         assert!(VALID_GUIDE_TOPICS.contains(&"context"));
-        assert_eq!(VALID_GUIDE_TOPICS.len(), 5);
+        assert!(VALID_GUIDE_TOPICS.contains(&"methodology"));
+        assert_eq!(VALID_GUIDE_TOPICS.len(), 6);
     }
 }

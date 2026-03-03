@@ -256,10 +256,10 @@ behavior graph-no-edges-result [edge_case]
 # Text content responses
 
 behavior text-content-format [happy_path]
-  "Scaffold, format, and explain tools return plain text content"
+  "Scaffold, format, and guide tools return plain text content"
 
   given
-    A tool that produces text output (scaffold, format, or explain)
+    A tool that produces text output (scaffold, format, or guide)
 
   when format text result
 

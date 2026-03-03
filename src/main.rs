@@ -46,8 +46,12 @@ enum Commands {
         #[arg(required = true)]
         file: PathBuf,
     },
-    /// Print the spec-driven development methodology reference
-    Explain,
+    /// Display a spec-driven development guide by topic
+    Guide {
+        /// Topic: workflow, authoring, smells, nfr, context, methodology
+        #[arg(value_enum)]
+        topic: minter::model::GuideTopic,
+    },
     /// Display the dependency graph
     Graph {
         /// Directory containing spec files
@@ -79,8 +83,8 @@ fn main() {
         Some(Commands::Inspect { file }) => {
             process::exit(minter::core::commands::inspect::run_inspect(&file));
         }
-        Some(Commands::Explain) => {
-            process::exit(minter::core::commands::explain::run_explain());
+        Some(Commands::Guide { topic }) => {
+            process::exit(minter::core::commands::guide::run_guide(&topic));
         }
         Some(Commands::Graph { dir, impacted }) => {
             process::exit(minter::core::commands::graph::run_graph(

@@ -4,14 +4,14 @@ use common::minter;
 use predicates::prelude::*;
 
 // ═══════════════════════════════════════════════════════════════
-// Core output (explain-command.spec)
+// Methodology topic (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// explain-command.spec: explain-prints-methodology
+/// guide-command.spec: guide-methodology-prints-methodology
 #[test]
-fn explain_prints_methodology() {
+fn guide_methodology_prints_methodology() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("spec"))
@@ -20,15 +20,11 @@ fn explain_prints_methodology() {
         .stdout(predicate::str::contains("constraint"));
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Spec role (explain-command.spec)
-// ═══════════════════════════════════════════════════════════════
-
-/// explain-command.spec: explain-describes-spec-role
+/// guide-command.spec: guide-methodology-describes-spec-role
 #[test]
-fn explain_describes_spec_role() {
+fn guide_methodology_describes_spec_role() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("source of truth"))
@@ -37,15 +33,11 @@ fn explain_describes_spec_role() {
         .stdout(predicate::str::contains("1 test").or(predicate::str::contains("one test")));
 }
 
-// ═══════════════════════════════════════════════════════════════
-// NFR role (explain-command.spec)
-// ═══════════════════════════════════════════════════════════════
-
-/// explain-command.spec: explain-describes-nfr-constraints
+/// guide-command.spec: guide-methodology-describes-nfr-constraints
 #[test]
-fn explain_describes_nfr_constraints() {
+fn guide_methodology_describes_nfr_constraints() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("non-functional"))
@@ -54,11 +46,11 @@ fn explain_describes_nfr_constraints() {
         .stdout(predicate::str::contains("rule"));
 }
 
-/// explain-command.spec: explain-lists-nfr-categories
+/// guide-command.spec: guide-methodology-lists-nfr-categories
 #[test]
-fn explain_lists_nfr_categories() {
+fn guide_methodology_lists_nfr_categories() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("performance"))
@@ -71,36 +63,36 @@ fn explain_lists_nfr_categories() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Cross-reference binding (explain-command.spec)
+// Cross-reference binding (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// explain-command.spec: explain-describes-spec-level-binding
+/// guide-command.spec: guide-methodology-describes-spec-level-binding
 #[test]
-fn explain_describes_spec_level_binding() {
+fn guide_methodology_describes_spec_level_binding() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("spec-level"))
         .stdout(predicate::str::contains("all behaviors"));
 }
 
-/// explain-command.spec: explain-describes-behavior-level-binding
+/// guide-command.spec: guide-methodology-describes-behavior-level-binding
 #[test]
-fn explain_describes_behavior_level_binding() {
+fn guide_methodology_describes_behavior_level_binding() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("behavior-level"))
         .stdout(predicate::str::contains("anchor"));
 }
 
-/// explain-command.spec: explain-describes-whole-file-vs-anchor
+/// guide-command.spec: guide-methodology-describes-whole-file-vs-anchor
 #[test]
-fn explain_describes_whole_file_vs_anchor() {
+fn guide_methodology_describes_whole_file_vs_anchor() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("whole-file"))
@@ -109,25 +101,25 @@ fn explain_describes_whole_file_vs_anchor() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Validation rules (explain-command.spec)
+// Validation rules (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// explain-command.spec: explain-describes-containment-rule
+/// guide-command.spec: guide-methodology-describes-containment-rule
 #[test]
-fn explain_describes_containment_rule() {
+fn guide_methodology_describes_containment_rule() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("containment"))
         .stdout(predicate::str::contains("spec-level"));
 }
 
-/// explain-command.spec: explain-describes-override-rules
+/// guide-command.spec: guide-methodology-describes-override-rules
 #[test]
-fn explain_describes_override_rules() {
+fn guide_methodology_describes_override_rules() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("override"))
@@ -137,14 +129,14 @@ fn explain_describes_override_rules() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Test generation (explain-command.spec)
+// Test generation (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// explain-command.spec: explain-describes-test-emission
+/// guide-command.spec: guide-methodology-describes-test-emission
 #[test]
-fn explain_describes_test_emission() {
+fn guide_methodology_describes_test_emission() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("test"))
@@ -152,14 +144,14 @@ fn explain_describes_test_emission() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Reference syntax (explain-command.spec)
+// Reference syntax (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// explain-command.spec: explain-shows-reference-syntax
+/// guide-command.spec: guide-methodology-shows-reference-syntax
 #[test]
-fn explain_shows_reference_syntax() {
+fn guide_methodology_shows_reference_syntax() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("category"))
@@ -170,14 +162,14 @@ fn explain_shows_reference_syntax() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Workflow (explain-command.spec)
+// Workflow (guide-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// explain-command.spec: explain-describes-workflow-phases
+/// guide-command.spec: guide-methodology-describes-workflow-phases
 #[test]
-fn explain_describes_workflow_phases() {
+fn guide_methodology_describes_workflow_phases() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("Phase 1"))
@@ -187,22 +179,22 @@ fn explain_describes_workflow_phases() {
         .stdout(predicate::str::contains("Phase 5"));
 }
 
-/// explain-command.spec: explain-workflow-specs-before-code
+/// guide-command.spec: guide-methodology-specs-before-code
 #[test]
-fn explain_workflow_specs_before_code() {
+fn guide_methodology_specs_before_code() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("before"))
         .stdout(predicate::str::contains("implementation").or(predicate::str::contains("code")));
 }
 
-/// explain-command.spec: explain-workflow-red-tests
+/// guide-command.spec: guide-methodology-red-tests
 #[test]
-fn explain_workflow_red_tests() {
+fn guide_methodology_red_tests() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("fail"))
@@ -210,4 +202,83 @@ fn explain_workflow_red_tests() {
             predicate::str::contains("1 behavior = 1 test")
                 .or(predicate::str::contains("one behavior = one test")),
         );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Topic-specific guides (guide-command.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// guide-command.spec: guide-workflow-topic
+#[test]
+fn guide_workflow_topic() {
+    minter()
+        .args(&["guide", "workflow"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Phase 1"))
+        .stdout(predicate::str::contains("Phase 5"));
+}
+
+/// guide-command.spec: guide-authoring-topic
+#[test]
+fn guide_authoring_topic() {
+    minter()
+        .args(&["guide", "authoring"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Right Granularity"));
+}
+
+/// guide-command.spec: guide-smells-topic
+#[test]
+fn guide_smells_topic() {
+    minter()
+        .args(&["guide", "smells"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Ambiguity"));
+}
+
+/// guide-command.spec: guide-nfr-topic
+#[test]
+fn guide_nfr_topic() {
+    minter()
+        .args(&["guide", "nfr"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Seven Fixed Categories"));
+}
+
+/// guide-command.spec: guide-context-topic
+#[test]
+fn guide_context_topic() {
+    minter()
+        .args(&["guide", "context"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Lazy Loading Sequence"));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Error cases (guide-command.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// guide-command.spec: guide-unknown-topic
+#[test]
+fn guide_unknown_topic() {
+    minter()
+        .args(&["guide", "banana"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("banana"));
+}
+
+/// guide-command.spec: guide-missing-topic
+#[test]
+fn guide_missing_topic() {
+    minter()
+        .arg("guide")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("guide"));
 }

@@ -37,7 +37,7 @@ behavior show-help [happy_path]
     assert output contains "scaffold"
     assert output contains "inspect"
     assert output contains "graph"
-    assert output contains "explain"
+    assert output contains "guide"
 
   then emits process_exit
     assert code == 0
@@ -247,15 +247,15 @@ behavior route-graph-impacted [happy_path]
     assert code == 0
 
 
-# Explain routing
+# Guide routing
 
-behavior route-explain [happy_path]
-  "Route to the explain command for methodology reference"
+behavior route-guide [happy_path]
+  "Route to the guide command for methodology reference"
 
   given
-    The explain subcommand is invoked
+    The guide subcommand is invoked with topic methodology
 
-  when minter explain
+  when minter guide methodology
 
   then emits stdout
     assert output contains "spec"
@@ -283,7 +283,7 @@ behavior reject-unknown-command [error_case]
     assert output contains "scaffold"
     assert output contains "inspect"
     assert output contains "graph"
-    assert output contains "explain"
+    assert output contains "guide"
 
   then emits process_exit
     assert code == 1
@@ -445,5 +445,5 @@ depends on format-command >= 1.0.0
 depends on scaffold-command >= 1.0.0
 depends on inspect-command >= 1.0.0
 depends on graph-command >= 1.0.0
-depends on explain-command >= 1.0.0
+depends on guide-command >= 1.0.0
 depends on nfr-grammar >= 1.0.0

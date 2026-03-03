@@ -188,6 +188,7 @@ behavior guide-unknown-topic [error_case]
     assert error message lists "smells" as valid topic
     assert error message lists "nfr" as valid topic
     assert error message lists "context" as valid topic
+    assert error message lists "methodology" as valid topic
 
 
 # Workflow enforcement via next_steps

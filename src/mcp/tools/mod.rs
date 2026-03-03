@@ -18,7 +18,7 @@ use crate::core::content;
 use crate::core::discover;
 use crate::core::parser;
 use crate::mcp::{next_steps, response};
-use crate::model::{VALID_GUIDE_TOPICS, VALID_NFR_CATEGORIES};
+use crate::model::VALID_NFR_CATEGORIES;
 
 #[derive(Debug, Clone)]
 pub struct MinterServer {
@@ -92,7 +92,7 @@ pub struct GraphParams {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GuideParams {
-    #[schemars(description = "Topic: workflow, authoring, smells, nfr, or context")]
+    #[schemars(description = "Topic: workflow, authoring, smells, nfr, context, or methodology")]
     pub topic: String,
 }
 
@@ -235,27 +235,10 @@ impl MinterServer {
         &self,
         Parameters(params): Parameters<GuideParams>,
     ) -> Result<CallToolResult, ErrorData> {
-        match params.topic.as_str() {
-            "workflow" => Ok(CallToolResult::success(vec![Content::text(
-                content::guide_workflow().to_string(),
-            )])),
-            "authoring" => Ok(CallToolResult::success(vec![Content::text(
-                content::guide_authoring().to_string(),
-            )])),
-            "smells" => Ok(CallToolResult::success(vec![Content::text(
-                content::guide_smells().to_string(),
-            )])),
-            "nfr" => Ok(CallToolResult::success(vec![Content::text(
-                content::guide_nfr().to_string(),
-            )])),
-            "context" => Ok(CallToolResult::success(vec![Content::text(
-                content::guide_context().to_string(),
-            )])),
-            other => Ok(tool_error(format!(
-                "Unknown topic '{}'. Valid topics: {}",
-                other,
-                VALID_GUIDE_TOPICS.join(", ")
-            ))),
+        use crate::core::commands::guide::run_guide_topic;
+        match run_guide_topic(&params.topic) {
+            Ok(text) => Ok(CallToolResult::success(vec![Content::text(text)])),
+            Err(msg) => Ok(tool_error(msg)),
         }
     }
 

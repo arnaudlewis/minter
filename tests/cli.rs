@@ -77,7 +77,7 @@ fn show_help() {
         .stdout(predicate::str::contains("scaffold"))
         .stdout(predicate::str::contains("inspect"))
         .stdout(predicate::str::contains("graph"))
-        .stdout(predicate::str::contains("explain"));
+        .stdout(predicate::str::contains("guide"));
 
     // No arguments also prints usage
     minter()
@@ -561,11 +561,11 @@ fn route_watch_file() {
     let _ = child.wait();
 }
 
-/// cli.spec: route-explain
+/// cli.spec: route-guide
 #[test]
-fn route_explain() {
+fn route_guide() {
     minter()
-        .arg("explain")
+        .args(&["guide", "methodology"])
         .assert()
         .success()
         .stdout(predicate::str::contains("spec"))

@@ -1618,6 +1618,10 @@ fn guide_unknown_topic() {
         text.contains("context"),
         "should list context as valid topic"
     );
+    assert!(
+        text.contains("methodology"),
+        "should list methodology as valid topic"
+    );
 }
 
 #[test]
