@@ -973,6 +973,7 @@ fn info_duplicate_coverage() {
         .success()
         .stdout(predicate::str::contains("do-thing"))
         .stdout(predicate::str::contains("unit"))
+        .stdout(predicate::str::contains("x2"))
         .stdout(predicate::str::contains("duplicate"));
 }
 

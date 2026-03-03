@@ -516,7 +516,7 @@ behavior warn-empty-tag [edge_case]
 
 
 behavior info-duplicate-coverage [edge_case]
-  "Report duplicate when the same behavior is covered by multiple tests of the same type"
+  "Report duplicate count when the same behavior is covered by multiple tests of the same type"
 
   given
     specs/a.spec has behavior do-thing
@@ -528,6 +528,7 @@ behavior info-duplicate-coverage [edge_case]
   then emits stdout
     assert output contains "do-thing"
     assert output contains "unit"
+    assert output contains "x2"
     assert output contains "duplicate"
 
   then emits process_exit

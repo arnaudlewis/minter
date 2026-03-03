@@ -62,6 +62,17 @@ my-feature v0.1.0 (1 behavior)
 
 ## Commands
 
+| Command | Purpose |
+|---------|---------|
+| `validate` | Validate spec files and directories |
+| `watch` | Live validation on file changes |
+| `format` | Display DSL grammar reference |
+| `scaffold` | Generate skeleton files |
+| `inspect` | Display structured metadata |
+| `guide` | Development reference guides |
+| `coverage` | Behavior coverage report |
+| `graph` | Dependency graph visualization |
+
 ### `validate` -- Validate spec files
 
 ```
@@ -231,13 +242,81 @@ category: performance
 no dependencies
 ```
 
-### `explain` -- Methodology reference
+### `guide` -- Development reference guides
 
 ```
-minter explain
+minter guide <TOPIC>
 ```
 
-Print the spec-driven development methodology reference, covering behaviors, NFR categories, cross-reference binding, containment rules, override rules, and test generation.
+Print a condensed reference guide for a specific topic.
+
+| Topic | Description |
+|-------|-------------|
+| `methodology` | Full spec-driven development methodology |
+| `workflow` | Five-phase development workflow |
+| `authoring` | Spec authoring: granularity, decomposition, entity format |
+| `smells` | Requirements smell detection (ambiguity, Observer Test, Swap Test) |
+| `nfr` | NFR design: categories, constraints, FR/NFR decision tree |
+| `context` | Context management protocol for lazy loading specs |
+| `coverage` | Coverage tagging guide for linking tests to spec behaviors |
+
+```bash
+minter guide methodology    # Full methodology reference
+minter guide workflow       # Quick workflow phase reference
+minter guide coverage       # How to tag tests for coverage tracking
+```
+
+### `coverage` -- Behavior coverage report
+
+```
+minter coverage [--scan <DIR>...] [--format <FORMAT>] <SPEC_PATH>
+```
+
+Scan project files for `@minter` tags in comments and cross-reference them against the spec graph to produce a behavior coverage report. Tags placed in test files declare which spec behaviors a test covers.
+
+```bash
+minter coverage specs/                          # Scan cwd for tags against all specs
+minter coverage specs/my-feature.spec           # Coverage for a single spec
+minter coverage specs/ --scan tests/            # Only scan tests/ directory
+minter coverage specs/ --scan tests/ --scan e2e/  # Multiple scan directories
+minter coverage specs/ --format json            # Machine-readable JSON output
+```
+
+**Tag format:**
+
+```
+// @minter:<type> <behavior> [<behavior>...]    — behavioral test
+// @minter:benchmark #<category>#<constraint>   — NFR benchmark
+```
+
+Valid types: `unit`, `integration`, `e2e`, `benchmark`. Tags are placed in comments (`//` or `#` style) above test blocks.
+
+```typescript
+// @minter:e2e report-full-coverage report-partial-coverage
+describe("coverage report", () => { /* ... */ });
+
+// @minter:benchmark #performance#validation-latency
+bench("validate 100 specs", || { /* ... */ });
+```
+
+**Output:**
+
+```
+a v1.0.0
+  do-thing ✓ unit, e2e
+  do-other ✗ uncovered
+
+Summary: 1/2 behaviors covered (50%)
+  unit: 1
+  e2e: 1
+```
+
+NFR coverage is derived automatically from the spec graph — if a covered behavior references an NFR constraint, that constraint has indirect coverage. No configuration file is required. The scanner respects `.gitignore`.
+
+| Exit code | Meaning |
+|-----------|---------|
+| `0` | All behaviors covered, no tag errors |
+| `1` | Uncovered behaviors or tag validation errors |
 
 ### `graph` -- Dependency graph visualization
 
