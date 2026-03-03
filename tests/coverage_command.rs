@@ -178,7 +178,6 @@ constraint api-latency [metric]
 // ═══════════════════════════════════════════════════════════════
 
 // @minter:e2e report-full-coverage
-/// coverage-command: report-full-coverage
 #[test]
 fn report_full_coverage() {
     let dir = TempDir::new().unwrap();
@@ -196,14 +195,11 @@ fn report_full_coverage() {
         .current_dir(dir.path())
         .assert()
         .success()
-        .stdout(predicate::str::contains("do-thing"))
-        .stdout(predicate::str::contains("do-other"))
         .stdout(predicate::str::contains("2/2"))
         .stdout(predicate::str::contains("100"));
 }
 
 // @minter:e2e report-partial-coverage
-/// coverage-command: report-partial-coverage
 #[test]
 fn report_partial_coverage() {
     let dir = TempDir::new().unwrap();
@@ -229,7 +225,6 @@ fn report_partial_coverage() {
 }
 
 // @minter:e2e group-by-spec
-/// coverage-command: group-by-spec
 #[test]
 fn group_by_spec() {
     let dir = TempDir::new().unwrap();
@@ -264,7 +259,6 @@ fn group_by_spec() {
 }
 
 // @minter:e2e show-test-types
-/// coverage-command: show-test-types
 #[test]
 fn show_test_types() {
     let dir = TempDir::new().unwrap();
@@ -285,13 +279,11 @@ fn show_test_types() {
         .arg(spec_dir)
         .current_dir(dir.path())
         .assert()
-        .stdout(predicate::str::contains("do-thing"))
         .stdout(predicate::str::contains("unit"))
         .stdout(predicate::str::contains("e2e"));
 }
 
 // @minter:e2e show-summary
-/// coverage-command: show-summary
 #[test]
 fn show_summary() {
     let dir = TempDir::new().unwrap();
@@ -321,7 +313,6 @@ fn show_summary() {
 }
 
 // @minter:e2e multiple-ids-in-one-tag
-/// coverage-command: multiple-ids-in-one-tag
 #[test]
 fn multiple_ids_in_one_tag() {
     let dir = TempDir::new().unwrap();
@@ -342,13 +333,10 @@ fn multiple_ids_in_one_tag() {
         .current_dir(dir.path())
         .assert()
         .success()
-        .stdout(predicate::str::contains("do-thing"))
-        .stdout(predicate::str::contains("do-other"))
         .stdout(predicate::str::contains("2/2"));
 }
 
 // @minter:e2e scan-double-slash-comments
-/// coverage-command: scan-double-slash-comments
 #[test]
 fn scan_double_slash_comments() {
     let dir = TempDir::new().unwrap();
@@ -368,12 +356,10 @@ fn scan_double_slash_comments() {
         .arg(spec_dir)
         .current_dir(dir.path())
         .assert()
-        .stdout(predicate::str::contains("do-thing"))
         .stdout(predicate::str::contains("unit"));
 }
 
 // @minter:e2e scan-hash-comments
-/// coverage-command: scan-hash-comments
 #[test]
 fn scan_hash_comments() {
     let dir = TempDir::new().unwrap();
@@ -393,7 +379,6 @@ fn scan_hash_comments() {
         .arg(spec_dir)
         .current_dir(dir.path())
         .assert()
-        .stdout(predicate::str::contains("do-thing"))
         .stdout(predicate::str::contains("unit"));
 }
 
@@ -402,7 +387,6 @@ fn scan_hash_comments() {
 // ═══════════════════════════════════════════════════════════════
 
 // @minter:e2e scope-scan-with-flag
-/// coverage-command: scope-scan-with-flag
 #[test]
 fn scope_scan_with_flag() {
     let dir = TempDir::new().unwrap();
@@ -435,7 +419,6 @@ fn scope_scan_with_flag() {
 }
 
 // @minter:e2e multiple-scan-flags
-/// coverage-command: multiple-scan-flags
 #[test]
 fn multiple_scan_flags() {
     let dir = TempDir::new().unwrap();
@@ -471,7 +454,6 @@ fn multiple_scan_flags() {
 }
 
 // @minter:e2e single-spec-file
-/// coverage-command: single-spec-file
 #[test]
 fn single_spec_file() {
     let dir = TempDir::new().unwrap();
@@ -498,7 +480,6 @@ fn single_spec_file() {
 }
 
 // @minter:e2e skip-gitignored-paths
-/// coverage-command: skip-gitignored-paths
 #[test]
 fn skip_gitignored_paths() {
     let dir = TempDir::new().unwrap();
@@ -536,7 +517,6 @@ fn skip_gitignored_paths() {
 // ═══════════════════════════════════════════════════════════════
 
 // @minter:e2e derive-nfr-from-covered-behavior
-/// coverage-command: derive-nfr-from-covered-behavior
 #[test]
 fn derive_nfr_from_covered_behavior() {
     let dir = TempDir::new().unwrap();
@@ -554,11 +534,10 @@ fn derive_nfr_from_covered_behavior() {
         .current_dir(dir.path())
         .assert()
         .stdout(predicate::str::contains("performance#api-latency"))
-        .stdout(predicate::str::contains("do-thing"));
+        .stdout(predicate::str::contains("derived"));
 }
 
 // @minter:e2e derive-nfr-uncovered-from-uncovered-behavior
-/// coverage-command: derive-nfr-uncovered-from-uncovered-behavior
 #[test]
 fn derive_nfr_uncovered_from_uncovered_behavior() {
     let dir = TempDir::new().unwrap();
@@ -584,7 +563,6 @@ fn derive_nfr_uncovered_from_uncovered_behavior() {
 // ═══════════════════════════════════════════════════════════════
 
 // @minter:e2e report-benchmark-nfr
-/// coverage-command: report-benchmark-nfr
 #[test]
 fn report_benchmark_nfr() {
     let dir = TempDir::new().unwrap();
@@ -615,11 +593,89 @@ fn report_benchmark_nfr() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Compact display (coverage-command.spec)
+// ═══════════════════════════════════════════════════════════════
+
+// @minter:e2e collapse-fully-covered-spec
+#[test]
+fn collapse_fully_covered_spec() {
+    let dir = TempDir::new().unwrap();
+
+    let spec_dir = dir.path().join("specs");
+    fs::create_dir(&spec_dir).unwrap();
+    fs::write(spec_dir.join("a.spec"), spec_two_behaviors()).unwrap();
+
+    fs::write(dir.path().join("a.test.ts"), "// @minter:unit do-thing\n").unwrap();
+    fs::write(dir.path().join("b.test.ts"), "// @minter:e2e do-other\n").unwrap();
+
+    minter()
+        .arg("coverage")
+        .arg(spec_dir)
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Behavior Coverage"))
+        .stdout(predicate::str::contains("a v1.0.0"))
+        .stdout(predicate::str::contains("2/2"))
+        .stdout(predicate::str::contains("unit"))
+        .stdout(predicate::str::contains("e2e"))
+        .stdout(predicate::str::contains("do-thing").not())
+        .stdout(predicate::str::contains("do-other").not());
+}
+
+// @minter:e2e expand-partially-covered-spec
+#[test]
+fn expand_partially_covered_spec() {
+    let dir = TempDir::new().unwrap();
+
+    let spec_dir = dir.path().join("specs");
+    fs::create_dir(&spec_dir).unwrap();
+    fs::write(spec_dir.join("a.spec"), spec_three_behaviors()).unwrap();
+
+    fs::write(dir.path().join("a.test.ts"), "// @minter:unit do-thing\n").unwrap();
+    fs::write(dir.path().join("b.test.ts"), "// @minter:e2e do-other\n").unwrap();
+
+    minter()
+        .arg("coverage")
+        .arg(spec_dir)
+        .current_dir(dir.path())
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("do-thing"))
+        .stdout(predicate::str::contains("do-other"))
+        .stdout(predicate::str::contains("do-missing"))
+        .stdout(predicate::str::contains("uncovered"));
+}
+
+// @minter:e2e verbose-expands-all
+#[test]
+fn verbose_expands_all() {
+    let dir = TempDir::new().unwrap();
+
+    let spec_dir = dir.path().join("specs");
+    fs::create_dir(&spec_dir).unwrap();
+    fs::write(spec_dir.join("a.spec"), spec_two_behaviors()).unwrap();
+
+    fs::write(dir.path().join("a.test.ts"), "// @minter:unit do-thing\n").unwrap();
+    fs::write(dir.path().join("b.test.ts"), "// @minter:e2e do-other\n").unwrap();
+
+    minter()
+        .arg("coverage")
+        .arg(spec_dir)
+        .arg("--verbose")
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("do-thing"))
+        .stdout(predicate::str::contains("do-other"))
+        .stdout(predicate::str::contains("2/2"));
+}
+
+// ═══════════════════════════════════════════════════════════════
 // JSON output (coverage-command.spec)
 // ═══════════════════════════════════════════════════════════════
 
 // @minter:e2e json-output
-/// coverage-command: json-output
 #[test]
 fn json_output() {
     let dir = TempDir::new().unwrap();
@@ -651,7 +707,6 @@ fn json_output() {
 // ═══════════════════════════════════════════════════════════════
 
 // @minter:e2e reject-unknown-behavior-id
-/// coverage-command: reject-unknown-behavior-id
 #[test]
 fn reject_unknown_behavior_id() {
     let dir = TempDir::new().unwrap();
@@ -681,7 +736,6 @@ fn reject_unknown_behavior_id() {
 }
 
 // @minter:e2e reject-unknown-nfr-constraint
-/// coverage-command: reject-unknown-nfr-constraint
 #[test]
 fn reject_unknown_nfr_constraint() {
     let dir = TempDir::new().unwrap();
@@ -712,7 +766,6 @@ fn reject_unknown_nfr_constraint() {
 }
 
 // @minter:e2e reject-missing-type
-/// coverage-command: reject-missing-type
 #[test]
 fn reject_missing_type() {
     let dir = TempDir::new().unwrap();
@@ -738,7 +791,6 @@ fn reject_missing_type() {
 }
 
 // @minter:e2e reject-invalid-type
-/// coverage-command: reject-invalid-type
 #[test]
 fn reject_invalid_type() {
     let dir = TempDir::new().unwrap();
@@ -768,7 +820,6 @@ fn reject_invalid_type() {
 }
 
 // @minter:e2e reject-behavior-in-benchmark
-/// coverage-command: reject-behavior-in-benchmark
 #[test]
 fn reject_behavior_in_benchmark() {
     let dir = TempDir::new().unwrap();
@@ -798,7 +849,6 @@ fn reject_behavior_in_benchmark() {
 }
 
 // @minter:e2e reject-nfr-in-behavioral-tag
-/// coverage-command: reject-nfr-in-behavioral-tag
 #[test]
 fn reject_nfr_in_behavioral_tag() {
     let dir = TempDir::new().unwrap();
@@ -828,7 +878,6 @@ fn reject_nfr_in_behavioral_tag() {
 }
 
 // @minter:e2e reject-nonexistent-spec-path
-/// coverage-command: reject-nonexistent-spec-path
 #[test]
 fn reject_nonexistent_spec_path() {
     let dir = TempDir::new().unwrap();
@@ -843,7 +892,6 @@ fn reject_nonexistent_spec_path() {
 }
 
 // @minter:e2e reject-no-specs-in-path
-/// coverage-command: reject-no-specs-in-path
 #[test]
 fn reject_no_specs_in_path() {
     let dir = TempDir::new().unwrap();
@@ -861,7 +909,6 @@ fn reject_no_specs_in_path() {
 }
 
 // @minter:e2e reject-nonexistent-scan-path
-/// coverage-command: reject-nonexistent-scan-path
 #[test]
 fn reject_nonexistent_scan_path() {
     let dir = TempDir::new().unwrap();
@@ -886,7 +933,6 @@ fn reject_nonexistent_scan_path() {
 }
 
 // @minter:e2e reject-invalid-format
-/// coverage-command: reject-invalid-format
 #[test]
 fn reject_invalid_format() {
     let dir = TempDir::new().unwrap();
@@ -912,7 +958,6 @@ fn reject_invalid_format() {
 }
 
 // @minter:e2e report-tag-errors-with-location
-/// coverage-command: report-tag-errors-with-location
 #[test]
 fn report_tag_errors_with_location() {
     let dir = TempDir::new().unwrap();
@@ -948,7 +993,6 @@ fn report_tag_errors_with_location() {
 // ═══════════════════════════════════════════════════════════════
 
 // @minter:e2e warn-empty-tag
-/// coverage-command: warn-empty-tag
 #[test]
 fn warn_empty_tag() {
     let dir = TempDir::new().unwrap();
@@ -971,12 +1015,10 @@ fn warn_empty_tag() {
         .assert()
         .success()
         .stderr(predicate::str::contains("empty"))
-        .stdout(predicate::str::contains("do-thing"))
         .stdout(predicate::str::contains("1/1"));
 }
 
 // @minter:e2e info-duplicate-coverage
-/// coverage-command: info-duplicate-coverage
 #[test]
 fn info_duplicate_coverage() {
     let dir = TempDir::new().unwrap();
@@ -997,6 +1039,7 @@ fn info_duplicate_coverage() {
     minter()
         .arg("coverage")
         .arg(&spec_dir)
+        .arg("--verbose")
         .current_dir(dir.path())
         .assert()
         .success()
@@ -1007,7 +1050,6 @@ fn info_duplicate_coverage() {
 }
 
 // @minter:e2e no-tags-found
-/// coverage-command: no-tags-found
 #[test]
 fn no_tags_found() {
     let dir = TempDir::new().unwrap();
@@ -1032,7 +1074,6 @@ fn no_tags_found() {
 }
 
 // @minter:e2e disambiguate-with-qualified-name
-/// coverage-command: disambiguate-with-qualified-name
 #[test]
 fn disambiguate_with_qualified_name() {
     let dir = TempDir::new().unwrap();
@@ -1067,7 +1108,6 @@ fn disambiguate_with_qualified_name() {
 }
 
 // @minter:e2e reject-ambiguous-unqualified-name
-/// coverage-command: reject-ambiguous-unqualified-name
 #[test]
 fn reject_ambiguous_unqualified_name() {
     let dir = TempDir::new().unwrap();
@@ -1102,7 +1142,6 @@ fn reject_ambiguous_unqualified_name() {
 }
 
 // @minter:e2e report-all-tag-errors
-/// coverage-command: report-all-tag-errors
 #[test]
 fn report_all_tag_errors() {
     let dir = TempDir::new().unwrap();
@@ -1139,7 +1178,6 @@ fn report_all_tag_errors() {
 }
 
 // @minter:e2e json-errors
-/// coverage-command: json-errors
 #[test]
 fn json_errors() {
     let dir = TempDir::new().unwrap();
@@ -1171,7 +1209,6 @@ fn json_errors() {
 }
 
 // @minter:e2e mixed-valid-and-invalid-tags
-/// coverage-command: mixed-valid-and-invalid-tags
 #[test]
 fn mixed_valid_and_invalid_tags() {
     let dir = TempDir::new().unwrap();

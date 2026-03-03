@@ -65,6 +65,10 @@ enum Commands {
         /// Output format (default: human, json)
         #[arg(long)]
         format: Option<String>,
+
+        /// Show individual behaviors even when specs are fully covered
+        #[arg(long)]
+        verbose: bool,
     },
     /// Display the dependency graph
     Graph {
@@ -104,10 +108,12 @@ fn main() {
             spec_path,
             scan,
             format,
+            verbose,
         }) => process::exit(minter::core::commands::coverage::run_coverage(
             &spec_path,
             &scan,
             format.as_deref(),
+            verbose,
         )),
         Some(Commands::Graph { dir, impacted }) => {
             process::exit(minter::core::commands::graph::run_graph(

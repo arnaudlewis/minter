@@ -47,7 +47,7 @@ struct NfrCoverage {
 
 #[derive(Debug, Clone)]
 enum NfrCoverageType {
-    Derived { from_behaviors: Vec<String> },
+    Derived,
     Benchmark,
     Uncovered,
 }
@@ -70,7 +70,12 @@ struct SpecCoverage {
 // ── Entry point ─────────────────────────────────────────
 
 /// Run the coverage command. Returns exit code (0 = full coverage, 1 = failure).
-pub fn run_coverage(spec_path: &Path, scan_paths: &[PathBuf], format: Option<&str>) -> i32 {
+pub fn run_coverage(
+    spec_path: &Path,
+    scan_paths: &[PathBuf],
+    format: Option<&str>,
+    verbose: bool,
+) -> i32 {
     // Validate format
     if let Some(fmt) = format {
         if fmt != "human" && fmt != "json" {
@@ -182,7 +187,7 @@ pub fn run_coverage(spec_path: &Path, scan_paths: &[PathBuf], format: Option<&st
     if is_json {
         print_json_report(&report);
     } else {
-        print_human_report(&report);
+        print_human_report(&report, verbose);
     }
 
     if report.covered_behaviors == report.total_behaviors {
@@ -731,9 +736,7 @@ fn build_report(
                 nfr_coverage.push(NfrCoverage {
                     category: category.to_string(),
                     constraint: constraint.to_string(),
-                    coverage_type: NfrCoverageType::Derived {
-                        from_behaviors: covered_behaviors,
-                    },
+                    coverage_type: NfrCoverageType::Derived,
                 });
             }
         }
@@ -765,7 +768,7 @@ fn build_report(
 
 // ── Human-readable output ───────────────────────────────
 
-fn print_human_report(report: &CoverageReport) {
+fn print_human_report(report: &CoverageReport, verbose: bool) {
     let color = crate::cli::display::use_color();
     let green = if color {
         crate::cli::display::GREEN
@@ -787,33 +790,61 @@ fn print_human_report(report: &CoverageReport) {
         ""
     };
 
+    println!("\n{bold}Behavior Coverage{reset}");
     for (spec_name, spec_cov) in &report.specs {
-        println!("\n{bold}{} v{}{reset}", spec_name, spec_cov.version);
+        let total = spec_cov.behaviors.len();
+        let covered = spec_cov
+            .behaviors
+            .iter()
+            .filter(|b| !b.test_types.is_empty())
+            .count();
+        let fully_covered = covered == total && total > 0;
 
-        for beh in &spec_cov.behaviors {
-            if beh.test_types.is_empty() {
-                println!(
-                    "  {red}\u{2717}{reset} {} {dim}uncovered{reset}",
-                    beh.behavior_name
-                );
-            } else {
-                let types_str: Vec<&str> = beh.test_types.iter().map(|s| s.as_str()).collect();
-                let dup_info = if beh.duplicates.is_empty() {
-                    String::new()
+        if fully_covered && !verbose {
+            // Collapsed single line: ✓ spec-name vX.Y.Z  N/N [type1, type2]
+            let all_types: BTreeSet<&str> = spec_cov
+                .behaviors
+                .iter()
+                .flat_map(|b| b.test_types.iter().map(|s| s.as_str()))
+                .collect();
+            let types_str: Vec<&str> = all_types.into_iter().collect();
+            println!(
+                "  {green}\u{2713}{reset} {bold}{} v{}{reset}  {}/{} {cyan}[{}]{reset}",
+                spec_name,
+                spec_cov.version,
+                covered,
+                total,
+                types_str.join(", ")
+            );
+        } else {
+            // Expanded: header then individual behaviors
+            println!("\n{bold}{} v{}{reset}", spec_name, spec_cov.version);
+
+            for beh in &spec_cov.behaviors {
+                if beh.test_types.is_empty() {
+                    println!(
+                        "  {red}\u{2717}{reset} {} {dim}uncovered{reset}",
+                        beh.behavior_name
+                    );
                 } else {
-                    let dup_parts: Vec<String> = beh
-                        .duplicates
-                        .iter()
-                        .map(|(t, c)| format!("{} x{} duplicate", t, c))
-                        .collect();
-                    format!(" {yellow}({}){reset}", dup_parts.join(", "))
-                };
-                println!(
-                    "  {green}\u{2713}{reset} {} {cyan}[{}]{reset}{}",
-                    beh.behavior_name,
-                    types_str.join(", "),
-                    dup_info
-                );
+                    let types_str: Vec<&str> = beh.test_types.iter().map(String::as_str).collect();
+                    let dup_info = if beh.duplicates.is_empty() {
+                        String::new()
+                    } else {
+                        let dup_parts: Vec<String> = beh
+                            .duplicates
+                            .iter()
+                            .map(|(t, c)| format!("{} x{} duplicate", t, c))
+                            .collect();
+                        format!(" {yellow}({}){reset}", dup_parts.join(", "))
+                    };
+                    println!(
+                        "  {green}\u{2713}{reset} {} {cyan}[{}]{reset}{}",
+                        beh.behavior_name,
+                        types_str.join(", "),
+                        dup_info
+                    );
+                }
             }
         }
     }
@@ -823,16 +854,10 @@ fn print_human_report(report: &CoverageReport) {
         println!("\n{bold}NFR Coverage{reset}");
         for nfr_cov in &report.nfr_coverage {
             match &nfr_cov.coverage_type {
-                NfrCoverageType::Derived { from_behaviors } => {
-                    let behavior_names: Vec<&str> = from_behaviors
-                        .iter()
-                        .map(|b| b.split('/').nth(1).unwrap_or(b.as_str()))
-                        .collect();
+                NfrCoverageType::Derived => {
                     println!(
-                        "  {green}\u{2713}{reset} {}#{} {dim}(derived from {}){reset}",
-                        nfr_cov.category,
-                        nfr_cov.constraint,
-                        behavior_names.join(", ")
+                        "  {green}\u{2713}{reset} {}#{} {dim}[derived]{reset}",
+                        nfr_cov.category, nfr_cov.constraint
                     );
                 }
                 NfrCoverageType::Benchmark => {
@@ -916,7 +941,7 @@ fn print_json_report(report: &CoverageReport) {
         .iter()
         .map(|n| {
             let status = match &n.coverage_type {
-                NfrCoverageType::Derived { .. } => "derived",
+                NfrCoverageType::Derived => "derived",
                 NfrCoverageType::Benchmark => "benchmark",
                 NfrCoverageType::Uncovered => "uncovered",
             };

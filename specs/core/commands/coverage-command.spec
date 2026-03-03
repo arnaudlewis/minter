@@ -1,4 +1,4 @@
-spec coverage-command v1.1.0
+spec coverage-command v1.3.0
 title "Coverage Command"
 
 description
@@ -13,7 +13,9 @@ description
   --scan flag narrows the scan to specific directories. NFR coverage
   for behavioral tests is derived from the spec graph — if a covered
   behavior references an NFR constraint, that constraint has indirect
-  coverage. No configuration file is required.
+  coverage. Fully covered specs are collapsed to a single summary line
+  by default; --verbose expands all specs to show individual behaviors.
+  No configuration file is required.
 
 motivation
   Specs are the source of truth. Tests are derived from specs. But
@@ -43,8 +45,6 @@ behavior report-full-coverage [happy_path]
   when minter coverage specs/
 
   then emits stdout
-    assert output contains "do-thing"
-    assert output contains "do-other"
     assert output contains "2/2"
     assert output contains "100"
 
@@ -103,7 +103,6 @@ behavior show-test-types [happy_path]
   when minter coverage specs/
 
   then emits stdout
-    assert output contains "do-thing"
     assert output contains "unit"
     assert output contains "e2e"
 
@@ -135,8 +134,6 @@ behavior multiple-ids-in-one-tag [happy_path]
   when minter coverage specs/
 
   then emits stdout
-    assert output contains "do-thing"
-    assert output contains "do-other"
     assert output contains "2/2"
 
   then emits process_exit
@@ -153,7 +150,6 @@ behavior scan-double-slash-comments [happy_path]
   when minter coverage specs/
 
   then emits stdout
-    assert output contains "do-thing"
     assert output contains "unit"
 
 
@@ -167,7 +163,6 @@ behavior scan-hash-comments [happy_path]
   when minter coverage specs/
 
   then emits stdout
-    assert output contains "do-thing"
     assert output contains "unit"
 
 
@@ -239,7 +234,7 @@ behavior skip-gitignored-paths [happy_path]
 # NFR derived coverage
 
 behavior derive-nfr-from-covered-behavior [happy_path]
-  "Show NFR coverage derived from a covered behavior that references an NFR constraint"
+  "Show NFR coverage as derived when its linked behavior is covered"
 
   given
     specs/a.spec has behavior do-thing with nfr performance#api-latency
@@ -250,7 +245,7 @@ behavior derive-nfr-from-covered-behavior [happy_path]
 
   then emits stdout
     assert output contains "performance#api-latency"
-    assert output contains "do-thing"
+    assert output contains "derived"
 
 
 behavior derive-nfr-uncovered-from-uncovered-behavior [happy_path]
@@ -282,6 +277,65 @@ behavior report-benchmark-nfr [happy_path]
   then emits stdout
     assert output contains "performance#api-latency"
     assert output contains "benchmark"
+
+
+# Compact display
+
+behavior collapse-fully-covered-spec [happy_path]
+  "Display fully covered specs as a single line with count and aggregated test types"
+
+  given
+    specs/a.spec has 2 behaviors: do-thing and do-other
+    A file contains // @minter:unit do-thing
+    Another file contains // @minter:e2e do-other
+
+  when minter coverage specs/
+
+  then emits stdout
+    assert output contains "Behavior Coverage"
+    assert output contains "a v1.0.0"
+    assert output contains "2/2"
+    assert output contains "unit"
+    assert output contains "e2e"
+    assert output does not contain "do-thing"
+    assert output does not contain "do-other"
+
+
+behavior expand-partially-covered-spec [happy_path]
+  "Expand specs with uncovered behaviors to show individual behavior lines"
+
+  given
+    specs/a.spec has 3 behaviors: do-thing, do-other, and do-missing
+    A file contains // @minter:unit do-thing
+    Another file contains // @minter:e2e do-other
+    No file references do-missing
+
+  when minter coverage specs/
+
+  then emits stdout
+    assert output contains "do-thing"
+    assert output contains "do-other"
+    assert output contains "do-missing"
+    assert output contains "uncovered"
+
+
+behavior verbose-expands-all [happy_path]
+  "Expand all specs when --verbose is provided, even when fully covered"
+
+  given
+    specs/a.spec has 2 behaviors: do-thing and do-other
+    A file contains // @minter:unit do-thing
+    Another file contains // @minter:e2e do-other
+
+  when minter coverage specs/ --verbose
+
+  then emits stdout
+    assert output contains "do-thing"
+    assert output contains "do-other"
+    assert output contains "2/2"
+
+  then emits process_exit
+    assert code == 0
 
 
 # JSON output
@@ -508,7 +562,6 @@ behavior warn-empty-tag [edge_case]
     assert output contains "empty"
 
   then emits stdout
-    assert output contains "do-thing"
     assert output contains "1/1"
 
   then emits process_exit
@@ -523,7 +576,7 @@ behavior info-duplicate-coverage [edge_case]
     tests/a.test.ts contains // @minter:unit do-thing
     tests/b.test.ts contains // @minter:unit do-thing
 
-  when minter coverage specs/
+  when minter coverage specs/ --verbose
 
   then emits stdout
     assert output contains "do-thing"

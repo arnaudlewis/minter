@@ -613,7 +613,8 @@ behavior do-thing [happy_path]
         .current_dir(dir.path())
         .assert()
         .success()
-        .stdout(predicate::str::contains("do-thing"));
+        .stdout(predicate::str::contains("a v1.0.0"))
+        .stdout(predicate::str::contains("1/1"));
 }
 
 // @minter:e2e route-coverage-file
@@ -654,7 +655,8 @@ behavior do-thing [happy_path]
         .current_dir(dir.path())
         .assert()
         .success()
-        .stdout(predicate::str::contains("do-thing"));
+        .stdout(predicate::str::contains("a v1.0.0"))
+        .stdout(predicate::str::contains("1/1"));
 }
 
 // @minter:e2e route-coverage-with-scan
@@ -700,7 +702,7 @@ behavior do-thing [happy_path]
         .current_dir(dir.path())
         .assert()
         .success()
-        .stdout(predicate::str::contains("do-thing"))
+        .stdout(predicate::str::contains("a v1.0.0"))
         .stdout(predicate::str::contains("unit"));
 }
 
