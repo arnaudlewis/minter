@@ -433,7 +433,7 @@ fn compute_skippable(
 }
 
 /// Recursively check if a spec and all its deps are skippable.
-fn is_transitively_skippable(
+pub(crate) fn is_transitively_skippable(
     name: &str,
     hash_ok: &HashMap<String, bool>,
     cache: &GraphCache,
@@ -467,4 +467,151 @@ fn is_transitively_skippable(
 
     memo.insert(name.to_string(), true);
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::graph::CachedEntry;
+
+    fn make_cached_entry(
+        hash: &str,
+        valid: bool,
+        deps: Vec<&str>,
+        nfr_cats: Vec<&str>,
+    ) -> CachedEntry {
+        CachedEntry {
+            content_hash: hash.to_string(),
+            version: "1.0.0".to_string(),
+            behavior_count: 1,
+            valid,
+            dependencies: deps.into_iter().map(String::from).collect(),
+            path: "test.spec".to_string(),
+            nfr_categories: nfr_cats.into_iter().map(String::from).collect(),
+        }
+    }
+
+    #[test]
+    /// validate: skippable_when_hash_ok_no_deps
+    fn skippable_when_hash_ok_no_deps() {
+        let mut cache = GraphCache::new();
+        cache.upsert(
+            "auth".to_string(),
+            make_cached_entry("abc", true, vec![], vec![]),
+        );
+        let hash_ok: HashMap<String, bool> = [("auth".to_string(), true)].into();
+        let changed_nfrs = HashSet::new();
+        let mut memo = HashMap::new();
+        assert!(is_transitively_skippable(
+            "auth",
+            &hash_ok,
+            &cache,
+            &mut memo,
+            &changed_nfrs
+        ));
+    }
+
+    #[test]
+    /// validate: not_skippable_when_hash_mismatch
+    fn not_skippable_when_hash_mismatch() {
+        let mut cache = GraphCache::new();
+        cache.upsert(
+            "auth".to_string(),
+            make_cached_entry("abc", true, vec![], vec![]),
+        );
+        let hash_ok: HashMap<String, bool> = [("auth".to_string(), false)].into();
+        let changed_nfrs = HashSet::new();
+        let mut memo = HashMap::new();
+        assert!(!is_transitively_skippable(
+            "auth",
+            &hash_ok,
+            &cache,
+            &mut memo,
+            &changed_nfrs
+        ));
+    }
+
+    #[test]
+    /// validate: not_skippable_when_dep_changed
+    fn not_skippable_when_dep_changed() {
+        let mut cache = GraphCache::new();
+        cache.upsert(
+            "auth".to_string(),
+            make_cached_entry("abc", true, vec!["user"], vec![]),
+        );
+        cache.upsert(
+            "user".to_string(),
+            make_cached_entry("def", true, vec![], vec![]),
+        );
+        let hash_ok: HashMap<String, bool> = [
+            ("auth".to_string(), true),
+            ("user".to_string(), false), // dep hash changed
+        ]
+        .into();
+        let changed_nfrs = HashSet::new();
+        let mut memo = HashMap::new();
+        assert!(!is_transitively_skippable(
+            "auth",
+            &hash_ok,
+            &cache,
+            &mut memo,
+            &changed_nfrs
+        ));
+    }
+
+    #[test]
+    /// validate: not_skippable_when_nfr_changed
+    fn not_skippable_when_nfr_changed() {
+        let mut cache = GraphCache::new();
+        cache.upsert(
+            "auth".to_string(),
+            make_cached_entry("abc", true, vec![], vec!["security"]),
+        );
+        let hash_ok: HashMap<String, bool> = [("auth".to_string(), true)].into();
+        let changed_nfrs: HashSet<String> = ["security".to_string()].into();
+        let mut memo = HashMap::new();
+        assert!(!is_transitively_skippable(
+            "auth",
+            &hash_ok,
+            &cache,
+            &mut memo,
+            &changed_nfrs
+        ));
+    }
+
+    #[test]
+    /// validate: skippable_transitive_chain
+    fn skippable_transitive_chain() {
+        let mut cache = GraphCache::new();
+        cache.upsert(
+            "a".to_string(),
+            make_cached_entry("h1", true, vec!["b"], vec![]),
+        );
+        cache.upsert(
+            "b".to_string(),
+            make_cached_entry("h2", true, vec!["c"], vec![]),
+        );
+        cache.upsert(
+            "c".to_string(),
+            make_cached_entry("h3", true, vec![], vec![]),
+        );
+        let hash_ok: HashMap<String, bool> = [
+            ("a".to_string(), true),
+            ("b".to_string(), true),
+            ("c".to_string(), true),
+        ]
+        .into();
+        let changed_nfrs = HashSet::new();
+        let mut memo = HashMap::new();
+        assert!(is_transitively_skippable(
+            "a",
+            &hash_ok,
+            &cache,
+            &mut memo,
+            &changed_nfrs
+        ));
+        assert_eq!(memo.get("a"), Some(&true));
+        assert_eq!(memo.get("b"), Some(&true));
+        assert_eq!(memo.get("c"), Some(&true));
+    }
 }

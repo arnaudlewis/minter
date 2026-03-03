@@ -477,6 +477,77 @@ fn print_impacted(
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_spec_node(name: &str, deps: Vec<&str>) -> SpecNode {
+        SpecNode {
+            name: name.to_string(),
+            version: "1.0.0".to_string(),
+            behavior_count: 1,
+            deps: deps.into_iter().map(String::from).collect(),
+            nfr_refs: BTreeMap::new(),
+        }
+    }
+
+    #[test]
+    /// graph: bfs_no_dependents
+    fn bfs_no_dependents() {
+        let specs = vec![make_spec_node("a", vec![]), make_spec_node("b", vec![])];
+        let result = find_spec_dependents(&specs, "a");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    /// graph: bfs_direct_dependents
+    fn bfs_direct_dependents() {
+        let specs = vec![
+            make_spec_node("target", vec![]),
+            make_spec_node("a", vec!["target"]),
+            make_spec_node("b", vec!["target"]),
+        ];
+        let mut result = find_spec_dependents(&specs, "target");
+        result.sort();
+        assert_eq!(result, vec!["a", "b"]);
+    }
+
+    #[test]
+    /// graph: bfs_transitive_chain
+    fn bfs_transitive_chain() {
+        let specs = vec![
+            make_spec_node("target", vec![]),
+            make_spec_node("b", vec!["target"]),
+            make_spec_node("a", vec!["b"]),
+        ];
+        let mut result = find_spec_dependents(&specs, "target");
+        result.sort();
+        assert_eq!(result, vec!["a", "b"]);
+    }
+
+    #[test]
+    /// graph: bfs_diamond
+    fn bfs_diamond() {
+        let specs = vec![
+            make_spec_node("target", vec![]),
+            make_spec_node("a", vec!["target"]),
+            make_spec_node("b", vec!["target"]),
+            make_spec_node("c", vec!["a", "b"]),
+        ];
+        let mut result = find_spec_dependents(&specs, "target");
+        result.sort();
+        assert_eq!(result, vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    /// graph: bfs_empty_graph
+    fn bfs_empty_graph() {
+        let specs: Vec<SpecNode> = vec![];
+        let result = find_spec_dependents(&specs, "nonexistent");
+        assert!(result.is_empty());
+    }
+}
+
 /// Find the best root directory for NFR file discovery.
 /// When given a file, walks up parent directories to find the nearest
 /// ancestor that contains .nfr files. Falls back to the file's parent.
