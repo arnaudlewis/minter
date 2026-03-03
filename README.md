@@ -269,10 +269,12 @@ minter guide coverage       # How to tag tests for coverage tracking
 ### `coverage` -- Behavior coverage report
 
 ```
-minter coverage [--scan <DIR>...] [--format <FORMAT>] <SPEC_PATH>
+minter coverage [--scan <DIR>...] [--format <FORMAT>] [--verbose] <SPEC_PATH>
 ```
 
 Scan project files for `@minter` tags in comments and cross-reference them against the spec graph to produce a behavior coverage report. Tags placed in test files declare which spec behaviors a test covers.
+
+Fully covered specs are collapsed to a single summary line by default. Use `--verbose` to expand all specs and show individual behaviors.
 
 ```bash
 minter coverage specs/                          # Scan cwd for tags against all specs
@@ -280,6 +282,7 @@ minter coverage specs/my-feature.spec           # Coverage for a single spec
 minter coverage specs/ --scan tests/            # Only scan tests/ directory
 minter coverage specs/ --scan tests/ --scan e2e/  # Multiple scan directories
 minter coverage specs/ --format json            # Machine-readable JSON output
+minter coverage specs/ --verbose                # Expand all specs (show individual behaviors)
 ```
 
 **Tag format:**
@@ -302,14 +305,17 @@ bench("validate 100 specs", || { /* ... */ });
 **Output:**
 
 ```
-a v1.0.0
-  do-thing ✓ unit, e2e
+✓ a v1.0.0  3/3 [unit, e2e]
+✗ b v2.0.0  1/2
+  do-thing ✓ unit
   do-other ✗ uncovered
 
-Summary: 1/2 behaviors covered (50%)
-  unit: 1
+Summary: 4/5 behaviors covered (80%)
+  unit: 2
   e2e: 1
 ```
+
+Fully covered specs (like `a`) collapse to one line. Specs with gaps (like `b`) expand to show every behavior.
 
 NFR coverage is derived automatically from the spec graph — if a covered behavior references an NFR constraint, that constraint has indirect coverage. No configuration file is required. The scanner respects `.gitignore`.
 
