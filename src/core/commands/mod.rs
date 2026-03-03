@@ -1,3 +1,4 @@
+pub mod coverage;
 pub mod format;
 pub mod graph;
 pub mod guide;

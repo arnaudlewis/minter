@@ -52,6 +52,20 @@ enum Commands {
         #[arg(value_enum)]
         topic: minter::model::GuideTopic,
     },
+    /// Compute test coverage of spec behaviors
+    Coverage {
+        /// Spec file or directory path
+        #[arg(required = true)]
+        spec_path: PathBuf,
+
+        /// Directories to scan for @minter tags (default: current directory)
+        #[arg(long)]
+        scan: Vec<PathBuf>,
+
+        /// Output format (default: human, json)
+        #[arg(long)]
+        format: Option<String>,
+    },
     /// Display the dependency graph
     Graph {
         /// Directory containing spec files
@@ -86,6 +100,15 @@ fn main() {
         Some(Commands::Guide { topic }) => {
             process::exit(minter::core::commands::guide::run_guide(&topic));
         }
+        Some(Commands::Coverage {
+            spec_path,
+            scan,
+            format,
+        }) => process::exit(minter::core::commands::coverage::run_coverage(
+            &spec_path,
+            &scan,
+            format.as_deref(),
+        )),
         Some(Commands::Graph { dir, impacted }) => {
             process::exit(minter::core::commands::graph::run_graph(
                 &dir,
