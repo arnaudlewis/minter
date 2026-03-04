@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to minter will be documented in this file.
+## [1.0.1] - 2026-03-04
+
+### Fixed
+
+- **cli:** List available topics when minter guide is run without arguments
+
 ## [1.0.0] - 2026-03-04
 
 ### Added
@@ -28,6 +34,10 @@ All notable changes to minter will be documented in this file.
 ### Fixed
 
 - **mcp:** Add coverage topic to guide tool description
+
+### Maintenance
+
+- Release v1.0.0
 
 ### Testing
 
