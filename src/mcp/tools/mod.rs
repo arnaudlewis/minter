@@ -92,7 +92,9 @@ pub struct GraphParams {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GuideParams {
-    #[schemars(description = "Topic: workflow, authoring, smells, nfr, context, or methodology")]
+    #[schemars(
+        description = "Topic: workflow, authoring, smells, nfr, context, methodology, or coverage"
+    )]
     pub topic: String,
 }
 
@@ -229,7 +231,7 @@ impl MinterServer {
     }
 
     #[tool(
-        description = "Condensed reference on spec-driven development practices. Returns guidance on workflow phases, spec authoring, requirements smells, NFR design, or context management."
+        description = "Condensed reference on spec-driven development practices. Returns guidance on workflow phases, spec authoring, requirements smells, NFR design, context management, or coverage tagging."
     )]
     fn guide(
         &self,
