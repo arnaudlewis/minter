@@ -48,9 +48,9 @@ enum Commands {
     },
     /// Display a spec-driven development guide by topic
     Guide {
-        /// Topic: workflow, authoring, smells, nfr, context, methodology
-        #[arg(value_enum)]
-        topic: minter::model::GuideTopic,
+        /// Guide topic (omit to list available topics)
+        #[arg(value_enum, hide_possible_values = true)]
+        topic: Option<minter::model::GuideTopic>,
     },
     /// Compute test coverage of spec behaviors
     Coverage {
@@ -102,7 +102,10 @@ fn main() {
             process::exit(minter::core::commands::inspect::run_inspect(&file));
         }
         Some(Commands::Guide { topic }) => {
-            process::exit(minter::core::commands::guide::run_guide(&topic));
+            process::exit(match topic {
+                Some(t) => minter::core::commands::guide::run_guide(&t),
+                None => minter::core::commands::guide::list_topics(),
+            });
         }
         Some(Commands::Coverage {
             spec_path,

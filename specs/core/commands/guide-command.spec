@@ -1,4 +1,4 @@
-spec guide-command v1.1.0
+spec guide-command v1.2.0
 title "Guide Command"
 
 description
@@ -351,19 +351,25 @@ behavior guide-unknown-topic [error_case]
     assert code == 1
 
 
-behavior guide-missing-topic [error_case]
-  "Print error when no topic argument is provided"
+behavior guide-missing-topic [happy_path]
+  "List available topics with descriptions when no topic argument is provided"
 
   given
     The guide subcommand is invoked with no arguments
 
   when minter guide
 
-  then emits stderr
-    assert output contains "guide"
+  then emits stdout
+    assert output contains "workflow"
+    assert output contains "authoring"
+    assert output contains "smells"
+    assert output contains "nfr"
+    assert output contains "context"
+    assert output contains "methodology"
+    assert output contains "coverage"
 
   then emits process_exit
-    assert code == 1
+    assert code == 0
 
 
 depends on nfr-grammar >= 1.0.0

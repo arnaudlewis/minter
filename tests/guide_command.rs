@@ -295,6 +295,12 @@ fn guide_missing_topic() {
     minter()
         .arg("guide")
         .assert()
-        .failure()
-        .stderr(predicate::str::contains("guide"));
+        .success()
+        .stdout(predicate::str::contains("workflow"))
+        .stdout(predicate::str::contains("authoring"))
+        .stdout(predicate::str::contains("smells"))
+        .stdout(predicate::str::contains("nfr"))
+        .stdout(predicate::str::contains("context"))
+        .stdout(predicate::str::contains("methodology"))
+        .stdout(predicate::str::contains("coverage"));
 }

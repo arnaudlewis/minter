@@ -245,10 +245,10 @@ no dependencies
 ### `guide` -- Development reference guides
 
 ```
-minter guide <TOPIC>
+minter guide [TOPIC]
 ```
 
-Print a condensed reference guide for a specific topic.
+Print a condensed reference guide for a specific topic. Run `minter guide` without arguments to list available topics with descriptions.
 
 | Topic | Description |
 |-------|-------------|
@@ -261,6 +261,7 @@ Print a condensed reference guide for a specific topic.
 | `coverage` | Coverage tagging guide for linking tests to spec behaviors |
 
 ```bash
+minter guide                # List available topics
 minter guide methodology    # Full methodology reference
 minter guide workflow       # Quick workflow phase reference
 minter guide coverage       # How to tag tests for coverage tracking
