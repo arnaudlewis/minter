@@ -1,6 +1,39 @@
 # Changelog
 
 All notable changes to minter will be documented in this file.
+## [1.0.0] - 2026-03-04
+
+### Added
+
+- **cli:** Add anti-contamination guidance to smells, authoring, and NFR guides
+- **cli:** Add coverage tagging guide topic
+- **cli:** Add coverage-command spec v1.1.0
+- **cli:** Implement minter coverage command
+- **cli:** Add coverage command routing to CLI spec
+- **cli:** Compact coverage display with --verbose flag
+- **cli:** Add coverage tagging directive to Phase 3 guides
+
+### Changed
+
+- **cli:** Replace explain command with guide command
+- **validator:** Extract shared orchestration to core
+
+### Documentation
+
+- Move guide-command.spec to core/commands/
+- Add coverage command and update guide references
+- Update coverage command docs with compact display
+- Fix coverage output example to match actual display
+
+### Fixed
+
+- **mcp:** Add coverage topic to guide tool description
+
+### Testing
+
+- **validator:** Add unit tests for inspect, graph BFS, and cache skip logic
+- Add @minter coverage tags to all test and bench files
+
 ## [0.1.0] - 2026-02-27
 
 ### Added
@@ -20,6 +53,7 @@ All notable changes to minter will be documented in this file.
 
 ### Maintenance
 
+- Release v0.1.0
 - Release v0.1.0
 
 
