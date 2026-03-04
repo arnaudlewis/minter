@@ -305,10 +305,12 @@ bench("validate 100 specs", || { /* ... */ });
 **Output:**
 
 ```
-✓ a v1.0.0  3/3 [unit, e2e]
-✗ b v2.0.0  1/2
-  do-thing ✓ unit
-  do-other ✗ uncovered
+Behavior Coverage
+  ✓ a v1.0.0  3/3 [unit, e2e]
+
+b v2.0.0
+  ✓ do-thing [unit]
+  ✗ do-other uncovered
 
 Summary: 4/5 behaviors covered (80%)
   unit: 2
