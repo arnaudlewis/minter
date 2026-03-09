@@ -1,4 +1,4 @@
-spec mcp-server v1.3.0
+spec mcp-server v1.4.0
 title "MCP Server"
 
 description
@@ -49,7 +49,7 @@ behavior initialize-server [happy_path]
     assert capabilities contains tools
 
 behavior list-tools [happy_path]
-  "Return all seven tool definitions with descriptions and input schemas"
+  "Return all eight tool definitions with descriptions and input schemas"
 
   given
     The MCP server has been initialized
@@ -57,12 +57,13 @@ behavior list-tools [happy_path]
   when tools/list
 
   then returns tool_list
-    assert tool_count == 7
+    assert tool_count == 8
     assert tools contains tool named "validate"
     assert tools contains tool named "inspect"
     assert tools contains tool named "scaffold"
     assert tools contains tool named "format"
     assert tools contains tool named "graph"
+    assert tools contains tool named "coverage"
     assert tools contains tool named "initialize_minter"
     assert tools contains tool named "guide"
     assert each tool has a description
@@ -596,9 +597,67 @@ behavior graph-nonexistent-directory [error_case]
     assert error message contains "nonexistent-dir"
 
 
+# Coverage tool
+
+behavior coverage-full [happy_path]
+  "Return JSON coverage report for specs with all behaviors covered"
+
+  given
+    A directory contains a valid spec with one behavior
+    A test file in the same directory tags that behavior with @minter:e2e
+
+  when tools/call coverage
+    spec_path = "specs/"
+
+  then returns tool_result
+    assert result contains total_behaviors
+    assert result contains covered_behaviors
+    assert result contains coverage_percentage
+
+behavior coverage-uncovered [happy_path]
+  "Return JSON coverage report showing uncovered behaviors"
+
+  given
+    A directory contains a valid spec with one behavior
+    No test files exist with @minter tags
+
+  when tools/call coverage
+    spec_path = "specs/"
+
+  then returns tool_result
+    assert covered_behaviors == 0
+
+behavior coverage-with-scan-dirs [happy_path]
+  "Respect explicit scan directories for tag discovery"
+
+  given
+    Spec files are in specs/ directory
+    Test files with @minter tags are in tests/ directory
+
+  when tools/call coverage
+    spec_path = "specs/"
+    scan = ["tests/"]
+
+  then returns tool_result
+    assert covered_behaviors == 1
+
+behavior coverage-nonexistent-path [error_case]
+  "Return error when the spec path does not exist"
+
+  given
+    The path does not exist on disk
+
+  when tools/call coverage
+    spec_path = "nonexistent/"
+
+  then returns tool_result
+    assert isError == true
+
+
 depends on validate-command >= 2.1.0
 depends on inspect-command >= 1.1.0
 depends on scaffold-command >= 1.1.0
 depends on format-command >= 1.1.0
 depends on graph-command >= 1.3.0
+depends on coverage-command >= 1.0.0
 depends on mcp-response-format >= 1.0.0

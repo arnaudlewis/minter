@@ -598,6 +598,7 @@ fn list_tools() {
     assert!(tool_names.contains(&"scaffold"), "missing scaffold tool");
     assert!(tool_names.contains(&"format"), "missing format tool");
     assert!(tool_names.contains(&"graph"), "missing graph tool");
+    assert!(tool_names.contains(&"coverage"), "missing coverage tool");
 
     // Each tool has description and inputSchema
     for tool in tools.as_array().unwrap() {
@@ -2230,4 +2231,113 @@ fn graph_nonexistent_directory() {
     assert!(is_error(&result));
     let text = text_content(&result);
     assert!(text.contains(fake_path), "error should mention the path");
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Coverage tool
+// ═══════════════════════════════════════════════════════════════
+
+// @minter:e2e coverage-full
+#[test]
+/// mcp-server: coverage returns JSON report for fully covered specs
+fn mcp_coverage_full() {
+    let dir = TempDir::new().unwrap();
+    write_spec(
+        &dir,
+        "auth",
+        "spec auth v1.0.0\ntitle \"Auth\"\n\ndescription\n  Auth spec.\n\nmotivation\n  Testing.\n\nbehavior login [happy_path]\n  \"login\"\n\n  given\n    The system is ready\n\n  when login\n\n  then emits stdout\n    assert output contains \"ok\"\n",
+    );
+    // Create a test file with a coverage tag
+    let test_path = dir.path().join("test.rs");
+    std::fs::write(
+        &test_path,
+        "// @minter:e2e login\n#[test]\nfn test_login() {}\n",
+    )
+    .unwrap();
+
+    let mut client = McpClient::new();
+    let result = client.call_tool(
+        "coverage",
+        json!({
+            "spec_path": dir.path().to_str().unwrap(),
+        }),
+    );
+    assert!(
+        !is_error(&result),
+        "coverage should succeed, got: {}",
+        text_content(&result)
+    );
+    let data = json_content(&result);
+    assert_eq!(data["total_behaviors"], 1);
+    assert_eq!(data["covered_behaviors"], 1);
+    assert_eq!(data["coverage_percentage"], 100);
+}
+
+// @minter:e2e coverage-uncovered
+#[test]
+/// mcp-server: coverage reports uncovered behaviors
+fn mcp_coverage_uncovered() {
+    let dir = TempDir::new().unwrap();
+    write_spec(
+        &dir,
+        "auth",
+        "spec auth v1.0.0\ntitle \"Auth\"\n\ndescription\n  Auth spec.\n\nmotivation\n  Testing.\n\nbehavior login [happy_path]\n  \"login\"\n\n  given\n    The system is ready\n\n  when login\n\n  then emits stdout\n    assert output contains \"ok\"\n",
+    );
+
+    let mut client = McpClient::new();
+    let result = client.call_tool(
+        "coverage",
+        json!({
+            "spec_path": dir.path().to_str().unwrap(),
+        }),
+    );
+    assert!(!is_error(&result), "coverage should succeed");
+    let data = json_content(&result);
+    assert_eq!(data["total_behaviors"], 1);
+    assert_eq!(data["covered_behaviors"], 0);
+}
+
+// @minter:e2e coverage-nonexistent-path
+#[test]
+/// mcp-server: coverage errors on nonexistent path
+fn mcp_coverage_nonexistent_path() {
+    let mut client = McpClient::new();
+    let result = client.call_tool(
+        "coverage",
+        json!({ "spec_path": "/tmp/minter-nonexistent-coverage-12345" }),
+    );
+    assert!(is_error(&result));
+}
+
+// @minter:e2e coverage-with-scan-dirs
+#[test]
+/// mcp-server: coverage respects scan directories
+fn mcp_coverage_with_scan_dirs() {
+    let dir = TempDir::new().unwrap();
+    let specs_dir = dir.path().join("specs");
+    let tests_dir = dir.path().join("tests");
+    std::fs::create_dir_all(&specs_dir).unwrap();
+    std::fs::create_dir_all(&tests_dir).unwrap();
+
+    std::fs::write(
+        specs_dir.join("auth.spec"),
+        "spec auth v1.0.0\ntitle \"Auth\"\n\ndescription\n  Auth spec.\n\nmotivation\n  Testing.\n\nbehavior login [happy_path]\n  \"login\"\n\n  given\n    The system is ready\n\n  when login\n\n  then emits stdout\n    assert output contains \"ok\"\n",
+    ).unwrap();
+    std::fs::write(
+        tests_dir.join("test.rs"),
+        "// @minter:e2e login\n#[test]\nfn test_login() {}\n",
+    )
+    .unwrap();
+
+    let mut client = McpClient::new();
+    let result = client.call_tool(
+        "coverage",
+        json!({
+            "spec_path": specs_dir.to_str().unwrap(),
+            "scan": [tests_dir.to_str().unwrap()],
+        }),
+    );
+    assert!(!is_error(&result));
+    let data = json_content(&result);
+    assert_eq!(data["covered_behaviors"], 1);
 }

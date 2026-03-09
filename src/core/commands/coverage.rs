@@ -69,6 +69,54 @@ struct SpecCoverage {
 
 // ── Entry point ─────────────────────────────────────────
 
+/// Run coverage analysis and return JSON string. Used by MCP.
+pub fn run_coverage_json(spec_path: &Path, scan_paths: &[PathBuf]) -> Result<String, String> {
+    if !spec_path.exists() {
+        return Err(format!("spec path not found: {}", spec_path.display()));
+    }
+
+    for scan in scan_paths {
+        if !scan.exists() {
+            return Err(format!("scan path not found: {}", scan.display()));
+        }
+    }
+
+    let (specs, nfr_specs) = load_specs(spec_path)?;
+
+    if specs.is_empty() {
+        return Err(format!("no spec files found in {}", spec_path.display()));
+    }
+
+    let scan_dirs: Vec<PathBuf> = if scan_paths.is_empty() {
+        if spec_path.is_dir() {
+            vec![spec_path.to_path_buf()]
+        } else {
+            vec![
+                spec_path
+                    .parent()
+                    .map(|p| p.to_path_buf())
+                    .unwrap_or_else(|| PathBuf::from(".")),
+            ]
+        }
+    } else {
+        scan_paths.to_vec()
+    };
+
+    let tags = scan_for_tags(&scan_dirs);
+    let behavior_index = build_behavior_index(&specs);
+    let nfr_index = build_nfr_index(&nfr_specs);
+    let (valid_tags, tag_errors, _warnings) =
+        validate_tags(&tags, &behavior_index, &nfr_index, &specs);
+
+    if !tag_errors.is_empty() {
+        let errors: Vec<String> = tag_errors.iter().map(|e| e.to_string()).collect();
+        return Err(errors.join("\n"));
+    }
+
+    let report = build_report(&specs, &nfr_specs, &valid_tags);
+    Ok(format_json_report(&report))
+}
+
 /// Run the coverage command. Returns exit code (0 = full coverage, 1 = failure).
 pub fn run_coverage(
     spec_path: &Path,
@@ -901,6 +949,10 @@ fn print_human_report(report: &CoverageReport, verbose: bool) {
 // ── JSON output ─────────────────────────────────────────
 
 fn print_json_report(report: &CoverageReport) {
+    println!("{}", format_json_report(report));
+}
+
+fn format_json_report(report: &CoverageReport) -> String {
     let pct = if report.total_behaviors > 0 {
         (report.covered_behaviors as f64 / report.total_behaviors as f64 * 100.0) as usize
     } else {
@@ -962,5 +1014,5 @@ fn print_json_report(report: &CoverageReport) {
         "type_counts": report.type_counts,
     });
 
-    println!("{}", serde_json::to_string_pretty(&output).unwrap());
+    serde_json::to_string_pretty(&output).unwrap()
 }

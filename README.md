@@ -587,7 +587,7 @@ Add `.minter/` to your `.gitignore`.
 
 Minter ships a separate `minter-mcp` binary that exposes minter's capabilities as an [MCP](https://modelcontextprotocol.io/) server over stdio. This allows AI agents and IDEs to validate specs, scaffold files, inspect metadata, and explore the dependency graph programmatically.
 
-**Tools provided:** `validate`, `inspect`, `scaffold`, `format`, `graph`, `initialize_minter`, `guide`.
+**Tools provided:** `validate`, `inspect`, `scaffold`, `format`, `graph`, `coverage`, `initialize_minter`, `guide`.
 
 The MCP server supports both file-path and inline-content modes for validation and inspection, making it usable in environments where specs are not yet written to disk.
 

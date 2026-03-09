@@ -91,6 +91,14 @@ pub struct GraphParams {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct CoverageParams {
+    #[schemars(description = "Spec file or directory path")]
+    pub spec_path: String,
+    #[schemars(description = "Directories to scan for @minter tags (default: spec directory)")]
+    pub scan: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GuideParams {
     #[schemars(
         description = "Topic: workflow, authoring, smells, nfr, context, methodology, or coverage"
@@ -444,6 +452,39 @@ impl MinterServer {
         match params.impacted {
             Some(target) => graph::graph_impacted(&spec_nodes, &target),
             None => graph::graph_full(&spec_nodes),
+        }
+    }
+
+    #[tool(
+        description = "Compute test coverage of spec behaviors by scanning for @minter tags. Returns JSON with per-spec behavior coverage, NFR coverage, and summary statistics."
+    )]
+    fn coverage(
+        &self,
+        Parameters(params): Parameters<CoverageParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let raw_path = Path::new(&params.spec_path);
+        let path = match sanitize_path(raw_path) {
+            Ok(p) => p,
+            Err(msg) => return Ok(tool_error(msg)),
+        };
+
+        let scan_paths: Vec<PathBuf> = params
+            .scan
+            .unwrap_or_default()
+            .iter()
+            .map(PathBuf::from)
+            .collect();
+
+        // Validate scan paths
+        for scan in &scan_paths {
+            if let Err(msg) = sanitize_path(scan) {
+                return Ok(tool_error(msg));
+            }
+        }
+
+        match crate::core::commands::coverage::run_coverage_json(&path, &scan_paths) {
+            Ok(json) => Ok(CallToolResult::success(vec![Content::text(json)])),
+            Err(msg) => Ok(tool_error(msg)),
         }
     }
 }
