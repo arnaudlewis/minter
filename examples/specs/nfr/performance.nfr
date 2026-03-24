@@ -1,0 +1,54 @@
+nfr performance v1.0.0
+title "API Performance Requirements"
+
+description
+  Response time and throughput constraints for all API endpoints.
+
+motivation
+  Users expect snappy interactions. Slow APIs degrade trust and adoption.
+
+
+constraint api-response-time [metric]
+  "API endpoint response time under normal load"
+
+  metric "p95 response time for API requests"
+  threshold < 200ms
+
+  verification
+    environment staging, production
+    benchmark "Run load test with 100 concurrent users for 5 minutes"
+    pass "p95 response time stays below threshold"
+
+  violation high
+  overridable yes
+
+
+constraint throughput [metric]
+  "Minimum request throughput the system must sustain"
+
+  metric "Requests per second the API handles"
+  threshold >= 500rps
+
+  verification
+    environment staging
+    benchmark "Sustained load test for 10 minutes"
+    pass "Throughput remains above threshold with <1% error rate"
+
+  violation medium
+  overridable no
+
+
+constraint no-unbounded-queries [rule]
+  "Every database query must have a bounded result set"
+
+  rule
+    All queries include a LIMIT clause or paginate via cursor.
+    Endpoints returning collections must cap results and provide
+    pagination metadata. No full-table scans in hot paths.
+
+  verification
+    static "Code review confirms all queries are bounded"
+    runtime "Query analyzer rejects plans with full scans on tables over 10k rows"
+
+  violation high
+  overridable no
