@@ -1,11 +1,25 @@
 # Changelog
 
 All notable changes to minter will be documented in this file.
+## [1.1.1] - 2026-03-24
+
+### Fixed
+
+- Trigger first open source release
+
+### Maintenance
+
+- Prepare for open source release
+
 ## [1.1.0] - 2026-03-09
 
 ### Added
 
 - **mcp:** Expose coverage tool
+
+### Maintenance
+
+- Release v1.1.0
 
 ## [1.0.1] - 2026-03-04
 
