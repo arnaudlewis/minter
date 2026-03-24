@@ -1,0 +1,40 @@
+nfr security v1.0.0
+title "Authentication Security Requirements"
+
+description
+  Security constraints for user authentication and credential handling.
+
+motivation
+  Authentication is the trust boundary. Weak credential handling
+  exposes the entire system.
+
+
+constraint password-hashing [rule]
+  "Passwords must be hashed with a modern algorithm before storage"
+
+  rule
+    All passwords are hashed using bcrypt, scrypt, or argon2 with a
+    unique salt per user. Plaintext passwords must never be stored,
+    logged, or returned in API responses.
+
+  verification
+    static "Code review confirms no plaintext password storage or logging"
+    runtime "Integration test verifies stored values are hashed"
+
+  violation critical
+  overridable no
+
+
+constraint brute-force-protection [metric]
+  "Login attempts must be rate-limited to prevent brute-force attacks"
+
+  metric "Maximum consecutive failed login attempts before lockout"
+  threshold <= 5
+
+  verification
+    environment staging, production
+    benchmark "Attempt 10 rapid logins with wrong credentials"
+    pass "Account locks after threshold and returns 429"
+
+  violation critical
+  overridable no

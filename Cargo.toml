@@ -6,9 +6,12 @@ default-run = "minter"
 rust-version = "1.85"
 description = "Spec compiler and validator for structured behavioral specifications"
 authors = ["Arnaud Lewis"]
-license-file = "LICENSE"
+license = "MIT"
 repository = "https://github.com/arnaudlewis/minter"
+homepage = "https://github.com/arnaudlewis/minter"
 readme = "README.md"
+keywords = ["spec", "validator", "dsl", "behavioral", "testing"]
+categories = ["development-tools", "command-line-utilities"]
 publish = false
 
 [dependencies]

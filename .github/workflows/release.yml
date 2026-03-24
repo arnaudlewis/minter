@@ -15,7 +15,6 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  PUBLIC_REPO: arnaudlewis/minter-releases
   TAP_REPO: arnaudlewis/homebrew-tap
 
 jobs:
@@ -87,19 +86,11 @@ jobs:
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
           echo "commits=$(echo "$COMMITS" | base64 -w 0)" >> "$GITHUB_OUTPUT"
 
-      - name: Generate internal changelog preview
+      - name: Generate changelog preview
         if: steps.bump.outputs.bump != 'none'
-        id: changelog_internal
+        id: changelog
         uses: orhun/git-cliff-action@v4
         with:
-          args: --unreleased --tag ${{ steps.bump.outputs.new_tag }} --strip header
-
-      - name: Generate public changelog preview
-        if: steps.bump.outputs.bump != 'none'
-        id: changelog_public
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.public.toml
           args: --unreleased --tag ${{ steps.bump.outputs.new_tag }} --strip header
 
       - name: Print summary
@@ -124,11 +115,8 @@ jobs:
           echo "${{ steps.bump.outputs.commits }}" | base64 -d >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Public Changelog (what users see)" >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ steps.changelog_public.outputs.content }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Internal Changelog (full detail)" >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ steps.changelog_internal.outputs.content }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Changelog" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.changelog.outputs.content }}" >> "$GITHUB_STEP_SUMMARY"
 
   ci:
     name: CI Gate
@@ -285,7 +273,6 @@ jobs:
         id: changelog
         uses: orhun/git-cliff-action@v4
         with:
-          config: cliff.public.toml
           args: --latest --strip header
 
       - name: Download all artifacts
@@ -302,11 +289,9 @@ jobs:
         working-directory: release
         run: sha256sum * > SHA256SUMS.txt
 
-      - name: Create public GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          repository: ${{ env.PUBLIC_REPO }}
-          token: ${{ secrets.RELEASE_TOKEN }}
           tag_name: ${{ needs.prepare.outputs.new_tag }}
           name: "minter ${{ needs.prepare.outputs.new_tag }}"
           draft: false
@@ -367,13 +352,14 @@ jobs:
           SHA_LINUX_ARM64: ${{ steps.shas.outputs.sha_linux_arm64 }}
         run: |
           mkdir -p tap/Formula
-          BASE_URL="https://github.com/${PUBLIC_REPO}/releases/download/${TAG}"
+          REPO="arnaudlewis/minter"
+          BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
           cat > tap/Formula/minter.rb << FORMULA
           class Minter < Formula
             desc "Spec compiler and validator for structured behavioral specifications"
-            homepage "https://github.com/${PUBLIC_REPO}"
+            homepage "https://github.com/${REPO}"
             version "${VERSION}"
-            license :cannot_represent
+            license "MIT"
 
             on_macos do
               if Hardware::CPU.arm?
