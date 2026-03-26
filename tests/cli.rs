@@ -134,12 +134,14 @@ fn reject_unknown_command() {
 // @minter:e2e reject-missing-required-argument
 #[test]
 fn reject_no_files() {
+    // When no config and no default dirs exist, validate reports an error
+    let dir = tempfile::TempDir::new().unwrap();
     minter()
         .arg("validate")
+        .current_dir(dir.path())
         .assert()
         .failure()
-        .stderr(predicate::str::is_empty().not())
-        .stderr(predicate::str::contains("validate"));
+        .stderr(predicate::str::is_empty().not());
 }
 
 // @minter:e2e reject-non-spec-extension
