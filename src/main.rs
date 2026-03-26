@@ -79,6 +79,8 @@ enum Commands {
     },
     /// Generate a minter.lock integrity snapshot
     Lock,
+    /// Verify project integrity against the lock file
+    Ci,
 }
 
 /// Load config from the current working directory, exiting on failure.
@@ -185,6 +187,10 @@ fn main() {
                 process::exit(1);
             }
             process::exit(minter::core::commands::lock::run_lock(&config));
+        }
+        Some(Commands::Ci) => {
+            let config = load_config_or_exit();
+            process::exit(minter::core::commands::ci::run_ci(&config));
         }
         None => {
             use clap::CommandFactory;
