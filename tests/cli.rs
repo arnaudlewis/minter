@@ -78,7 +78,9 @@ fn show_help() {
         .stdout(predicate::str::contains("inspect"))
         .stdout(predicate::str::contains("graph"))
         .stdout(predicate::str::contains("guide"))
-        .stdout(predicate::str::contains("coverage"));
+        .stdout(predicate::str::contains("coverage"))
+        .stdout(predicate::str::contains("lock"))
+        .stdout(predicate::str::contains("ci"));
 
     // No arguments also prints usage
     minter()

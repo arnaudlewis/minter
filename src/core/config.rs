@@ -118,7 +118,7 @@ fn format_parse_error(err: &serde_json::Error) -> String {
     let msg = err.to_string();
 
     // Check for unknown field errors
-    if msg.contains("unknown field") || msg.contains("unknown field") {
+    if msg.contains("unknown field") {
         return format!("{}: {}", CONFIG_FILE_NAME, msg);
     }
 

@@ -38,6 +38,7 @@ struct LockNfr {
 struct LockTestFile {
     hash: String,
     #[serde(default)]
+    #[allow(dead_code)]
     covers: Vec<String>,
 }
 
@@ -94,14 +95,14 @@ pub fn run_ci(config: &crate::core::config::ProjectConfig) -> i32 {
     // Build relative path -> absolute path maps for specs
     let mut disk_specs_rel: BTreeMap<String, PathBuf> = BTreeMap::new();
     for path in &disk_spec_files {
-        let rel = make_relative(path, &cwd);
+        let rel = io::make_relative(path, &cwd);
         disk_specs_rel.insert(rel, path.clone());
     }
 
     // Build relative path -> absolute path maps for nfrs
     let mut disk_nfrs_rel: BTreeMap<String, PathBuf> = BTreeMap::new();
     for path in &disk_nfr_files {
-        let rel = make_relative(path, &cwd);
+        let rel = io::make_relative(path, &cwd);
         disk_nfrs_rel.insert(rel, path.clone());
     }
 
@@ -137,7 +138,7 @@ pub fn run_ci(config: &crate::core::config::ProjectConfig) -> i32 {
             continue;
         }
 
-        let rel_path = make_relative(&tag.file, &cwd);
+        let rel_path = io::make_relative(&tag.file, &cwd);
 
         // Hash the file if not already done
         if !disk_tagged_tests.contains_key(&rel_path) {
@@ -389,15 +390,6 @@ fn check_coverage(
         }
     }
 
-    // Also consider coverage from the lock's test_files covers
-    for lock_spec in lock.specs.values() {
-        for test_file in lock_spec.test_files.values() {
-            for cover in &test_file.covers {
-                covered_behaviors.insert(cover.clone());
-            }
-        }
-    }
-
     // Check each behavior in each spec has coverage
     for lock_spec in lock.specs.values() {
         for behavior in &lock_spec.behaviors {
@@ -417,21 +409,14 @@ fn check_coverage(
 // ── Check 6: Orphan detection ──────────────────────────
 
 fn check_orphans(
-    lock: &LockFile,
+    _lock: &LockFile,
     test_tag_behaviors: &HashMap<String, Vec<String>>,
     parsed_specs: &[(String, String, crate::model::Spec)],
 ) -> CheckResult {
     let mut errors = Vec::new();
 
-    // Build the set of all known behavior names from lock
+    // Build the set of all known behavior names from parsed specs (current disk state)
     let mut known_behaviors: HashSet<String> = HashSet::new();
-    for lock_spec in lock.specs.values() {
-        for behavior in &lock_spec.behaviors {
-            known_behaviors.insert(behavior.clone());
-        }
-    }
-
-    // Also from parsed specs (in case lock is outdated)
     for (_, _, spec) in parsed_specs {
         for behavior in &spec.behaviors {
             known_behaviors.insert(behavior.name.clone());
@@ -460,14 +445,5 @@ fn check_orphans(
         name: "orphan",
         passed: errors.is_empty(),
         errors,
-    }
-}
-
-// ── Helpers ─────────────────────────────────────────────
-
-fn make_relative(path: &Path, base: &Path) -> String {
-    match path.strip_prefix(base) {
-        Ok(rel) => rel.display().to_string(),
-        Err(_) => path.display().to_string(),
     }
 }

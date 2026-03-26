@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::core::commands::coverage::{
     build_behavior_index, build_nfr_index, scan_for_tags, validate_tags,
@@ -127,7 +127,7 @@ pub fn run_lock(config: &crate::core::config::ProjectConfig) -> i32 {
     let mut dep_name_to_path: HashMap<String, String> = HashMap::new();
 
     for (path, source, spec) in &parsed_specs {
-        let rel_path = make_relative(path, &cwd);
+        let rel_path = io::make_relative(path, &cwd);
         spec_name_to_rel_path.insert(spec.name.clone(), rel_path.clone());
         dep_name_to_path.insert(spec.name.clone(), rel_path.clone());
 
@@ -144,7 +144,7 @@ pub fn run_lock(config: &crate::core::config::ProjectConfig) -> i32 {
                 parsed_specs
                     .iter()
                     .find(|(_, _, s)| s.name == *dep_name)
-                    .map(|(p, _, _)| make_relative(p, &cwd))
+                    .map(|(p, _, _)| io::make_relative(p, &cwd))
             })
             .collect();
 
@@ -198,11 +198,11 @@ pub fn run_lock(config: &crate::core::config::ProjectConfig) -> i32 {
             continue; // benchmarks are NFR-only, not behavior coverage
         }
 
-        let test_rel_path = make_relative(&tag.file, &cwd);
+        let test_rel_path = io::make_relative(&tag.file, &cwd);
 
         // Hash the test file if not already done
         if !test_file_hashes.contains_key(&test_rel_path) {
-            if let Ok(content) = std::fs::read_to_string(&tag.file) {
+            if let Ok(content) = io::read_file_safe(&tag.file) {
                 test_file_hashes.insert(test_rel_path.clone(), content_hash(&content));
             }
         }
@@ -269,7 +269,7 @@ pub fn run_lock(config: &crate::core::config::ProjectConfig) -> i32 {
     let mut lock_nfrs: BTreeMap<String, serde_json::Value> = BTreeMap::new();
 
     for (cat, (path, source)) in &nfr_sources {
-        let rel_path = make_relative(path, &cwd);
+        let rel_path = io::make_relative(path, &cwd);
         let hash = content_hash(source);
         lock_nfrs.insert(
             rel_path,
@@ -309,12 +309,4 @@ pub fn run_lock(config: &crate::core::config::ProjectConfig) -> i32 {
 
     println!("lock: minter.lock written");
     0
-}
-
-/// Make a path relative to the given base directory.
-fn make_relative(path: &Path, base: &Path) -> String {
-    match path.strip_prefix(base) {
-        Ok(rel) => rel.display().to_string(),
-        Err(_) => path.display().to_string(),
-    }
 }
