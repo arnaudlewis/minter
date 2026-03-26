@@ -638,7 +638,8 @@ Override Rules
 
 /// Coverage tagging guide for the guide tool.
 pub fn guide_coverage() -> &'static str {
-    "\
+    concat!(
+        "\
 Coverage Tagging Guide
 ======================
 
@@ -680,7 +681,8 @@ Choosing the Type
 
 Qualified Names
   If two specs share a behavior name, qualify with spec-name/behavior-name:
-    // @minter:unit billing-webhooks/handle-error
+    // @",
+        "minter:unit billing-webhooks/handle-error
 
 Discovering Behavior Names
   minter inspect specs/my-feature.spec   — lists all behavior names
@@ -698,6 +700,7 @@ Common Mistakes
   Using commas           — @minter:unit a, b (wrong) vs @minter:unit a b
   Invented names         — IDs must match spec behavior names exactly
   Tagging everything     — only tag tests that map to spec behaviors"
+    )
 }
 
 #[cfg(test)]

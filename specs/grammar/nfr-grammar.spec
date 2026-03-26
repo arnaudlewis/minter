@@ -1,4 +1,4 @@
-spec nfr-grammar v1.0.0
+spec nfr-grammar v1.1.0
 title "NFR Grammar"
 
 description
@@ -708,3 +708,16 @@ behavior ignore-nfr-blank-lines [happy_path]
   then
     assert title is_present
     assert description is_present
+
+
+behavior reject-trailing-content [error_case]
+  "Reject non-whitespace content after the last valid constraint"
+
+  given
+    An NFR file with valid structure followed by unexpected text after the last constraint
+
+  when minter validate is run
+
+  then
+    assert validation fails with an error indicating unexpected trailing content
+    assert the error includes the line number where the trailing content starts

@@ -197,10 +197,15 @@ impl<'a> NfrParser<'a> {
                 self.skip_blank_lines();
             } else if line.is_empty() || line.starts_with('#') {
                 self.advance();
-            } else {
+            } else if constraints.is_empty() {
                 return Err(self.err(format!(
                     "Expected 'constraint' declaration, got '{}'",
                     first_word(line)
+                )));
+            } else {
+                return Err(self.err(format!(
+                    "Unexpected content after end of NFR spec (line {})",
+                    self.line_num()
                 )));
             }
         }

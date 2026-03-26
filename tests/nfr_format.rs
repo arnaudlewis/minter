@@ -1268,3 +1268,121 @@ constraint test-constraint [rule]
     let (_dir, path) = temp_nfr("blanks", content);
     minter().arg("validate").arg(&path).assert().success();
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Trailing content (nfr-grammar.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// nfr-grammar: reject-trailing-content
+// @minter:e2e nfr-grammar/reject-trailing-content
+#[test]
+fn trailing_text_after_last_constraint() {
+    let content = "\
+nfr performance v1.0.0
+title \"Performance Requirements\"
+
+description
+  Defines performance constraints.
+
+motivation
+  Performance matters.
+
+
+constraint test-constraint [rule]
+  \"A test constraint\"
+
+  rule
+    Some invariant.
+
+  verification
+    static \"Check it\"
+
+  violation medium
+  overridable no
+
+some random garbage here
+";
+    let (_dir, path) = temp_nfr("trailing-text", content);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(path.to_str().unwrap()))
+        .stderr(predicate::str::contains("Unexpected content"));
+}
+
+/// nfr-grammar: reject-trailing-content
+// @minter:e2e nfr-grammar/reject-trailing-content
+#[test]
+fn trailing_whitespace_after_nfr_is_ok() {
+    let content = "\
+nfr performance v1.0.0
+title \"Performance Requirements\"
+
+description
+  Defines performance constraints.
+
+motivation
+  Performance matters.
+
+
+constraint test-constraint [rule]
+  \"A test constraint\"
+
+  rule
+    Some invariant.
+
+  verification
+    static \"Check it\"
+
+  violation medium
+  overridable no
+
+
+";
+    let (_dir, path) = temp_nfr("trailing-ws", content);
+    minter().arg("validate").arg(&path).assert().success();
+}
+
+/// nfr-grammar: reject-trailing-content
+// @minter:e2e nfr-grammar/reject-trailing-content
+#[test]
+fn trailing_garbage_after_constraint() {
+    let content = "\
+nfr performance v1.0.0
+title \"Performance Requirements\"
+
+description
+  Defines performance constraints.
+
+motivation
+  Performance matters.
+
+
+constraint test-constraint [metric]
+  \"A test constraint\"
+
+  metric \"HTTP response time, p95\"
+  threshold < 1s
+
+  verification
+    environment staging, production
+    benchmark \"100 concurrent requests per endpoint\"
+    pass \"p95 < threshold\"
+
+  violation high
+  overridable yes
+
+this is not a valid nfr section
+and neither is this
+";
+    let (_dir, path) = temp_nfr("trailing-garbage", content);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(path.to_str().unwrap()))
+        .stderr(predicate::str::contains("Unexpected content"));
+}

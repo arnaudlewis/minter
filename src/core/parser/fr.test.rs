@@ -1412,3 +1412,120 @@ depends on billing >= 2.0.0
     assert_eq!(spec.behaviors[0].postconditions.len(), 2);
     assert_eq!(spec.dependencies.len(), 2);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Trailing content (spec-grammar.spec: reject-trailing-content)
+// ═══════════════════════════════════════════════════════════════
+
+/// spec-grammar.spec: reject-trailing-content
+// @minter:unit spec-grammar/reject-trailing-content
+#[test]
+fn trailing_text_after_depends_on() {
+    let input = spec_with_deps(
+        "\
+depends on user-auth >= 1.0.0
+
+this is unexpected trailing content",
+    );
+    let errors = parse(&input).unwrap_err();
+    assert!(!errors.is_empty());
+    let msg = &errors[0].message;
+    assert!(
+        msg.contains("Unexpected content after end of spec"),
+        "Expected trailing content error, got: {msg}"
+    );
+}
+
+/// spec-grammar.spec: reject-trailing-content
+// @minter:unit spec-grammar/reject-trailing-content
+#[test]
+fn trailing_text_after_last_behavior() {
+    let input = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  A test.
+
+motivation
+  Testing.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+this is unexpected garbage
+";
+    let errors = parse(input).unwrap_err();
+    assert!(!errors.is_empty());
+    // Trailing content after behaviors (no deps) is caught by parse_behaviors
+    // as an unrecognized line. Either error message is acceptable — the key
+    // invariant is that the file is rejected.
+    let msg = &errors[0].message;
+    assert!(
+        msg.contains("Unexpected content after end of spec") || msg.contains("Expected 'behavior'"),
+        "Expected trailing content or bad behavior error, got: {msg}"
+    );
+}
+
+/// spec-grammar.spec: reject-trailing-content (negative — whitespace is fine)
+// @minter:unit spec-grammar/reject-trailing-content
+#[test]
+fn trailing_whitespace_after_spec_is_ok() {
+    let input = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  A test.
+
+motivation
+  Testing.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+
+
+";
+    let spec = parse(input).unwrap();
+    assert_eq!(spec.name, "test-spec");
+}
+
+/// spec-grammar.spec: reject-trailing-content
+// @minter:unit spec-grammar/reject-trailing-content
+#[test]
+fn trailing_comments_after_spec() {
+    // Non-comment garbage text after the last valid section
+    let input = spec_with_deps(
+        "\
+depends on user-auth >= 1.0.0
+
+random garbage that is not a valid section
+more garbage here",
+    );
+    let errors = parse(&input).unwrap_err();
+    assert!(!errors.is_empty());
+    let msg = &errors[0].message;
+    assert!(
+        msg.contains("Unexpected content after end of spec"),
+        "Expected trailing content error, got: {msg}"
+    );
+    // Should include the line number
+    assert!(errors[0].line > 0, "Expected a positive line number");
+}

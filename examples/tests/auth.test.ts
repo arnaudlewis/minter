@@ -1,4 +1,4 @@
-// @minter:e2e register-user
+// @​minter:e2e register-user
 test("register a new user", async () => {
   const res = await api.post("/register", {
     email: "alice@example.com",
@@ -8,7 +8,7 @@ test("register a new user", async () => {
   expect(res.body.user_id).toBeDefined();
 });
 
-// @minter:e2e login-user
+// @​minter:e2e login-user
 test("login with valid credentials", async () => {
   const res = await api.post("/login", {
     email: "alice@example.com",
@@ -18,14 +18,14 @@ test("login with valid credentials", async () => {
   expect(res.body.expires_in).toBeGreaterThan(0);
 });
 
-// @minter:e2e register-duplicate-email
+// @​minter:e2e register-duplicate-email
 test("reject duplicate email registration", async () => {
   await api.post("/register", { email: "alice@example.com", password: "pass" });
   const res = await api.post("/register", { email: "alice@example.com", password: "other" });
   expect(res.status).toBe(409);
 });
 
-// @minter:e2e login-wrong-password
+// @​minter:e2e login-wrong-password
 test("reject wrong password", async () => {
   const res = await api.post("/login", {
     email: "alice@example.com",

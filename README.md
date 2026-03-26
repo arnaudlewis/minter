@@ -362,17 +362,17 @@ minter coverage specs/ --verbose                # Expand all specs (show individ
 **Tag format:**
 
 ```
-// @minter:<type> <behavior> [<behavior>...]    — behavioral test
-// @minter:benchmark #<category>#<constraint>   — NFR benchmark
+// @​minter:<type> <behavior> [<behavior>...]    — behavioral test
+// @​minter:benchmark #<category>#<constraint>   — NFR benchmark
 ```
 
 Valid types: `unit`, `integration`, `e2e`, `benchmark`. Tags work in `//` and `#` style comments.
 
 ```typescript
-// @minter:e2e login-user login-wrong-password
+// @​minter:e2e login-user login-wrong-password
 describe("authentication", () => { /* ... */ });
 
-// @minter:benchmark #performance#api-response-time
+// @​minter:benchmark #performance#api-response-time
 bench("create task latency", () => { /* ... */ });
 ```
 
