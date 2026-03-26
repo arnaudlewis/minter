@@ -1,4 +1,4 @@
-spec coverage-command v1.3.0
+spec coverage-command v1.4.0
 title "Coverage Command"
 
 description
@@ -6,12 +6,14 @@ description
   comments and cross-references them against the spec graph to produce
   a behavior coverage report. Tags placed in test files declare which
   spec behaviors a test covers. The format is
-  @minter:<type> <behavior>... for behavioral tests (unit, integration,
-  e2e) and @minter:benchmark #<category>#<constraint>... for NFR
-  benchmarks. The command takes a spec path as its positional argument
-  and walks the current working directory for tags by default. The
-  --scan flag narrows the scan to specific directories. NFR coverage
-  for behavioral tests is derived from the spec graph — if a covered
+  @minter:<type> <behavior>... for behavioral tests (any type name is
+  accepted) and @minter:benchmark #<category>#<constraint>... for NFR
+  benchmarks. The benchmark type is special — it maps to NFR constraints
+  instead of behavior names. All other types are treated as behavioral
+  tags. The command takes a spec path as its positional argument and
+  walks the current working directory for tags by default. The --scan
+  flag narrows the scan to specific directories. NFR coverage for
+  behavioral tests is derived from the spec graph — if a covered
   behavior references an NFR constraint, that constraint has indirect
   coverage. Fully covered specs are collapsed to a single summary line
   by default; --verbose expands all specs to show individual behaviors.
@@ -411,23 +413,6 @@ behavior reject-missing-type [error_case]
   then emits stderr
     assert output contains "@minter"
     assert output contains "type"
-
-  then emits process_exit
-    assert code == 1
-
-
-behavior reject-invalid-type [error_case]
-  "Report error when the tag type is not one of unit, integration, e2e, benchmark"
-
-  given
-    specs/a.spec has 1 behavior: do-thing
-    A file contains // @minter:acceptance do-thing
-
-  when minter coverage specs/
-
-  then emits stderr
-    assert output contains "acceptance"
-    assert output contains "invalid"
 
   then emits process_exit
     assert code == 1
