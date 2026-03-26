@@ -81,6 +81,9 @@ enum Commands {
     Lock,
     /// Verify project integrity against the lock file
     Ci,
+    /// Launch the interactive terminal dashboard
+    #[cfg(feature = "ui")]
+    Ui {},
 }
 
 /// Load config from the current working directory, exiting on failure.
@@ -191,6 +194,17 @@ fn main() {
         Some(Commands::Ci) => {
             let config = load_config_or_exit();
             process::exit(minter::core::commands::ci::run_ci(&config));
+        }
+        #[cfg(feature = "ui")]
+        Some(Commands::Ui {}) => {
+            let cwd = match std::env::current_dir() {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("error: cannot determine working directory: {}", e);
+                    process::exit(1);
+                }
+            };
+            process::exit(minter::core::ui::app::run_ui(&cwd));
         }
         None => {
             use clap::CommandFactory;

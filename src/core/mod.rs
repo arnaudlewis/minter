@@ -6,4 +6,5 @@ pub mod discover;
 pub mod graph;
 pub mod io;
 pub mod parser;
+pub mod ui;
 pub mod validation;
