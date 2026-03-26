@@ -4,9 +4,7 @@ use std::path::{Path, PathBuf};
 use crate::core::{discover, io, parser};
 use crate::model::{NfrSpec, Spec};
 
-// ── Tag types ───────────────────────────────────────────
-
-const VALID_TAG_TYPES: &[&str] = &["unit", "integration", "e2e", "benchmark"];
+// ── Tag scanning ────────────────────────────────────────
 
 #[derive(Debug, Clone)]
 pub struct MinterTag {
@@ -467,20 +465,7 @@ pub fn validate_tags(
             errors.push(TagError {
                 file: tag.file.clone(),
                 line: tag.line,
-                message: "@minter tag missing type (expected @minter:unit, @minter:integration, @minter:e2e, or @minter:benchmark)".to_string(),
-            });
-            continue;
-        }
-
-        // Check invalid type
-        if !VALID_TAG_TYPES.contains(&tag.tag_type.as_str()) {
-            errors.push(TagError {
-                file: tag.file.clone(),
-                line: tag.line,
-                message: format!(
-                    "invalid tag type '{}' (expected unit, integration, e2e, or benchmark)",
-                    tag.tag_type
-                ),
+                message: "@minter tag missing type (expected @minter:<type>, e.g. @minter:unit, @minter:e2e, @minter:benchmark)".to_string(),
             });
             continue;
         }
