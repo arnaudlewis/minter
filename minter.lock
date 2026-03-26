@@ -188,6 +188,7 @@
     "specs/core/commands/ci-command.spec": {
       "behaviors": [
         "ci-all-checks-pass",
+        "ci-summary-shows-stats",
         "ci-reads-config",
         "ci-uses-default-conventions",
         "detect-spec-hash-mismatch",
@@ -212,7 +213,7 @@
         "specs/core/config.spec",
         "specs/core/commands/lock-command.spec"
       ],
-      "hash": "a39a911b75fb34eaab8e3aa38371b519b3e574803404e8ca6ac9b0b03b4cc500",
+      "hash": "c9a4f4bf86c92fbdf6a3f7419e79a325b533362ef6ba9c6ca0588c7e2a129ffc",
       "nfrs": [
         "operability#ci-friendly-output",
         "operability#deterministic-output",
@@ -225,6 +226,7 @@
             "ci-all-checks-pass",
             "ci-multi-test-dirs",
             "ci-reads-config",
+            "ci-summary-shows-stats",
             "ci-uses-default-conventions",
             "detect-deleted-spec-in-lock",
             "detect-deleted-test-in-lock",
@@ -243,7 +245,7 @@
             "report-all-failures",
             "report-check-summary"
           ],
-          "hash": "db4aa72162f562fc8811c30ccdd308827fad911737988a88cc76099af67c14bf"
+          "hash": "b482df85d5f0331f518332487906ad9bafb01b00802355be10025b0057ffb430"
         }
       }
     },

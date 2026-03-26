@@ -311,12 +311,77 @@ fn ci_all_checks_pass() {
         .current_dir(dir.path())
         .assert()
         .success()
-        .stdout(predicate::str::contains("spec integrity"))
-        .stdout(predicate::str::contains("nfr integrity"))
-        .stdout(predicate::str::contains("dependency structure"))
-        .stdout(predicate::str::contains("test integrity"))
-        .stdout(predicate::str::contains("coverage"))
-        .stdout(predicate::str::contains("orphan"));
+        .stdout(predicate::str::contains("pass spec integrity (1 specs"))
+        .stdout(predicate::str::contains("pass nfr integrity (0 nfrs)"))
+        .stdout(predicate::str::contains(
+            "pass dependency structure (0 edges)",
+        ))
+        .stdout(predicate::str::contains(
+            "pass test integrity (2 test files)",
+        ))
+        .stdout(predicate::str::contains(
+            "pass coverage (2/2 behaviors, 100%)",
+        ))
+        .stdout(predicate::str::contains("pass orphan (0 orphaned tags)"));
+}
+
+/// ci-command: ci-summary-shows-stats
+// @minter:e2e ci-summary-shows-stats
+#[test]
+fn ci_summary_shows_stats() {
+    // Create a project with known quantities:
+    // 2 specs, 3 behaviors, 1 nfr, 1 dependency edge, 2 test files
+    let spec_a = spec_with_dep("a", "1.0.0", "do-thing", "b");
+    let spec_b = spec_with_nfr("b", "1.0.0", "b-thing", "performance");
+    let nfr_content = nfr_performance();
+    let test_content_a = "// @minter:unit do-thing\n";
+    let test_content_b = "// @minter:unit b-thing\n";
+
+    let dir = TempDir::new().unwrap();
+
+    // Create specs/
+    let spec_dir = dir.path().join("specs");
+    fs::create_dir_all(&spec_dir).unwrap();
+    fs::write(spec_dir.join("a.spec"), &spec_a).unwrap();
+    fs::write(spec_dir.join("b.spec"), &spec_b).unwrap();
+
+    // Create NFR
+    let nfr_dir = spec_dir.join("nfr");
+    fs::create_dir_all(&nfr_dir).unwrap();
+    fs::write(nfr_dir.join("performance.nfr"), nfr_content).unwrap();
+
+    // Create tests/
+    let test_dir = dir.path().join("tests");
+    fs::create_dir_all(&test_dir).unwrap();
+    fs::write(test_dir.join("a_test.rs"), test_content_a).unwrap();
+    fs::write(test_dir.join("b_test.rs"), test_content_b).unwrap();
+
+    // Generate lock, then run CI
+    minter()
+        .arg("lock")
+        .current_dir(dir.path())
+        .assert()
+        .success();
+
+    minter()
+        .arg("ci")
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "pass spec integrity (2 specs, 1 nfrs)",
+        ))
+        .stdout(predicate::str::contains("pass nfr integrity (1 nfrs)"))
+        .stdout(predicate::str::contains(
+            "pass dependency structure (1 edges)",
+        ))
+        .stdout(predicate::str::contains(
+            "pass test integrity (2 test files)",
+        ))
+        .stdout(predicate::str::contains(
+            "pass coverage (2/2 behaviors, 100%)",
+        ))
+        .stdout(predicate::str::contains("pass orphan (0 orphaned tags)"));
 }
 
 /// ci-command: ci-reads-config
@@ -1035,14 +1100,14 @@ fn report_check_summary() {
     let modified_test = "// @minter:unit do-thing\n// changed\n";
     fs::write(dir.path().join("tests").join("a_test.rs"), modified_test).unwrap();
 
-    // The output should show each check with pass/fail status
+    // The output should show each check with pass/fail status and stats for passing checks
     minter()
         .arg("ci")
         .current_dir(dir.path())
         .assert()
         .failure()
-        .stdout(predicate::str::contains("spec integrity"))
-        .stdout(predicate::str::contains("test integrity"));
+        .stdout(predicate::str::contains("pass spec integrity (1 specs)"))
+        .stdout(predicate::str::contains("FAIL test integrity"));
 }
 
 // ── Edge cases ──────────────────────────────────────────

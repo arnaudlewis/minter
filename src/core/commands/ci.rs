@@ -55,6 +55,7 @@ struct CheckResult {
     name: &'static str,
     passed: bool,
     errors: Vec<String>,
+    stats: String,
 }
 
 // ── Entry point ─────────────────────────────────────────
@@ -188,7 +189,11 @@ pub fn run_ci(config: &crate::core::config::ProjectConfig) -> i32 {
     // Print summary to stdout
     for check in &checks {
         let status = if check.passed { "pass" } else { "FAIL" };
-        println!("  {} {}", status, check.name);
+        if check.passed && !check.stats.is_empty() {
+            println!("  {} {} ({})", status, check.name, check.stats);
+        } else {
+            println!("  {} {}", status, check.name);
+        }
     }
 
     if any_failed { 1 } else { 0 }
@@ -225,10 +230,19 @@ fn check_spec_integrity(
         }
     }
 
+    let spec_count = lock.specs.len();
+    let nfr_count = lock.nfrs.len();
+    let stats = if nfr_count > 0 {
+        format!("{} specs, {} nfrs", spec_count, nfr_count)
+    } else {
+        format!("{} specs", spec_count)
+    };
+
     CheckResult {
         name: "spec integrity",
         passed: errors.is_empty(),
         errors,
+        stats,
     }
 }
 
@@ -263,10 +277,14 @@ fn check_nfr_integrity(
         }
     }
 
+    let nfr_count = lock.nfrs.len();
+    let stats = format!("{} nfrs", nfr_count);
+
     CheckResult {
         name: "nfr integrity",
         passed: errors.is_empty(),
         errors,
+        stats,
     }
 }
 
@@ -308,10 +326,14 @@ fn check_dependency_structure(
         }
     }
 
+    let edge_count: usize = lock.specs.values().map(|s| s.dependencies.len()).sum();
+    let stats = format!("{} edges", edge_count);
+
     CheckResult {
         name: "dependency structure",
         passed: errors.is_empty(),
         errors,
+        stats,
     }
 }
 
@@ -374,10 +396,14 @@ fn check_test_integrity(
         }
     }
 
+    let test_file_count = lock_test_files.len();
+    let stats = format!("{} test files", test_file_count);
+
     CheckResult {
         name: "test integrity",
         passed: errors.is_empty(),
         errors,
+        stats,
     }
 }
 
@@ -403,18 +429,31 @@ fn check_coverage(
     }
 
     // Check each behavior in each spec has coverage
+    let mut total_behaviors: usize = 0;
+    let mut covered_count: usize = 0;
     for lock_spec in lock.specs.values() {
         for behavior in &lock_spec.behaviors {
-            if !covered_behaviors.contains(behavior) {
+            total_behaviors += 1;
+            if covered_behaviors.contains(behavior) {
+                covered_count += 1;
+            } else {
                 errors.push(format!("coverage: {} uncovered", behavior));
             }
         }
     }
 
+    let pct = if total_behaviors > 0 {
+        (covered_count as f64 / total_behaviors as f64 * 100.0) as u64
+    } else {
+        100
+    };
+    let stats = format!("{}/{} behaviors, {}%", covered_count, total_behaviors, pct);
+
     CheckResult {
         name: "coverage",
         passed: errors.is_empty(),
         errors,
+        stats,
     }
 }
 
@@ -436,6 +475,7 @@ fn check_orphans(
     }
 
     // Check each tag references a known behavior
+    let mut orphan_count: usize = 0;
     for (test_path, behaviors) in test_tag_behaviors {
         for b in behaviors {
             let behavior_name = if let Some((_spec, behavior)) = b.split_once('/') {
@@ -445,6 +485,7 @@ fn check_orphans(
             };
 
             if !known_behaviors.contains(&behavior_name) {
+                orphan_count += 1;
                 errors.push(format!(
                     "orphan: {} in {} references unknown behavior",
                     behavior_name, test_path
@@ -453,9 +494,12 @@ fn check_orphans(
         }
     }
 
+    let stats = format!("{} orphaned tags", orphan_count);
+
     CheckResult {
         name: "orphan",
         passed: errors.is_empty(),
         errors,
+        stats,
     }
 }

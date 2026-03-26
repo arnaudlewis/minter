@@ -1,4 +1,4 @@
-spec ci-command v1.0.0
+spec ci-command v1.1.0
 title "CI Command"
 
 description
@@ -30,7 +30,7 @@ nfr
 # Full pass — happy path
 
 behavior ci-all-checks-pass [happy_path]
-  "Exit 0 when all six checks pass against the lock"
+  "Exit 0 when all six checks pass with summary stats"
 
   given
     minter.lock exists and was generated from the current state
@@ -40,13 +40,35 @@ behavior ci-all-checks-pass [happy_path]
   when minter ci
 
   then emits stdout
-    assert output contains "spec integrity"
-    assert output contains "nfr integrity"
-    assert output contains "dependency structure"
-    assert output contains "test integrity"
-    assert output contains "coverage"
-    assert output contains "orphan"
+    assert output contains "spec integrity" with spec and nfr counts
+    assert output contains "nfr integrity" with nfr count
+    assert output contains "dependency structure" with edge count
+    assert output contains "test integrity" with test file count
+    assert output contains "coverage" with covered/total and percentage
+    assert output contains "orphan" with orphan count
     assert output indicates all checks passed
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior ci-summary-shows-stats [happy_path]
+  "Pass lines show correct counts matching the project state"
+
+  given
+    A project with known quantities of specs, behaviors, nfrs, deps, and test files
+    minter.lock was generated from these files
+    All files are unchanged
+
+  when minter ci
+
+  then emits stdout
+    assert spec integrity line contains correct spec and nfr counts
+    assert nfr integrity line contains correct nfr count
+    assert dependency structure line contains correct edge count
+    assert test integrity line contains correct test file count
+    assert coverage line contains correct covered/total and percentage
+    assert orphan line contains 0 orphaned tags
 
   then emits process_exit
     assert code == 0
@@ -337,7 +359,7 @@ behavior report-all-failures [edge_case]
 
 
 behavior report-check-summary [edge_case]
-  "Display a summary showing which checks passed and which failed"
+  "Display a summary showing which checks passed/failed with stats"
 
   given
     Spec integrity passes
@@ -347,7 +369,9 @@ behavior report-check-summary [edge_case]
   when minter ci
 
   then emits stdout
-    assert output shows each check with pass/fail status
+    assert output shows each check with pass/fail status and counts
+    assert passing checks include parenthesized stats
+    assert failing checks show FAIL without stats
 
   then emits process_exit
     assert code == 1
