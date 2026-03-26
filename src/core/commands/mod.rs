@@ -4,6 +4,7 @@ pub mod graph;
 pub mod guide;
 pub mod inspect;
 pub mod inspect_core;
+pub mod lock;
 pub mod scaffold;
 pub mod validate;
 pub mod validate_core;

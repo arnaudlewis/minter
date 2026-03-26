@@ -77,6 +77,8 @@ enum Commands {
         #[arg(long)]
         impacted: Option<String>,
     },
+    /// Generate a minter.lock integrity snapshot
+    Lock,
 }
 
 /// Load config from the current working directory, exiting on failure.
@@ -175,6 +177,14 @@ fn main() {
                 &resolved_dir,
                 impacted.as_deref(),
             ));
+        }
+        Some(Commands::Lock) => {
+            let config = load_config_or_exit();
+            if let Err(e) = minter::core::config::require_specs(&config) {
+                eprintln!("error: {}", e);
+                process::exit(1);
+            }
+            process::exit(minter::core::commands::lock::run_lock(&config));
         }
         None => {
             use clap::CommandFactory;
