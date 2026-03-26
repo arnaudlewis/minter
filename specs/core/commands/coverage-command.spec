@@ -677,6 +677,74 @@ behavior mixed-valid-and-invalid-tags [edge_case]
     assert code == 1
 
 
+behavior accept-arbitrary-tag-type [happy_path]
+  "Accept any tag type, not just a predefined list"
+
+  given
+    specs/a.spec has behavior do-thing
+    A file contains // @minter:acceptance do-thing
+
+  when minter coverage specs/
+
+  then emits stdout
+    assert output contains "acceptance"
+    assert output contains "1/1"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior accept-multiple-custom-types [happy_path]
+  "Accept multiple custom tag types and report each"
+
+  given
+    specs/a.spec has behaviors do-thing and do-other
+    A file contains // @minter:smoke do-thing
+    Another file contains // @minter:property do-other
+
+  when minter coverage specs/
+
+  then emits stdout
+    assert output contains "smoke"
+    assert output contains "property"
+    assert output contains "2/2"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior accept-uppercase-tag-type [edge_case]
+  "Accept tag types with uppercase characters"
+
+  given
+    specs/a.spec has behavior do-thing
+    A file contains // @minter:SMOKE do-thing
+
+  when minter coverage specs/
+
+  then emits stdout
+    assert output contains "SMOKE"
+
+  then emits process_exit
+    assert code == 0
+
+
+behavior accept-single-char-tag-type [edge_case]
+  "Accept single character tag types"
+
+  given
+    specs/a.spec has behavior do-thing
+    A file contains // @minter:a do-thing
+
+  when minter coverage specs/
+
+  then emits stdout
+    assert output contains "1/1"
+
+  then emits process_exit
+    assert code == 0
+
+
 depends on spec-grammar >= 1.1.0
 depends on nfr-grammar >= 1.0.0
 depends on cli-display >= 2.0.0

@@ -273,7 +273,6 @@
         "reject-unknown-behavior-id",
         "reject-unknown-nfr-constraint",
         "reject-missing-type",
-        "reject-invalid-type",
         "reject-behavior-in-benchmark",
         "reject-nfr-in-behavioral-tag",
         "reject-nonexistent-spec-path",
@@ -288,14 +287,18 @@
         "reject-ambiguous-unqualified-name",
         "report-all-tag-errors",
         "json-errors",
-        "mixed-valid-and-invalid-tags"
+        "mixed-valid-and-invalid-tags",
+        "accept-arbitrary-tag-type",
+        "accept-multiple-custom-types",
+        "accept-uppercase-tag-type",
+        "accept-single-char-tag-type"
       ],
       "dependencies": [
         "specs/grammar/spec-grammar.spec",
         "specs/grammar/nfr-grammar.spec",
         "specs/cli/cli-display.spec"
       ],
-      "hash": "e8fda1403c391dfbb75c73d6626075bc7ccc143cc5277bccf81ef0ff9ca139f7",
+      "hash": "a7a3d3f2512bc753003d7754b046fe9a8e6cc0b958ea5d4fa04af3f9a5b6ead0",
       "nfrs": [
         "operability#ci-friendly-output",
         "operability#deterministic-output",
@@ -305,6 +308,10 @@
       "test_files": {
         "tests/coverage_command.rs": {
           "covers": [
+            "accept-arbitrary-tag-type",
+            "accept-multiple-custom-types",
+            "accept-single-char-tag-type",
+            "accept-uppercase-tag-type",
             "collapse-fully-covered-spec",
             "derive-nfr-from-covered-behavior",
             "derive-nfr-uncovered-from-uncovered-behavior",
@@ -321,7 +328,6 @@
             "reject-ambiguous-unqualified-name",
             "reject-behavior-in-benchmark",
             "reject-invalid-format",
-            "reject-invalid-type",
             "reject-missing-type",
             "reject-nfr-in-behavioral-tag",
             "reject-no-specs-in-path",
@@ -344,7 +350,7 @@
             "verbose-expands-all",
             "warn-empty-tag"
           ],
-          "hash": "4614fa5ee274eb7581ab93527cc9325b492962820241ace15e21ff2ce513d090"
+          "hash": "da2ecda4884ae7eabc2c93c4890995d2497e97d217f4bd75213b5e89075ec9da"
         }
       }
     },
