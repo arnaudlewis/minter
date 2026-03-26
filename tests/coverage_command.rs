@@ -790,7 +790,7 @@ fn reject_missing_type() {
         .stderr(predicate::str::contains("type"));
 }
 
-/// coverage-command: accept-arbitrary-tag-type
+// @minter:e2e accept-arbitrary-tag-type
 #[test]
 fn accept_arbitrary_tag_type() {
     let dir = TempDir::new().unwrap();
@@ -819,7 +819,7 @@ fn accept_arbitrary_tag_type() {
         .stdout(predicate::str::contains("1/1"));
 }
 
-/// coverage-command: accept-multiple-custom-types
+// @minter:e2e accept-multiple-custom-types
 #[test]
 fn accept_multiple_custom_types() {
     let dir = TempDir::new().unwrap();
@@ -844,6 +844,56 @@ fn accept_multiple_custom_types() {
         .stdout(predicate::str::contains("smoke"))
         .stdout(predicate::str::contains("property"))
         .stdout(predicate::str::contains("2/2"));
+}
+
+// @minter:e2e accept-uppercase-tag-type
+#[test]
+fn accept_uppercase_tag_type() {
+    let dir = TempDir::new().unwrap();
+
+    let spec_dir = dir.path().join("specs");
+    fs::create_dir(&spec_dir).unwrap();
+    fs::write(
+        spec_dir.join("a.spec"),
+        spec_one_behavior("a", "1.0.0", "do-thing"),
+    )
+    .unwrap();
+
+    fs::write(dir.path().join("a.test.ts"), "// @minter:SMOKE do-thing\n").unwrap();
+
+    minter()
+        .arg("coverage")
+        .arg(&spec_dir)
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("SMOKE"))
+        .stdout(predicate::str::contains("1/1"));
+}
+
+// @minter:e2e accept-single-char-tag-type
+#[test]
+fn accept_single_char_tag_type() {
+    let dir = TempDir::new().unwrap();
+
+    let spec_dir = dir.path().join("specs");
+    fs::create_dir(&spec_dir).unwrap();
+    fs::write(
+        spec_dir.join("a.spec"),
+        spec_one_behavior("a", "1.0.0", "do-thing"),
+    )
+    .unwrap();
+
+    fs::write(dir.path().join("a.test.ts"), "// @minter:a do-thing\n").unwrap();
+
+    minter()
+        .arg("coverage")
+        .arg(&spec_dir)
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("[a]"))
+        .stdout(predicate::str::contains("1/1"));
 }
 
 // @minter:e2e reject-behavior-in-benchmark

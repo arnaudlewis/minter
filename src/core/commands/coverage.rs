@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use crate::core::{discover, io, parser};
 use crate::model::{NfrSpec, Spec};
 
-// ── Tag types ───────────────────────────────────────────
+// ── Tag scanning ────────────────────────────────────────
 
 #[derive(Debug, Clone)]
 struct MinterTag {
