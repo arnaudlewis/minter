@@ -1,6 +1,16 @@
 use std::io;
 use std::path::Path;
 
+/// Make a path relative to the given base directory.
+///
+/// If the path is not under `base`, returns the original path as a string.
+pub fn make_relative(path: &Path, base: &Path) -> String {
+    match path.strip_prefix(base) {
+        Ok(rel) => rel.display().to_string(),
+        Err(_) => path.display().to_string(),
+    }
+}
+
 /// Maximum file size allowed for reading (10 MB).
 pub const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
 

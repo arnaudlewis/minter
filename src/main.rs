@@ -15,7 +15,6 @@ enum Commands {
     /// Validate one or more .spec files or directories
     Validate {
         /// Spec files or directories to validate
-        #[arg(required = true)]
         files: Vec<PathBuf>,
 
         /// Also resolve and validate dependencies
@@ -55,8 +54,7 @@ enum Commands {
     /// Compute test coverage of spec behaviors
     Coverage {
         /// Spec file or directory path
-        #[arg(required = true)]
-        spec_path: PathBuf,
+        spec_path: Option<PathBuf>,
 
         /// Directories to scan for @minter tags (default: current directory)
         #[arg(long)]
@@ -73,13 +71,34 @@ enum Commands {
     /// Display the dependency graph
     Graph {
         /// Directory containing spec files
-        #[arg(required = true)]
-        dir: PathBuf,
+        dir: Option<PathBuf>,
 
         /// Show reverse dependencies of a named spec
         #[arg(long)]
         impacted: Option<String>,
     },
+    /// Generate a minter.lock integrity snapshot
+    Lock,
+    /// Verify project integrity against the lock file
+    Ci,
+}
+
+/// Load config from the current working directory, exiting on failure.
+fn load_config_or_exit() -> minter::core::config::ProjectConfig {
+    let cwd = match std::env::current_dir() {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: cannot determine working directory: {}", e);
+            process::exit(1);
+        }
+    };
+    match minter::core::config::load_config(&cwd) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("error: {}", e);
+            process::exit(1);
+        }
+    }
 }
 
 fn main() {
@@ -87,7 +106,19 @@ fn main() {
 
     match cli.command {
         Some(Commands::Validate { files, deep }) => {
-            process::exit(minter::core::commands::validate::run_validate(&files, deep));
+            if files.is_empty() {
+                let config = load_config_or_exit();
+                if let Err(e) = minter::core::config::require_specs(&config) {
+                    eprintln!("error: {}", e);
+                    process::exit(1);
+                }
+                process::exit(minter::core::commands::validate::run_validate(
+                    &[config.specs],
+                    deep,
+                ));
+            } else {
+                process::exit(minter::core::commands::validate::run_validate(&files, deep));
+            }
         }
         Some(Commands::Watch { path }) => {
             process::exit(minter::core::commands::watch::run_watch(&path));
@@ -112,17 +143,54 @@ fn main() {
             scan,
             format,
             verbose,
-        }) => process::exit(minter::core::commands::coverage::run_coverage(
-            &spec_path,
-            &scan,
-            format.as_deref(),
-            verbose,
-        )),
+        }) => {
+            let (resolved_spec_path, resolved_scan) = match spec_path {
+                Some(p) => (p, scan),
+                None => {
+                    let config = load_config_or_exit();
+                    if let Err(e) = minter::core::config::require_specs(&config) {
+                        eprintln!("error: {}", e);
+                        process::exit(1);
+                    }
+                    let scan_dirs = if scan.is_empty() { config.tests } else { scan };
+                    (config.specs, scan_dirs)
+                }
+            };
+            process::exit(minter::core::commands::coverage::run_coverage(
+                &resolved_spec_path,
+                &resolved_scan,
+                format.as_deref(),
+                verbose,
+            ));
+        }
         Some(Commands::Graph { dir, impacted }) => {
+            let resolved_dir = match dir {
+                Some(d) => d,
+                None => {
+                    let config = load_config_or_exit();
+                    if let Err(e) = minter::core::config::require_specs(&config) {
+                        eprintln!("error: {}", e);
+                        process::exit(1);
+                    }
+                    config.specs
+                }
+            };
             process::exit(minter::core::commands::graph::run_graph(
-                &dir,
+                &resolved_dir,
                 impacted.as_deref(),
             ));
+        }
+        Some(Commands::Lock) => {
+            let config = load_config_or_exit();
+            if let Err(e) = minter::core::config::require_specs(&config) {
+                eprintln!("error: {}", e);
+                process::exit(1);
+            }
+            process::exit(minter::core::commands::lock::run_lock(&config));
+        }
+        Some(Commands::Ci) => {
+            let config = load_config_or_exit();
+            process::exit(minter::core::commands::ci::run_ci(&config));
         }
         None => {
             use clap::CommandFactory;

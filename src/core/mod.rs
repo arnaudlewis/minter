@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod config;
 pub mod content;
 pub mod deps;
 pub mod discover;

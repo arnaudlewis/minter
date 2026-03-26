@@ -1,0 +1,1459 @@
+{
+  "benchmark_files": {
+    "benches/cache_skip_unchanged.rs": {
+      "hash": "a533cc0075f31a8418856a3c562c2637eb14c45ff90a4495b677ff4a1e4ffafe"
+    },
+    "benches/directory_scaling.rs": {
+      "hash": "4cceb391e0199e54832808d3aa66e928d1cf0315aa278cdf41e914b3f16052f2"
+    },
+    "benches/large_tree_scaling.rs": {
+      "hash": "4d063d6fdbb04eacfc756bf8300517f2a5814730eda77c3b1bfde39f57514dfe"
+    },
+    "benches/single_discovery_pass.rs": {
+      "hash": "d959b3b1871caae3b5dbce153baadd9980b9d696699a9756645fb91284c6fdb8"
+    },
+    "benches/validation_latency.rs": {
+      "hash": "5a3359bff42ff54ccfc38fdd47ef272dbae118fe6889697a2ae36894b3055a12"
+    }
+  },
+  "nfrs": {
+    "specs/nfr/operability.nfr": {
+      "hash": "9e6735b56eac8afc7b9c31de91861f5f9c9731454206bc5fa09727ad4114d2ba"
+    },
+    "specs/nfr/performance.nfr": {
+      "hash": "8180013cfd1113c910fede8a1510407ff1d68603719fbf2148150f3342c2fc0c"
+    },
+    "specs/nfr/reliability.nfr": {
+      "hash": "b128294ae87860e998cbdac86c7398aaf385d3900aa881c94a555f273cc17190"
+    },
+    "specs/nfr/security.nfr": {
+      "hash": "fa05ca532c0772e043d82674b228ae9b6cc83c3e1eefcdb8003661679af71616"
+    }
+  },
+  "specs": {
+    "specs/cli/cli-display.spec": {
+      "behaviors": [
+        "display-success-line",
+        "display-singular-behavior-count",
+        "display-failure-line",
+        "display-errors-on-stderr",
+        "color-success-checkmark-green",
+        "color-failure-cross-red",
+        "color-changed-file-yellow",
+        "color-new-file-cyan",
+        "color-deleted-file-red",
+        "color-banner-cyan",
+        "display-dependency-tree",
+        "display-first-occurrence-expanded",
+        "display-repeated-dep-dimmed",
+        "display-repeated-dep-preserves-status",
+        "skip-already-shown-root",
+        "display-tree-error-on-stderr",
+        "display-dependency-count",
+        "no-color-mode",
+        "display-long-spec-name",
+        "display-nfr-success-line",
+        "display-nfr-singular-constraint-count",
+        "display-nfr-failure-line",
+        "separate-result-and-errors"
+      ],
+      "dependencies": [
+        "specs/grammar/nfr-grammar.spec"
+      ],
+      "hash": "4d62df58207eb81ec639aefff3dd88e87274c510e1fc4179ec509ae7a84ccc61",
+      "nfrs": [
+        "operability#ci-friendly-output",
+        "operability#deterministic-output"
+      ],
+      "test_files": {
+        "tests/validate_display.rs": {
+          "covers": [
+            "color-failure-cross-red",
+            "color-success-checkmark-green",
+            "display-dependency-count",
+            "display-dependency-tree",
+            "display-errors-on-stderr",
+            "display-failure-line",
+            "display-first-occurrence-expanded",
+            "display-long-spec-name",
+            "display-nfr-failure-line",
+            "display-nfr-singular-constraint-count",
+            "display-nfr-success-line",
+            "display-repeated-dep-dimmed",
+            "display-repeated-dep-preserves-status",
+            "display-singular-behavior-count",
+            "display-success-line",
+            "display-tree-error-on-stderr",
+            "no-color-mode",
+            "separate-result-and-errors",
+            "skip-already-shown-root"
+          ],
+          "hash": "c9d827612275c62fb3edecff6d7ecfc7d16d880f9402f80533c4b169271766d8"
+        },
+        "tests/watch_mode.rs": {
+          "covers": [
+            "color-banner-cyan",
+            "color-changed-file-yellow",
+            "color-deleted-file-red",
+            "color-new-file-cyan"
+          ],
+          "hash": "008ef16e3e6309fbe652a1b3877a81248acefd9c2049801d5593862713067fe1"
+        }
+      }
+    },
+    "specs/cli/cli.spec": {
+      "behaviors": [
+        "show-help",
+        "show-version",
+        "route-validate-file",
+        "route-validate-file-deep",
+        "route-validate-folder",
+        "route-watch-folder",
+        "route-watch-file",
+        "route-format",
+        "route-scaffold-spec",
+        "route-scaffold-nfr",
+        "route-inspect",
+        "route-graph",
+        "route-graph-impacted",
+        "route-guide",
+        "route-coverage-directory",
+        "route-coverage-file",
+        "route-coverage-with-scan",
+        "route-coverage-with-format",
+        "reject-unknown-command",
+        "reject-unknown-flag",
+        "reject-missing-required-argument",
+        "reject-non-spec-extension",
+        "accept-deep-on-folder-as-noop",
+        "handle-mixed-valid-invalid-files",
+        "route-validate-nfr-file",
+        "route-watch-nfr-file",
+        "route-inspect-nfr",
+        "route-validate-mixed-directory"
+      ],
+      "dependencies": [
+        "specs/core/commands/validate-command.spec",
+        "specs/core/dependency-resolution.spec",
+        "specs/core/commands/watch-command.spec",
+        "specs/core/commands/format-command.spec",
+        "specs/core/commands/scaffold-command.spec",
+        "specs/core/commands/inspect-command.spec",
+        "specs/core/commands/graph-command.spec",
+        "specs/core/commands/guide-command.spec",
+        "specs/core/commands/coverage-command.spec",
+        "specs/grammar/nfr-grammar.spec"
+      ],
+      "hash": "5b3777653d79c18bb60ce4cb70182aec24ecdc2ce5b70060635aca1b031e27a1",
+      "nfrs": [
+        "operability#ci-friendly-output",
+        "operability#zero-config"
+      ],
+      "test_files": {
+        "tests/cli.rs": {
+          "covers": [
+            "accept-deep-on-folder-as-noop",
+            "handle-mixed-valid-invalid-files",
+            "reject-missing-required-argument",
+            "reject-non-spec-extension",
+            "reject-unknown-command",
+            "reject-unknown-flag",
+            "route-coverage-directory",
+            "route-coverage-file",
+            "route-coverage-with-format",
+            "route-coverage-with-scan",
+            "route-format",
+            "route-graph",
+            "route-graph-impacted",
+            "route-guide",
+            "route-inspect",
+            "route-inspect-nfr",
+            "route-scaffold-nfr",
+            "route-scaffold-spec",
+            "route-validate-file",
+            "route-validate-file-deep",
+            "route-validate-folder",
+            "route-validate-mixed-directory",
+            "route-validate-nfr-file",
+            "route-watch-file",
+            "route-watch-folder",
+            "route-watch-nfr-file",
+            "show-help",
+            "show-version"
+          ],
+          "hash": "33a49c616882ad34514606cfc19e83f81c0b511eca713e3227e0a6e749a7a42b"
+        }
+      }
+    },
+    "specs/core/commands/ci-command.spec": {
+      "behaviors": [
+        "ci-all-checks-pass",
+        "ci-summary-shows-stats",
+        "ci-reads-config",
+        "ci-uses-default-conventions",
+        "detect-spec-hash-mismatch",
+        "detect-new-spec-not-in-lock",
+        "detect-deleted-spec-in-lock",
+        "detect-nfr-hash-mismatch",
+        "detect-new-nfr-not-in-lock",
+        "detect-dependency-change",
+        "detect-test-hash-mismatch",
+        "detect-new-test-not-in-lock",
+        "detect-deleted-test-in-lock",
+        "detect-uncovered-behavior",
+        "detect-orphaned-tag",
+        "reject-missing-lock",
+        "reject-corrupted-lock",
+        "report-all-failures",
+        "report-check-summary",
+        "ignore-untagged-test-files",
+        "ci-multi-test-dirs"
+      ],
+      "dependencies": [
+        "specs/core/config.spec",
+        "specs/core/commands/lock-command.spec"
+      ],
+      "hash": "c9a4f4bf86c92fbdf6a3f7419e79a325b533362ef6ba9c6ca0588c7e2a129ffc",
+      "nfrs": [
+        "operability#ci-friendly-output",
+        "operability#deterministic-output",
+        "operability#zero-config",
+        "reliability#error-completeness"
+      ],
+      "test_files": {
+        "tests/ci_command.rs": {
+          "covers": [
+            "ci-all-checks-pass",
+            "ci-multi-test-dirs",
+            "ci-reads-config",
+            "ci-summary-shows-stats",
+            "ci-uses-default-conventions",
+            "detect-deleted-spec-in-lock",
+            "detect-deleted-test-in-lock",
+            "detect-dependency-change",
+            "detect-new-nfr-not-in-lock",
+            "detect-new-spec-not-in-lock",
+            "detect-new-test-not-in-lock",
+            "detect-nfr-hash-mismatch",
+            "detect-orphaned-tag",
+            "detect-spec-hash-mismatch",
+            "detect-test-hash-mismatch",
+            "detect-uncovered-behavior",
+            "ignore-untagged-test-files",
+            "reject-corrupted-lock",
+            "reject-missing-lock",
+            "report-all-failures",
+            "report-check-summary"
+          ],
+          "hash": "b482df85d5f0331f518332487906ad9bafb01b00802355be10025b0057ffb430"
+        }
+      }
+    },
+    "specs/core/commands/coverage-command.spec": {
+      "behaviors": [
+        "report-full-coverage",
+        "report-partial-coverage",
+        "group-by-spec",
+        "show-test-types",
+        "show-summary",
+        "multiple-ids-in-one-tag",
+        "scan-double-slash-comments",
+        "scan-hash-comments",
+        "scope-scan-with-flag",
+        "multiple-scan-flags",
+        "single-spec-file",
+        "skip-gitignored-paths",
+        "derive-nfr-from-covered-behavior",
+        "derive-nfr-uncovered-from-uncovered-behavior",
+        "report-benchmark-nfr",
+        "collapse-fully-covered-spec",
+        "expand-partially-covered-spec",
+        "verbose-expands-all",
+        "json-output",
+        "reject-unknown-behavior-id",
+        "reject-unknown-nfr-constraint",
+        "reject-missing-type",
+        "reject-behavior-in-benchmark",
+        "reject-nfr-in-behavioral-tag",
+        "reject-nonexistent-spec-path",
+        "reject-no-specs-in-path",
+        "reject-nonexistent-scan-path",
+        "reject-invalid-format",
+        "report-tag-errors-with-location",
+        "warn-empty-tag",
+        "info-duplicate-coverage",
+        "no-tags-found",
+        "disambiguate-with-qualified-name",
+        "reject-ambiguous-unqualified-name",
+        "report-all-tag-errors",
+        "json-errors",
+        "mixed-valid-and-invalid-tags",
+        "accept-arbitrary-tag-type",
+        "accept-multiple-custom-types",
+        "accept-uppercase-tag-type",
+        "accept-single-char-tag-type"
+      ],
+      "dependencies": [
+        "specs/grammar/spec-grammar.spec",
+        "specs/grammar/nfr-grammar.spec",
+        "specs/cli/cli-display.spec"
+      ],
+      "hash": "a7a3d3f2512bc753003d7754b046fe9a8e6cc0b958ea5d4fa04af3f9a5b6ead0",
+      "nfrs": [
+        "operability#ci-friendly-output",
+        "operability#deterministic-output",
+        "operability#zero-config",
+        "reliability#error-completeness"
+      ],
+      "test_files": {
+        "tests/coverage_command.rs": {
+          "covers": [
+            "accept-arbitrary-tag-type",
+            "accept-multiple-custom-types",
+            "accept-single-char-tag-type",
+            "accept-uppercase-tag-type",
+            "collapse-fully-covered-spec",
+            "derive-nfr-from-covered-behavior",
+            "derive-nfr-uncovered-from-uncovered-behavior",
+            "disambiguate-with-qualified-name",
+            "expand-partially-covered-spec",
+            "group-by-spec",
+            "info-duplicate-coverage",
+            "json-errors",
+            "json-output",
+            "mixed-valid-and-invalid-tags",
+            "multiple-ids-in-one-tag",
+            "multiple-scan-flags",
+            "no-tags-found",
+            "reject-ambiguous-unqualified-name",
+            "reject-behavior-in-benchmark",
+            "reject-invalid-format",
+            "reject-missing-type",
+            "reject-nfr-in-behavioral-tag",
+            "reject-no-specs-in-path",
+            "reject-nonexistent-scan-path",
+            "reject-nonexistent-spec-path",
+            "reject-unknown-behavior-id",
+            "reject-unknown-nfr-constraint",
+            "report-all-tag-errors",
+            "report-benchmark-nfr",
+            "report-full-coverage",
+            "report-partial-coverage",
+            "report-tag-errors-with-location",
+            "scan-double-slash-comments",
+            "scan-hash-comments",
+            "scope-scan-with-flag",
+            "show-summary",
+            "show-test-types",
+            "single-spec-file",
+            "skip-gitignored-paths",
+            "verbose-expands-all",
+            "warn-empty-tag"
+          ],
+          "hash": "da2ecda4884ae7eabc2c93c4890995d2497e97d217f4bd75213b5e89075ec9da"
+        }
+      }
+    },
+    "specs/core/commands/format-command.spec": {
+      "behaviors": [
+        "display-spec-grammar",
+        "display-nfr-grammar",
+        "reject-unknown-format-type",
+        "reject-missing-format-type"
+      ],
+      "dependencies": [
+        "specs/grammar/nfr-grammar.spec"
+      ],
+      "hash": "8c99973e257ecc7fd329b51cc816bef24bdcc7fd04e6eb667ea4af5fa0743647",
+      "nfrs": [
+        "operability#ci-friendly-output"
+      ],
+      "test_files": {
+        "tests/format_command.rs": {
+          "covers": [
+            "display-nfr-grammar",
+            "display-spec-grammar",
+            "reject-missing-format-type",
+            "reject-unknown-format-type"
+          ],
+          "hash": "4a188d62424f1dd761b4a855fe39d3f2aaa61ba9626e81b1a098f5ea22adce62"
+        }
+      }
+    },
+    "specs/core/commands/graph-command.spec": {
+      "behaviors": [
+        "display-summary-header",
+        "display-full-graph",
+        "display-impacted-specs",
+        "display-transitive-impacted",
+        "impacted-unknown-spec",
+        "graph-no-specs",
+        "graph-persists-cache",
+        "graph-no-dependencies",
+        "display-nfr-refs-in-tree",
+        "display-nfr-refs-hidden-when-spec-dimmed",
+        "display-nfr-anchors-show-referenced-count",
+        "display-nfr-whole-file-absorbs-anchors",
+        "impacted-by-nfr",
+        "single-file-resolves-nfr-from-sibling-dirs"
+      ],
+      "dependencies": [
+        "specs/core/dependency-resolution.spec"
+      ],
+      "hash": "52181f5887f5c772f0cfb57d8b2bb1885ea0590b8d267b7704700acb623a7917",
+      "nfrs": [
+        "operability#ci-friendly-output",
+        "operability#deterministic-output"
+      ],
+      "test_files": {
+        "tests/graph_command.rs": {
+          "covers": [
+            "display-full-graph",
+            "display-impacted-specs",
+            "display-nfr-anchors-show-referenced-count",
+            "display-nfr-refs-hidden-when-spec-dimmed",
+            "display-nfr-refs-in-tree",
+            "display-nfr-whole-file-absorbs-anchors",
+            "display-summary-header",
+            "display-transitive-impacted",
+            "graph-no-dependencies",
+            "graph-no-specs",
+            "graph-persists-cache",
+            "impacted-by-nfr",
+            "impacted-unknown-spec",
+            "single-file-resolves-nfr-from-sibling-dirs"
+          ],
+          "hash": "f623e0fc240b25f012bae88e06a2943812ce9b8490ae68b48129188c9fce1536"
+        }
+      }
+    },
+    "specs/core/commands/guide-command.spec": {
+      "behaviors": [
+        "guide-methodology-prints-methodology",
+        "guide-methodology-describes-spec-role",
+        "guide-methodology-describes-nfr-constraints",
+        "guide-methodology-lists-nfr-categories",
+        "guide-methodology-describes-spec-level-binding",
+        "guide-methodology-describes-behavior-level-binding",
+        "guide-methodology-describes-whole-file-vs-anchor",
+        "guide-methodology-describes-containment-rule",
+        "guide-methodology-describes-override-rules",
+        "guide-methodology-describes-test-emission",
+        "guide-methodology-shows-reference-syntax",
+        "guide-methodology-describes-workflow-phases",
+        "guide-methodology-specs-before-code",
+        "guide-methodology-red-tests",
+        "guide-workflow-topic",
+        "guide-authoring-topic",
+        "guide-smells-topic",
+        "guide-nfr-topic",
+        "guide-context-topic",
+        "guide-coverage-topic",
+        "guide-unknown-topic",
+        "guide-missing-topic"
+      ],
+      "dependencies": [
+        "specs/grammar/nfr-grammar.spec",
+        "specs/nfr/nfr-cross-reference.spec"
+      ],
+      "hash": "c4038ca611893e58258608e4915acdcda049409d0f2ee2031c7f0df5268090eb",
+      "nfrs": [
+        "operability#ci-friendly-output",
+        "operability#zero-config"
+      ],
+      "test_files": {
+        "tests/guide_command.rs": {
+          "covers": [
+            "guide-authoring-topic",
+            "guide-context-topic",
+            "guide-coverage-topic",
+            "guide-methodology-describes-behavior-level-binding",
+            "guide-methodology-describes-containment-rule",
+            "guide-methodology-describes-nfr-constraints",
+            "guide-methodology-describes-override-rules",
+            "guide-methodology-describes-spec-level-binding",
+            "guide-methodology-describes-spec-role",
+            "guide-methodology-describes-test-emission",
+            "guide-methodology-describes-whole-file-vs-anchor",
+            "guide-methodology-describes-workflow-phases",
+            "guide-methodology-lists-nfr-categories",
+            "guide-methodology-prints-methodology",
+            "guide-methodology-red-tests",
+            "guide-methodology-shows-reference-syntax",
+            "guide-methodology-specs-before-code",
+            "guide-missing-topic",
+            "guide-nfr-topic",
+            "guide-smells-topic",
+            "guide-unknown-topic",
+            "guide-workflow-topic"
+          ],
+          "hash": "4fa49947a860500bc3c6f18199e5fcc8daada38793f03c47e5288c385855b6cc"
+        }
+      }
+    },
+    "specs/core/commands/inspect-command.spec": {
+      "behaviors": [
+        "inspect-behavior-count",
+        "inspect-category-distribution",
+        "inspect-dependencies",
+        "inspect-assertion-types",
+        "inspect-invalid-spec",
+        "inspect-nonexistent-file",
+        "inspect-no-dependencies",
+        "inspect-nfr-constraint-count",
+        "inspect-nfr-type-distribution",
+        "inspect-nfr-category",
+        "inspect-nfr-no-dependencies"
+      ],
+      "dependencies": [
+        "specs/grammar/spec-grammar.spec",
+        "specs/core/commands/validate-command.spec",
+        "specs/grammar/nfr-grammar.spec"
+      ],
+      "hash": "c092d81f85ae677f281ada41de8867cebabc88a297c9bf36cceffea6287e5682",
+      "nfrs": [
+        "operability#ci-friendly-output"
+      ],
+      "test_files": {
+        "tests/inspect_command.rs": {
+          "covers": [
+            "inspect-assertion-types",
+            "inspect-behavior-count",
+            "inspect-category-distribution",
+            "inspect-dependencies",
+            "inspect-invalid-spec",
+            "inspect-nfr-category",
+            "inspect-nfr-constraint-count",
+            "inspect-nfr-no-dependencies",
+            "inspect-nfr-type-distribution",
+            "inspect-no-dependencies",
+            "inspect-nonexistent-file"
+          ],
+          "hash": "ffff37438100d15800be1b5a5d126252673d91b142a42284b9680cfb504db562"
+        }
+      }
+    },
+    "specs/core/commands/lock-command.spec": {
+      "behaviors": [
+        "generate-lock-file",
+        "lock-contains-spec-hashes",
+        "lock-contains-behaviors",
+        "lock-contains-dependencies",
+        "lock-contains-nfr-refs",
+        "lock-contains-nfr-hashes",
+        "lock-contains-test-file-hashes",
+        "lock-contains-covers-mapping",
+        "lock-reads-config",
+        "lock-uses-default-conventions",
+        "lock-deterministic",
+        "lock-updates-existing",
+        "lock-multiple-specs",
+        "lock-test-covers-multiple-specs",
+        "reject-invalid-specs",
+        "reject-tag-errors",
+        "reject-no-specs-found",
+        "lock-no-tests",
+        "lock-no-nfrs",
+        "lock-atomic-write",
+        "lock-scans-all-test-dirs"
+      ],
+      "dependencies": [
+        "specs/core/config.spec",
+        "specs/core/commands/coverage-command.spec",
+        "specs/core/commands/graph-command.spec"
+      ],
+      "hash": "f3f0bf7f2f0c78e6d71918e66d6eacccaf63000881b0ae55e2bd1770a25ca017",
+      "nfrs": [
+        "operability#ci-friendly-output",
+        "operability#deterministic-output",
+        "reliability#no-silent-data-loss"
+      ],
+      "test_files": {
+        "tests/lock_command.rs": {
+          "covers": [
+            "generate-lock-file",
+            "lock-atomic-write",
+            "lock-contains-behaviors",
+            "lock-contains-covers-mapping",
+            "lock-contains-dependencies",
+            "lock-contains-nfr-hashes",
+            "lock-contains-nfr-refs",
+            "lock-contains-spec-hashes",
+            "lock-contains-test-file-hashes",
+            "lock-deterministic",
+            "lock-multiple-specs",
+            "lock-no-nfrs",
+            "lock-no-tests",
+            "lock-reads-config",
+            "lock-scans-all-test-dirs",
+            "lock-test-covers-multiple-specs",
+            "lock-updates-existing",
+            "lock-uses-default-conventions",
+            "reject-invalid-specs",
+            "reject-no-specs-found",
+            "reject-tag-errors"
+          ],
+          "hash": "b490155f221e8b7a40dfd6ee5a066b1be74029737619b46365d83fb7063bc1ff"
+        }
+      }
+    },
+    "specs/core/commands/scaffold-command.spec": {
+      "behaviors": [
+        "scaffold-spec",
+        "scaffold-nfr-with-category",
+        "scaffold-nfr-all-categories",
+        "reject-unknown-nfr-category",
+        "reject-nfr-missing-category",
+        "reject-unknown-scaffold-type",
+        "scaffold-output-is-parseable",
+        "scaffold-nfr-output-is-parseable"
+      ],
+      "dependencies": [
+        "specs/grammar/nfr-grammar.spec"
+      ],
+      "hash": "6453a0c64919812d0a56d9fa528d6f5d8e9b542182eef8c15316805e3cffe7ff",
+      "nfrs": [],
+      "test_files": {
+        "tests/scaffold_command.rs": {
+          "covers": [
+            "reject-nfr-missing-category",
+            "reject-unknown-nfr-category",
+            "reject-unknown-scaffold-type",
+            "scaffold-nfr-all-categories",
+            "scaffold-nfr-output-is-parseable",
+            "scaffold-nfr-with-category",
+            "scaffold-output-is-parseable",
+            "scaffold-spec"
+          ],
+          "hash": "41762967fdcb649ed947d25cd1f46d8016c48f52475e06848a2d33a720e675e8"
+        }
+      }
+    },
+    "specs/core/commands/validate-command.spec": {
+      "behaviors": [
+        "validate-valid-spec",
+        "validate-multiple-files-all-valid",
+        "validate-single-file-is-isolated",
+        "validate-deep-single-file",
+        "discover-specs-in-directory",
+        "validate-directory-is-always-deep",
+        "reject-duplicate-behavior-names",
+        "reject-unresolved-alias",
+        "reject-duplicate-aliases",
+        "reject-invalid-identity-name",
+        "reject-invalid-semver",
+        "reject-no-happy-path",
+        "validate-directory-with-invalid",
+        "reject-nonexistent-file",
+        "reject-empty-directory",
+        "reject-nonexistent-directory",
+        "reject-unreadable-file",
+        "reject-empty-file",
+        "report-all-errors",
+        "skip-semantic-when-parse-fails",
+        "exit-1-when-any-file-invalid",
+        "validate-all-files-independently",
+        "validate-valid-nfr",
+        "validate-nfr-single-file-is-isolated",
+        "discover-nfr-in-directory",
+        "validate-mixed-spec-and-nfr-directory",
+        "reject-invalid-nfr",
+        "validate-cross-references-in-directory",
+        "reject-broken-cross-reference"
+      ],
+      "dependencies": [
+        "specs/grammar/spec-grammar.spec",
+        "specs/cli/cli-display.spec",
+        "specs/grammar/nfr-grammar.spec",
+        "specs/nfr/nfr-cross-reference.spec"
+      ],
+      "hash": "b872dc4a113778ebac0a4963a86684ac277318e72205d282575db4166303c896",
+      "nfrs": [
+        "operability#ci-friendly-output",
+        "performance#cache-skip-unchanged",
+        "performance#directory-validation-scaling",
+        "performance#large-tree-validation-scaling",
+        "performance#no-redundant-file-reads",
+        "performance#single-discovery-pass",
+        "performance#validation-latency",
+        "reliability#error-completeness",
+        "reliability#no-silent-data-loss"
+      ],
+      "test_files": {
+        "tests/validate_spec.rs": {
+          "covers": [
+            "discover-nfr-in-directory",
+            "discover-specs-in-directory",
+            "exit-1-when-any-file-invalid",
+            "reject-broken-cross-reference",
+            "reject-duplicate-aliases",
+            "reject-duplicate-behavior-names",
+            "reject-empty-directory",
+            "reject-empty-file",
+            "reject-invalid-identity-name",
+            "reject-invalid-nfr",
+            "reject-invalid-semver",
+            "reject-no-happy-path",
+            "reject-nonexistent-directory",
+            "reject-nonexistent-file",
+            "reject-unreadable-file",
+            "reject-unresolved-alias",
+            "report-all-errors",
+            "skip-semantic-when-parse-fails",
+            "validate-all-files-independently",
+            "validate-cross-references-in-directory",
+            "validate-deep-single-file",
+            "validate-directory-is-always-deep",
+            "validate-directory-with-invalid",
+            "validate-mixed-spec-and-nfr-directory",
+            "validate-multiple-files-all-valid",
+            "validate-nfr-single-file-is-isolated",
+            "validate-single-file-is-isolated",
+            "validate-valid-nfr",
+            "validate-valid-spec"
+          ],
+          "hash": "77d0358949290f492cc3b5c96eadbc1eefc1317d426dc6250af40faa30be75a2"
+        }
+      }
+    },
+    "specs/core/commands/watch-command.spec": {
+      "behaviors": [
+        "watch-start-directory",
+        "watch-start-single-file",
+        "watch-initial-validation",
+        "watch-revalidate-changed-file",
+        "watch-revalidate-subdirectory",
+        "watch-file-regresses-valid-to-invalid",
+        "watch-file-fixed-invalid-to-valid",
+        "watch-dependency-added",
+        "watch-dependency-removed",
+        "watch-integrate-new-file",
+        "watch-report-broken-deps-on-delete",
+        "watch-rebuild-stale-graph-entries",
+        "watch-multiple-files-changed",
+        "watch-debounce-rapid-changes",
+        "watch-graceful-shutdown",
+        "watch-nonexistent-path",
+        "watch-permission-denied-on-directory",
+        "watch-empty-directory",
+        "watch-file-becomes-unreadable",
+        "watch-graph-persist-failure-on-shutdown",
+        "watch-discover-nfr-files",
+        "watch-revalidate-changed-nfr",
+        "watch-integrate-new-nfr-file"
+      ],
+      "dependencies": [
+        "specs/core/dependency-resolution.spec",
+        "specs/cli/cli-display.spec"
+      ],
+      "hash": "068ce921583a641772c5431c7edfb4dce12478f21fad90051b623f7704f007eb",
+      "nfrs": [
+        "operability#ci-friendly-output",
+        "performance#watch-revalidation-latency",
+        "reliability#crash-safe-persistence",
+        "reliability#no-silent-data-loss"
+      ],
+      "test_files": {
+        "tests/watch_mode.rs": {
+          "covers": [
+            "watch-debounce-rapid-changes",
+            "watch-dependency-added",
+            "watch-dependency-removed",
+            "watch-discover-nfr-files",
+            "watch-empty-directory",
+            "watch-file-becomes-unreadable",
+            "watch-file-fixed-invalid-to-valid",
+            "watch-file-regresses-valid-to-invalid",
+            "watch-graceful-shutdown",
+            "watch-graph-persist-failure-on-shutdown",
+            "watch-initial-validation",
+            "watch-integrate-new-file",
+            "watch-integrate-new-nfr-file",
+            "watch-multiple-files-changed",
+            "watch-nonexistent-path",
+            "watch-permission-denied-on-directory",
+            "watch-rebuild-stale-graph-entries",
+            "watch-report-broken-deps-on-delete",
+            "watch-revalidate-changed-file",
+            "watch-revalidate-changed-nfr",
+            "watch-revalidate-subdirectory",
+            "watch-start-directory",
+            "watch-start-single-file"
+          ],
+          "hash": "008ef16e3e6309fbe652a1b3877a81248acefd9c2049801d5593862713067fe1"
+        }
+      }
+    },
+    "specs/core/config.spec": {
+      "behaviors": [
+        "load-default-conventions",
+        "load-config-file",
+        "config-specs-string",
+        "config-tests-array",
+        "config-tests-single-string",
+        "config-partial-override",
+        "cli-args-override-config",
+        "reject-invalid-json",
+        "reject-invalid-specs-type",
+        "reject-invalid-tests-type",
+        "reject-nonexistent-specs-dir",
+        "reject-nonexistent-tests-dir",
+        "reject-unknown-fields",
+        "empty-config-uses-defaults",
+        "no-default-dirs-without-config"
+      ],
+      "dependencies": [],
+      "hash": "6da18c966bf6f9ff26b69b49d39f034224a2081a32b04e1256829609a39872b9",
+      "nfrs": [
+        "operability#zero-config",
+        "reliability#error-completeness"
+      ],
+      "test_files": {
+        "tests/config.rs": {
+          "covers": [
+            "cli-args-override-config",
+            "config-partial-override",
+            "config-specs-string",
+            "config-tests-array",
+            "config-tests-single-string",
+            "empty-config-uses-defaults",
+            "load-config-file",
+            "load-default-conventions",
+            "no-default-dirs-without-config",
+            "reject-invalid-json",
+            "reject-invalid-specs-type",
+            "reject-invalid-tests-type",
+            "reject-nonexistent-specs-dir",
+            "reject-nonexistent-tests-dir",
+            "reject-unknown-fields"
+          ],
+          "hash": "4ec4975a7e105048e8cca6dcdf5155fbc3bff60999dc75f3ff856b26a89f0623"
+        }
+      }
+    },
+    "specs/core/dependency-resolution.spec": {
+      "behaviors": [
+        "resolve-direct-dependencies",
+        "resolve-by-name-in-tree",
+        "resolve-transitive-dependencies",
+        "resolve-cross-directory-dependency",
+        "folder-automatically-resolves-dependencies",
+        "version-constraint-satisfied",
+        "version-constraint-exact-match",
+        "version-constraint-patch-higher",
+        "reject-missing-dependency",
+        "reject-incompatible-version",
+        "reject-version-below-constraint",
+        "reject-cyclic-dependencies",
+        "reject-transitive-cycle",
+        "reject-invalid-dependency-spec",
+        "reject-duplicate-spec-names",
+        "skip-deps-when-spec-invalid",
+        "handle-no-dependencies",
+        "report-all-resolution-errors",
+        "cache-directory-location",
+        "cache-cold-start-creates-directory",
+        "cache-produces-correct-results",
+        "cache-revalidates-modified-and-dependents",
+        "cache-integrates-new-files",
+        "validate-without-deep-ignores-graph",
+        "rebuild-on-corrupted-graph",
+        "rebuild-on-schema-mismatch",
+        "cache-tracks-nfr-files",
+        "cache-revalidates-on-nfr-change",
+        "cache-integrates-new-nfr-files",
+        "cache-prunes-deleted-nfr-files"
+      ],
+      "dependencies": [
+        "specs/core/commands/validate-command.spec"
+      ],
+      "hash": "3a6e3e0e14a923756e6344b0f31f754edf3f001d78c3f6c635d6df5855fb4c7a",
+      "nfrs": [
+        "operability#graph-location-predictability",
+        "performance#cache-skip-unchanged",
+        "performance#directory-validation-scaling",
+        "performance#no-redundant-file-reads",
+        "performance#single-discovery-pass",
+        "reliability#error-completeness",
+        "reliability#graceful-corruption-recovery"
+      ],
+      "test_files": {
+        "tests/graph_cache.rs": {
+          "covers": [
+            "cache-cold-start-creates-directory",
+            "cache-directory-location",
+            "cache-integrates-new-nfr-files",
+            "cache-produces-correct-results",
+            "cache-prunes-deleted-nfr-files",
+            "cache-revalidates-modified-and-dependents",
+            "cache-revalidates-on-nfr-change",
+            "cache-tracks-nfr-files",
+            "rebuild-on-corrupted-graph",
+            "rebuild-on-schema-mismatch",
+            "validate-without-deep-ignores-graph"
+          ],
+          "hash": "f873f0b376ac7898c7d170c881f04fd545cc8997b4070ec2a227040d546c7c08"
+        },
+        "tests/incremental_validation.rs": {
+          "covers": [
+            "cache-integrates-new-files"
+          ],
+          "hash": "fc99b24d769fe7dabaee967c9486c51a72b120e7a868a45da2a43157382bf9fa"
+        },
+        "tests/validate_dependencies.rs": {
+          "covers": [
+            "folder-automatically-resolves-dependencies",
+            "handle-no-dependencies",
+            "reject-cyclic-dependencies",
+            "reject-duplicate-spec-names",
+            "reject-incompatible-version",
+            "reject-invalid-dependency-spec",
+            "reject-missing-dependency",
+            "reject-transitive-cycle",
+            "reject-version-below-constraint",
+            "report-all-resolution-errors",
+            "resolve-by-name-in-tree",
+            "resolve-cross-directory-dependency",
+            "resolve-direct-dependencies",
+            "resolve-transitive-dependencies",
+            "skip-deps-when-spec-invalid",
+            "version-constraint-exact-match",
+            "version-constraint-patch-higher",
+            "version-constraint-satisfied"
+          ],
+          "hash": "67d12712e78a7f9315fe8900fda7705261bbe6dada9ae5c49347ca41485cd9ac"
+        }
+      }
+    },
+    "specs/grammar/nfr-grammar.spec": {
+      "behaviors": [
+        "parse-nfr-declaration",
+        "parse-nfr-category-validated",
+        "reject-invalid-nfr-category",
+        "parse-nfr-title",
+        "parse-nfr-description-block",
+        "parse-nfr-motivation-block",
+        "reject-nfr-missing-version",
+        "parse-metric-constraint-declaration",
+        "parse-rule-constraint-declaration",
+        "reject-unknown-constraint-type",
+        "reject-constraint-without-description",
+        "reject-non-kebab-constraint-name",
+        "parse-metric-field",
+        "parse-threshold-less-than",
+        "parse-threshold-greater-than",
+        "parse-threshold-less-or-equal",
+        "parse-threshold-greater-or-equal",
+        "parse-threshold-equals",
+        "reject-threshold-invalid-operator",
+        "parse-metric-verification-block",
+        "parse-metric-verification-without-dataset",
+        "parse-rule-text-block",
+        "parse-rule-verification-static-only",
+        "parse-rule-verification-runtime-only",
+        "parse-rule-verification-both",
+        "reject-rule-verification-empty",
+        "parse-violation-severity",
+        "reject-invalid-violation-severity",
+        "parse-overridable-values",
+        "reject-invalid-overridable-value",
+        "reject-missing-nfr-declaration",
+        "reject-nfr-missing-title",
+        "reject-nfr-missing-description",
+        "reject-nfr-missing-motivation",
+        "reject-nfr-no-constraints",
+        "reject-duplicate-constraint-names",
+        "reject-metric-missing-required-fields",
+        "reject-metric-verification-missing-required",
+        "reject-rule-missing-required-fields",
+        "reject-nfr-tab-indentation",
+        "parse-multiple-constraints",
+        "parse-multiple-verification-lines",
+        "parse-environment-all",
+        "ignore-nfr-comments",
+        "ignore-nfr-blank-lines"
+      ],
+      "dependencies": [],
+      "hash": "de49040e9238839b94da38fc7be45c90d93a2d19c684342eac281cbba5bca3ca",
+      "nfrs": [],
+      "test_files": {
+        "tests/nfr_format.rs": {
+          "covers": [
+            "ignore-nfr-blank-lines",
+            "ignore-nfr-comments",
+            "parse-environment-all",
+            "parse-metric-constraint-declaration",
+            "parse-metric-field",
+            "parse-metric-verification-block",
+            "parse-metric-verification-without-dataset",
+            "parse-multiple-constraints",
+            "parse-multiple-verification-lines",
+            "parse-nfr-category-validated",
+            "parse-nfr-declaration",
+            "parse-nfr-description-block",
+            "parse-nfr-motivation-block",
+            "parse-nfr-title",
+            "parse-overridable-values",
+            "parse-rule-constraint-declaration",
+            "parse-rule-text-block",
+            "parse-rule-verification-both",
+            "parse-rule-verification-runtime-only",
+            "parse-rule-verification-static-only",
+            "parse-threshold-equals",
+            "parse-threshold-greater-or-equal",
+            "parse-threshold-greater-than",
+            "parse-threshold-less-or-equal",
+            "parse-threshold-less-than",
+            "parse-violation-severity",
+            "reject-constraint-without-description",
+            "reject-duplicate-constraint-names",
+            "reject-invalid-nfr-category",
+            "reject-invalid-overridable-value",
+            "reject-invalid-violation-severity",
+            "reject-metric-missing-required-fields",
+            "reject-metric-verification-missing-required",
+            "reject-missing-nfr-declaration",
+            "reject-nfr-missing-description",
+            "reject-nfr-missing-motivation",
+            "reject-nfr-missing-title",
+            "reject-nfr-missing-version",
+            "reject-nfr-no-constraints",
+            "reject-nfr-tab-indentation",
+            "reject-non-kebab-constraint-name",
+            "reject-rule-missing-required-fields",
+            "reject-rule-verification-empty",
+            "reject-threshold-invalid-operator",
+            "reject-unknown-constraint-type"
+          ],
+          "hash": "44b6d7275d4830ed57dc55de9e42f90911869180b6efe355a935a93085fbe9d4"
+        }
+      }
+    },
+    "specs/grammar/spec-grammar.spec": {
+      "behaviors": [
+        "parse-spec-declaration",
+        "parse-title",
+        "parse-description-block",
+        "parse-motivation-block",
+        "parse-empty-description",
+        "parse-behavior-declaration",
+        "parse-category-happy-path",
+        "parse-category-error-case",
+        "parse-category-edge-case",
+        "parse-given-prose",
+        "parse-given-alias-declaration",
+        "parse-given-alias-single-property",
+        "parse-given-alias-zero-properties",
+        "parse-given-multiple-preconditions",
+        "parse-when-action",
+        "parse-when-inputs",
+        "parse-when-alias-reference",
+        "parse-then-returns",
+        "parse-then-emits",
+        "parse-then-emits-process-exit",
+        "parse-then-side-effect",
+        "parse-then-plain",
+        "parse-multiple-then-blocks",
+        "parse-assert-equals",
+        "parse-assert-is-present",
+        "parse-assert-contains",
+        "parse-assert-in-range",
+        "parse-assert-matches-pattern",
+        "parse-assert-equals-ref",
+        "parse-assert-greater-or-equal",
+        "parse-assert-prose",
+        "parse-unicode-in-quoted-strings",
+        "parse-trailing-whitespace",
+        "accept-two-space-indentation",
+        "reject-tab-indentation",
+        "reject-zero-indent-in-block",
+        "parse-depends-on",
+        "parse-multiple-dependencies",
+        "ignore-comments",
+        "ignore-blank-lines",
+        "reject-missing-spec-declaration",
+        "reject-missing-title",
+        "reject-missing-description",
+        "reject-missing-motivation",
+        "reject-behavior-without-description",
+        "reject-behavior-without-given",
+        "reject-behavior-without-when",
+        "reject-behavior-without-then",
+        "reject-wrong-section-order",
+        "reject-assert-without-field",
+        "reject-unknown-assertion-operator",
+        "reject-alias-without-entity",
+        "reject-malformed-alias-reference",
+        "parse-spec-level-nfr-section",
+        "parse-behavior-level-nfr-section",
+        "reject-depends-on-without-version"
+      ],
+      "dependencies": [],
+      "hash": "23e0ba8ca3865e1766ec0c2d7dbed4d4ff43e87e6b1f6752108279570ec973c7",
+      "nfrs": [],
+      "test_files": {
+        "tests/dsl_format.rs": {
+          "covers": [
+            "accept-two-space-indentation",
+            "ignore-blank-lines",
+            "ignore-comments",
+            "parse-assert-contains",
+            "parse-assert-equals",
+            "parse-assert-equals-ref",
+            "parse-assert-greater-or-equal",
+            "parse-assert-in-range",
+            "parse-assert-is-present",
+            "parse-assert-matches-pattern",
+            "parse-assert-prose",
+            "parse-behavior-declaration",
+            "parse-behavior-level-nfr-section",
+            "parse-category-edge-case",
+            "parse-category-error-case",
+            "parse-category-happy-path",
+            "parse-depends-on",
+            "parse-description-block",
+            "parse-empty-description",
+            "parse-given-alias-declaration",
+            "parse-given-alias-single-property",
+            "parse-given-alias-zero-properties",
+            "parse-given-multiple-preconditions",
+            "parse-given-prose",
+            "parse-motivation-block",
+            "parse-multiple-dependencies",
+            "parse-multiple-then-blocks",
+            "parse-spec-declaration",
+            "parse-spec-level-nfr-section",
+            "parse-then-emits",
+            "parse-then-emits-process-exit",
+            "parse-then-plain",
+            "parse-then-returns",
+            "parse-then-side-effect",
+            "parse-title",
+            "parse-trailing-whitespace",
+            "parse-unicode-in-quoted-strings",
+            "parse-when-action",
+            "parse-when-alias-reference",
+            "parse-when-inputs",
+            "reject-alias-without-entity",
+            "reject-assert-without-field",
+            "reject-behavior-without-description",
+            "reject-behavior-without-given",
+            "reject-behavior-without-then",
+            "reject-behavior-without-when",
+            "reject-depends-on-without-version",
+            "reject-malformed-alias-reference",
+            "reject-missing-description",
+            "reject-missing-motivation",
+            "reject-missing-spec-declaration",
+            "reject-missing-title",
+            "reject-tab-indentation",
+            "reject-unknown-assertion-operator",
+            "reject-wrong-section-order",
+            "reject-zero-indent-in-block"
+          ],
+          "hash": "61d787e36479d9d619313f1a6a2df8d9153e82df4808c417903616f36d725f3d"
+        }
+      }
+    },
+    "specs/mcp/mcp-agent-guidance.spec": {
+      "behaviors": [
+        "initialize-includes-methodology-instructions",
+        "initialize-minter-returns-full-methodology",
+        "initialize-minter-lists-available-tools",
+        "guide-workflow-phases",
+        "guide-spec-authoring",
+        "guide-requirements-smells",
+        "guide-nfr-design",
+        "guide-context-management",
+        "guide-coverage-tagging",
+        "guide-unknown-topic",
+        "next-steps-after-scaffold",
+        "next-steps-after-validate-pass",
+        "next-steps-after-validate-fail",
+        "next-steps-after-format",
+        "next-steps-after-inspect",
+        "next-steps-after-nfr-scaffold",
+        "list-tools-includes-agent-guidance"
+      ],
+      "dependencies": [
+        "specs/mcp/mcp-server.spec",
+        "specs/mcp/mcp-response-format.spec"
+      ],
+      "hash": "33ae589da0b1fd65b01f01996de3fe8c467443bb221581d3e5b231190f9092f3",
+      "nfrs": [
+        "operability#deterministic-output",
+        "operability#mcp-protocol-compliance"
+      ],
+      "test_files": {
+        "tests/mcp_server.rs": {
+          "covers": [
+            "guide-context-management",
+            "guide-coverage-tagging",
+            "guide-nfr-design",
+            "guide-requirements-smells",
+            "guide-spec-authoring",
+            "guide-unknown-topic",
+            "guide-workflow-phases",
+            "initialize-includes-methodology-instructions",
+            "initialize-minter-lists-available-tools",
+            "initialize-minter-returns-full-methodology",
+            "list-tools-includes-agent-guidance",
+            "next-steps-after-format",
+            "next-steps-after-inspect",
+            "next-steps-after-nfr-scaffold",
+            "next-steps-after-scaffold",
+            "next-steps-after-validate-fail",
+            "next-steps-after-validate-pass"
+          ],
+          "hash": "faea99692111a731b73ed8ed03001cb19acf84d10e7c1eff5c4e2781f4fa1a0e"
+        }
+      }
+    },
+    "specs/mcp/mcp-response-format.spec": {
+      "behaviors": [
+        "validate-pass-result-fields",
+        "validate-fail-result-fields",
+        "validate-nfr-result-fields",
+        "validate-summary-fields",
+        "validate-deep-dependency-fields",
+        "validate-inline-result-omits-file",
+        "error-object-fields",
+        "error-object-includes-file-path",
+        "inspect-spec-result-fields",
+        "inspect-nfr-result-fields",
+        "inspect-no-dependencies-field",
+        "graph-full-result-fields",
+        "graph-impacted-result-fields",
+        "graph-no-edges-result",
+        "text-content-format",
+        "tool-error-structure",
+        "tool-error-lists-valid-options",
+        "no-ansi-in-responses",
+        "snake-case-field-names",
+        "consistent-count-field-naming"
+      ],
+      "dependencies": [
+        "specs/grammar/nfr-grammar.spec"
+      ],
+      "hash": "ed4f35c14d1b1f1e65206336adc9b98946add2d8c01a194f5bb3452e4818e791",
+      "nfrs": [
+        "operability#deterministic-output",
+        "operability#json-response-schema"
+      ],
+      "test_files": {
+        "tests/mcp_server.rs": {
+          "covers": [
+            "consistent-count-field-naming",
+            "error-object-fields",
+            "error-object-includes-file-path",
+            "graph-full-result-fields",
+            "graph-impacted-result-fields",
+            "graph-no-edges-result",
+            "inspect-nfr-result-fields",
+            "inspect-no-dependencies-field",
+            "inspect-spec-result-fields",
+            "no-ansi-in-responses",
+            "snake-case-field-names",
+            "text-content-format",
+            "tool-error-lists-valid-options",
+            "tool-error-structure",
+            "validate-deep-dependency-fields",
+            "validate-fail-result-fields",
+            "validate-inline-result-omits-file",
+            "validate-nfr-result-fields",
+            "validate-pass-result-fields",
+            "validate-summary-fields"
+          ],
+          "hash": "faea99692111a731b73ed8ed03001cb19acf84d10e7c1eff5c4e2781f4fa1a0e"
+        }
+      }
+    },
+    "specs/mcp/mcp-server.spec": {
+      "behaviors": [
+        "initialize-server",
+        "list-tools",
+        "validate-file-pass",
+        "validate-file-fail",
+        "validate-directory",
+        "validate-deep-mode",
+        "validate-nfr-file",
+        "validate-inline-content",
+        "validate-nonexistent-path",
+        "validate-mixed-results",
+        "validate-reject-non-spec-extension",
+        "validate-reject-oversized-file",
+        "validate-reject-oversized-content",
+        "validate-reject-unreadable-file",
+        "validate-content-takes-precedence",
+        "validate-reject-unknown-content-type",
+        "validate-require-path-or-content",
+        "inspect-spec-file",
+        "inspect-nfr-file",
+        "inspect-inline-content",
+        "inspect-invalid-file",
+        "inspect-nonexistent-file",
+        "inspect-reject-non-spec-extension",
+        "inspect-reject-oversized-file",
+        "scaffold-spec-template",
+        "scaffold-nfr-template",
+        "scaffold-unknown-category",
+        "scaffold-nfr-missing-category",
+        "scaffold-unknown-type",
+        "format-spec-grammar",
+        "format-nfr-grammar",
+        "format-unknown-type",
+        "graph-full-dependencies",
+        "graph-impacted-specs",
+        "graph-impacted-transitive",
+        "graph-unknown-spec",
+        "graph-empty-directory",
+        "graph-nonexistent-directory",
+        "coverage-full",
+        "coverage-uncovered",
+        "coverage-with-scan-dirs",
+        "coverage-nonexistent-path"
+      ],
+      "dependencies": [
+        "specs/core/commands/validate-command.spec",
+        "specs/core/commands/inspect-command.spec",
+        "specs/core/commands/scaffold-command.spec",
+        "specs/core/commands/format-command.spec",
+        "specs/core/commands/graph-command.spec",
+        "specs/core/commands/coverage-command.spec",
+        "specs/mcp/mcp-response-format.spec"
+      ],
+      "hash": "1b74daa1c199d2dc857d231e8ee6647cf03fa2e210e6b2bed9c312367a17d45f",
+      "nfrs": [
+        "operability#deterministic-output",
+        "operability#input-schema-accuracy",
+        "operability#mcp-protocol-compliance",
+        "performance#cache-skip-unchanged",
+        "security#file-extension-validation",
+        "security#max-file-size",
+        "security#max-inline-content-size",
+        "security#permission-denied-handling"
+      ],
+      "test_files": {
+        "tests/mcp_server.rs": {
+          "covers": [
+            "coverage-full",
+            "coverage-nonexistent-path",
+            "coverage-uncovered",
+            "coverage-with-scan-dirs",
+            "format-nfr-grammar",
+            "format-spec-grammar",
+            "format-unknown-type",
+            "graph-empty-directory",
+            "graph-full-dependencies",
+            "graph-impacted-specs",
+            "graph-impacted-transitive",
+            "graph-nonexistent-directory",
+            "graph-unknown-spec",
+            "initialize-server",
+            "inspect-inline-content",
+            "inspect-invalid-file",
+            "inspect-nfr-file",
+            "inspect-nonexistent-file",
+            "inspect-reject-non-spec-extension",
+            "inspect-reject-oversized-file",
+            "inspect-spec-file",
+            "list-tools",
+            "scaffold-nfr-missing-category",
+            "scaffold-nfr-template",
+            "scaffold-spec-template",
+            "scaffold-unknown-category",
+            "scaffold-unknown-type",
+            "validate-content-takes-precedence",
+            "validate-deep-mode",
+            "validate-directory",
+            "validate-file-fail",
+            "validate-file-pass",
+            "validate-inline-content",
+            "validate-mixed-results",
+            "validate-nfr-file",
+            "validate-nonexistent-path",
+            "validate-reject-non-spec-extension",
+            "validate-reject-oversized-content",
+            "validate-reject-oversized-file",
+            "validate-reject-unknown-content-type",
+            "validate-reject-unreadable-file",
+            "validate-require-path-or-content"
+          ],
+          "hash": "faea99692111a731b73ed8ed03001cb19acf84d10e7c1eff5c4e2781f4fa1a0e"
+        }
+      }
+    },
+    "specs/nfr/nfr-cross-reference.spec": {
+      "behaviors": [
+        "parse-spec-level-whole-file-ref",
+        "parse-spec-level-anchor-ref",
+        "parse-spec-level-mixed-refs",
+        "parse-spec-level-nfr-optional",
+        "parse-spec-level-nfr-position",
+        "reject-spec-level-override",
+        "parse-behavior-level-anchor-ref",
+        "parse-behavior-level-override",
+        "parse-behavior-level-multiple-refs",
+        "parse-behavior-level-nfr-position",
+        "parse-behavior-level-nfr-optional",
+        "resolve-category-to-nfr-file",
+        "reject-missing-nfr-category-file",
+        "resolve-anchor-to-constraint",
+        "reject-missing-anchor",
+        "containment-satisfied",
+        "reject-containment-violation",
+        "override-allowed-on-overridable-yes",
+        "reject-override-on-overridable-no",
+        "override-allowed-on-metric",
+        "reject-override-on-rule",
+        "override-same-operator",
+        "reject-override-mismatched-operator",
+        "override-stricter-value",
+        "reject-override-relaxed-value",
+        "reject-behavior-level-whole-file-ref",
+        "accept-behavior-level-anchor-only"
+      ],
+      "dependencies": [
+        "specs/grammar/spec-grammar.spec",
+        "specs/grammar/nfr-grammar.spec"
+      ],
+      "hash": "ef302056c40d2757fd6c249e9ae576a2711ea0cac1f40959e08063c7af51016a",
+      "nfrs": [],
+      "test_files": {
+        "tests/nfr_cross_ref.rs": {
+          "covers": [
+            "accept-behavior-level-anchor-only",
+            "containment-satisfied",
+            "override-allowed-on-metric",
+            "override-allowed-on-overridable-yes",
+            "override-same-operator",
+            "override-stricter-value",
+            "parse-behavior-level-anchor-ref",
+            "parse-behavior-level-multiple-refs",
+            "parse-behavior-level-nfr-optional",
+            "parse-behavior-level-nfr-position",
+            "parse-behavior-level-override",
+            "parse-spec-level-anchor-ref",
+            "parse-spec-level-mixed-refs",
+            "parse-spec-level-nfr-optional",
+            "parse-spec-level-nfr-position",
+            "parse-spec-level-whole-file-ref",
+            "reject-behavior-level-whole-file-ref",
+            "reject-containment-violation",
+            "reject-missing-anchor",
+            "reject-missing-nfr-category-file",
+            "reject-override-mismatched-operator",
+            "reject-override-on-overridable-no",
+            "reject-override-on-rule",
+            "reject-override-relaxed-value",
+            "reject-spec-level-override",
+            "resolve-anchor-to-constraint",
+            "resolve-category-to-nfr-file"
+          ],
+          "hash": "beac561e0071844093fd8c38ec875c992f2d48722d02e759782388779d1bb62d"
+        }
+      }
+    }
+  },
+  "version": 1
+}

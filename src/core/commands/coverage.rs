@@ -7,18 +7,18 @@ use crate::model::{NfrSpec, Spec};
 // ── Tag scanning ────────────────────────────────────────
 
 #[derive(Debug, Clone)]
-struct MinterTag {
-    file: PathBuf,
-    line: usize,
-    tag_type: String,
-    ids: Vec<String>,
+pub struct MinterTag {
+    pub file: PathBuf,
+    pub line: usize,
+    pub tag_type: String,
+    pub ids: Vec<String>,
 }
 
 #[derive(Debug)]
-struct TagError {
-    file: PathBuf,
-    line: usize,
-    message: String,
+pub struct TagError {
+    pub file: PathBuf,
+    pub line: usize,
+    pub message: String,
 }
 
 impl std::fmt::Display for TagError {
@@ -316,7 +316,7 @@ fn load_nfrs_from_dir(dir: &Path, nfr_specs: &mut HashMap<String, NfrSpec>) {
 
 // ── Tag scanning ────────────────────────────────────────
 
-fn scan_for_tags(scan_dirs: &[PathBuf]) -> Vec<MinterTag> {
+pub fn scan_for_tags(scan_dirs: &[PathBuf]) -> Vec<MinterTag> {
     let mut tags = Vec::new();
 
     for dir in scan_dirs {
@@ -411,7 +411,7 @@ fn parse_tag_line(line: &str, file: &Path, line_num: usize) -> Option<MinterTag>
 // ── Index building ──────────────────────────────────────
 
 /// Maps behavior name -> vec of spec names that contain it
-fn build_behavior_index(specs: &[(String, Spec)]) -> HashMap<String, Vec<String>> {
+pub fn build_behavior_index(specs: &[(String, Spec)]) -> HashMap<String, Vec<String>> {
     let mut index: HashMap<String, Vec<String>> = HashMap::new();
     for (spec_name, spec) in specs {
         for behavior in &spec.behaviors {
@@ -425,7 +425,7 @@ fn build_behavior_index(specs: &[(String, Spec)]) -> HashMap<String, Vec<String>
 }
 
 /// Set of valid "category#constraint" strings
-fn build_nfr_index(nfr_specs: &HashMap<String, NfrSpec>) -> HashSet<String> {
+pub fn build_nfr_index(nfr_specs: &HashMap<String, NfrSpec>) -> HashSet<String> {
     let mut index = HashSet::new();
     for (category, nfr) in nfr_specs {
         for constraint in &nfr.constraints {
@@ -437,16 +437,16 @@ fn build_nfr_index(nfr_specs: &HashMap<String, NfrSpec>) -> HashSet<String> {
 
 // ── Tag validation ──────────────────────────────────────
 
-struct ValidTag {
-    tag_type: String,
+pub struct ValidTag {
+    pub tag_type: String,
     /// For behavioral: (spec_name, behavior_name)
     /// For benchmark: not used (nfr_refs used instead)
-    behavior_ref: Option<(String, String)>,
+    pub behavior_ref: Option<(String, String)>,
     /// For benchmark tags: "category#constraint"
-    nfr_ref: Option<String>,
+    pub nfr_ref: Option<String>,
 }
 
-fn validate_tags(
+pub fn validate_tags(
     tags: &[MinterTag],
     behavior_index: &HashMap<String, Vec<String>>,
     nfr_index: &HashSet<String>,
