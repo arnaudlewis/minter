@@ -1080,3 +1080,55 @@ fn ignore_untagged_test_files() {
         .assert()
         .success();
 }
+
+/// ci-command: ci-multi-test-dirs
+// @minter:e2e ci-multi-test-dirs
+#[test]
+fn ci_multi_test_dirs() {
+    let dir = TempDir::new().unwrap();
+
+    // Write config with multiple test directories
+    fs::write(
+        dir.path().join("minter.config.json"),
+        r#"{ "specs": "specs/", "tests": ["tests/", "benches/"] }"#,
+    )
+    .unwrap();
+
+    // Create specs/
+    let spec_dir = dir.path().join("specs");
+    fs::create_dir(&spec_dir).unwrap();
+    let spec_content = spec_one_behavior("a", "1.0.0", "do-thing");
+    fs::write(spec_dir.join("a.spec"), &spec_content).unwrap();
+
+    // Create NFR for benchmark references
+    let nfr_dir = spec_dir.join("nfr");
+    fs::create_dir(&nfr_dir).unwrap();
+    fs::write(nfr_dir.join("performance.nfr"), nfr_performance()).unwrap();
+
+    // Create tests/ with a unit test
+    let test_dir = dir.path().join("tests");
+    fs::create_dir(&test_dir).unwrap();
+    let test_content = "// @minter:unit do-thing\n";
+    fs::write(test_dir.join("a_test.rs"), test_content).unwrap();
+
+    // Create benches/ with a benchmark test
+    let bench_dir = dir.path().join("benches");
+    fs::create_dir(&bench_dir).unwrap();
+    let bench_content = "// @minter:benchmark #performance#api-latency\n";
+    fs::write(bench_dir.join("perf_test.rs"), bench_content).unwrap();
+
+    // Generate the lock file first
+    minter()
+        .arg("lock")
+        .current_dir(dir.path())
+        .assert()
+        .success();
+
+    // CI should pass — all files from all configured dirs are in the lock
+    minter()
+        .arg("ci")
+        .current_dir(dir.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("pass test integrity"));
+}

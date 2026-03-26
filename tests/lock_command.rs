@@ -1202,3 +1202,88 @@ fn lock_atomic_write() {
         "no temp files should remain after atomic write"
     );
 }
+
+/// lock-command: lock-scans-all-test-dirs
+// @minter:e2e lock-scans-all-test-dirs
+#[test]
+fn lock_scans_all_test_dirs() {
+    let dir = TempDir::new().unwrap();
+
+    // Write config with multiple test directories
+    fs::write(
+        dir.path().join("minter.config.json"),
+        r#"{ "specs": "specs/", "tests": ["tests/", "benches/"] }"#,
+    )
+    .unwrap();
+
+    // Create specs/
+    let spec_dir = dir.path().join("specs");
+    fs::create_dir(&spec_dir).unwrap();
+    fs::write(
+        spec_dir.join("a.spec"),
+        spec_one_behavior("a", "1.0.0", "do-thing"),
+    )
+    .unwrap();
+
+    // Create NFR for benchmark references
+    let nfr_dir = spec_dir.join("nfr");
+    fs::create_dir(&nfr_dir).unwrap();
+    fs::write(nfr_dir.join("performance.nfr"), nfr_performance()).unwrap();
+
+    // Create tests/ with a unit test
+    let test_dir = dir.path().join("tests");
+    fs::create_dir(&test_dir).unwrap();
+    fs::write(test_dir.join("a_test.rs"), "// @minter:unit do-thing\n").unwrap();
+
+    // Create benches/ with a benchmark test
+    let bench_dir = dir.path().join("benches");
+    fs::create_dir(&bench_dir).unwrap();
+    fs::write(
+        bench_dir.join("perf_test.rs"),
+        "// @minter:benchmark #performance#api-latency\n",
+    )
+    .unwrap();
+
+    minter()
+        .arg("lock")
+        .current_dir(dir.path())
+        .assert()
+        .success();
+
+    let lock = read_lock_json(dir.path());
+    let lock_str = serde_json::to_string(&lock).unwrap();
+
+    // Lock must contain test files from tests/
+    assert!(
+        lock_str.contains("a_test.rs"),
+        "lock must contain tests/a_test.rs"
+    );
+
+    // Lock must also contain benchmark files from benches/
+    assert!(
+        lock_str.contains("perf_test.rs"),
+        "lock must contain benches/perf_test.rs — all configured test dirs must be scanned"
+    );
+
+    // Verify benchmark_files section exists
+    let benchmarks = lock
+        .get("benchmark_files")
+        .expect("lock must contain benchmark_files section");
+    let benchmarks_obj = benchmarks
+        .as_object()
+        .expect("benchmark_files must be an object");
+    let bench_entry = benchmarks_obj
+        .iter()
+        .find(|(k, _)| k.contains("perf_test.rs"))
+        .expect("benchmark_files must contain perf_test.rs");
+    let hash = bench_entry
+        .1
+        .get("hash")
+        .expect("benchmark file entry must have hash field");
+    let hash_str = hash.as_str().expect("hash must be a string");
+    assert_eq!(
+        hash_str.len(),
+        64,
+        "benchmark file hash must be SHA-256 hex (64 chars)"
+    );
+}

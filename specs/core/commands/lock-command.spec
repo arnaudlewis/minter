@@ -338,6 +338,25 @@ behavior lock-atomic-write [edge_case]
     assert no partial minter.lock is observable on crash
 
 
+behavior lock-scans-all-test-dirs [happy_path]
+  "Lock scans all test directories from config, including benchmark dirs"
+
+  given
+    minter.config.json contains: { "specs": "specs/", "tests": ["tests/", "benches/"] }
+    specs/a.spec has behavior do-thing
+    tests/a_test.rs contains // @minter:unit do-thing
+    benches/perf_test.rs contains // @minter:benchmark #performance#api-latency
+
+  when minter lock
+
+  then emits file minter.lock
+    assert file contains tests/a_test.rs
+    assert file contains benches/perf_test.rs in benchmark_files section
+
+  then emits process_exit
+    assert code == 0
+
+
 depends on config >= 1.0.0
 depends on coverage-command >= 1.3.0
 depends on graph-command >= 1.4.0

@@ -187,6 +187,10 @@ pub fn run_lock(config: &crate::core::config::ProjectConfig) -> i32 {
     // Since validate_tags doesn't return file info, let me do a simpler approach:
     // walk the raw tags and use the behavior_index directly.
 
+    // Benchmark files are tracked separately — they reference NFR constraints,
+    // not spec behaviors, so they don't belong under a specific spec's test_files.
+    let mut benchmark_file_hashes: BTreeMap<String, String> = BTreeMap::new();
+
     for tag in &tags {
         if tag.tag_type.is_empty() || tag.ids.is_empty() {
             continue;
@@ -194,17 +198,25 @@ pub fn run_lock(config: &crate::core::config::ProjectConfig) -> i32 {
         if !["unit", "integration", "e2e", "benchmark"].contains(&tag.tag_type.as_str()) {
             continue;
         }
-        if tag.tag_type == "benchmark" {
-            continue; // benchmarks are NFR-only, not behavior coverage
-        }
 
         let test_rel_path = io::make_relative(&tag.file, &cwd);
 
         // Hash the test file if not already done
-        if !test_file_hashes.contains_key(&test_rel_path) {
+        if !test_file_hashes.contains_key(&test_rel_path)
+            && !benchmark_file_hashes.contains_key(&test_rel_path)
+        {
             if let Ok(content) = io::read_file_safe(&tag.file) {
-                test_file_hashes.insert(test_rel_path.clone(), content_hash(&content));
+                let hash = content_hash(&content);
+                if tag.tag_type == "benchmark" {
+                    benchmark_file_hashes.insert(test_rel_path.clone(), hash);
+                } else {
+                    test_file_hashes.insert(test_rel_path.clone(), hash);
+                }
             }
+        }
+
+        if tag.tag_type == "benchmark" {
+            continue; // benchmarks are NFR-only, not behavior coverage
         }
 
         for id in &tag.ids {
@@ -280,11 +292,23 @@ pub fn run_lock(config: &crate::core::config::ProjectConfig) -> i32 {
         let _ = cat; // category used only to organize nfr_sources
     }
 
+    // Build benchmark_files section
+    let mut lock_benchmarks: BTreeMap<String, serde_json::Value> = BTreeMap::new();
+    for (rel_path, hash) in &benchmark_file_hashes {
+        lock_benchmarks.insert(
+            rel_path.clone(),
+            serde_json::json!({
+                "hash": hash,
+            }),
+        );
+    }
+
     // Build the final lock object
     let lock = serde_json::json!({
         "version": 1,
         "specs": lock_specs,
         "nfrs": lock_nfrs,
+        "benchmark_files": lock_benchmarks,
     });
 
     // Write atomically

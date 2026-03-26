@@ -14,6 +14,13 @@ struct LockFile {
     specs: BTreeMap<String, LockSpec>,
     #[serde(default)]
     nfrs: BTreeMap<String, LockNfr>,
+    #[serde(default)]
+    benchmark_files: BTreeMap<String, LockBenchmarkFile>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct LockBenchmarkFile {
+    hash: String,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -316,7 +323,7 @@ fn check_test_integrity(
 ) -> CheckResult {
     let mut errors = Vec::new();
 
-    // Collect all test files from the lock
+    // Collect all test files from the lock (spec test_files + benchmark_files)
     let mut lock_test_files: BTreeMap<String, String> = BTreeMap::new();
     for lock_spec in lock.specs.values() {
         for (test_path, test_file) in &lock_spec.test_files {
@@ -324,6 +331,11 @@ fn check_test_integrity(
                 .entry(test_path.clone())
                 .or_insert_with(|| test_file.hash.clone());
         }
+    }
+    for (bench_path, bench_file) in &lock.benchmark_files {
+        lock_test_files
+            .entry(bench_path.clone())
+            .or_insert_with(|| bench_file.hash.clone());
     }
 
     // Check each test in lock exists and hash matches

@@ -368,5 +368,22 @@ behavior ignore-untagged-test-files [edge_case]
     assert test integrity check passes for this file
 
 
+behavior ci-multi-test-dirs [happy_path]
+  "CI passes when lock includes files from all configured test directories"
+
+  given
+    minter.config.json contains: { "specs": "specs/", "tests": ["tests/", "benches/"] }
+    minter.lock was generated from these paths including benches/ benchmark files
+    All files are unchanged
+
+  when minter ci
+
+  then emits stdout
+    assert output contains "pass test integrity"
+
+  then emits process_exit
+    assert code == 0
+
+
 depends on config >= 1.0.0
 depends on lock-command >= 1.0.0
