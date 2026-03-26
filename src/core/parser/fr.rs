@@ -115,6 +115,15 @@ impl<'a> Parser<'a> {
             vec![]
         };
 
+        // Reject trailing non-whitespace content after the last valid section
+        while !self.at_end() {
+            let line = self.lines[self.pos].trim();
+            if !line.is_empty() {
+                return Err(self.err(format!("Unexpected content after end of spec: '{}'", line)));
+            }
+            self.advance();
+        }
+
         Ok(Spec {
             name,
             version,

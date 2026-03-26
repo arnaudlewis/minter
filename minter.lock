@@ -712,7 +712,7 @@
             "validate-valid-nfr",
             "validate-valid-spec"
           ],
-          "hash": "77d0358949290f492cc3b5c96eadbc1eefc1317d426dc6250af40faa30be75a2"
+          "hash": "fe2f3859d3931714d46912407f4c11547892c5f614b5d4ec0aa1c58df0337cf8"
         }
       }
     },
@@ -971,10 +971,11 @@
         "parse-multiple-verification-lines",
         "parse-environment-all",
         "ignore-nfr-comments",
-        "ignore-nfr-blank-lines"
+        "ignore-nfr-blank-lines",
+        "reject-trailing-content"
       ],
       "dependencies": [],
-      "hash": "de49040e9238839b94da38fc7be45c90d93a2d19c684342eac281cbba5bca3ca",
+      "hash": "5fe6c9e1d8b2ae594e549bb9406c3caef8d2f9839ce3b75b591b0d56bcd6233f",
       "nfrs": [],
       "test_files": {
         "tests/nfr_format.rs": {
@@ -1023,9 +1024,10 @@
             "reject-rule-missing-required-fields",
             "reject-rule-verification-empty",
             "reject-threshold-invalid-operator",
+            "reject-trailing-content",
             "reject-unknown-constraint-type"
           ],
-          "hash": "44b6d7275d4830ed57dc55de9e42f90911869180b6efe355a935a93085fbe9d4"
+          "hash": "66471178b3510f5bdbf1dbc6272fc7f72e495de40cc18beb4ce5238def3f5ed1"
         }
       }
     },
@@ -1086,10 +1088,11 @@
         "reject-malformed-alias-reference",
         "parse-spec-level-nfr-section",
         "parse-behavior-level-nfr-section",
-        "reject-depends-on-without-version"
+        "reject-depends-on-without-version",
+        "reject-trailing-content"
       ],
       "dependencies": [],
-      "hash": "23e0ba8ca3865e1766ec0c2d7dbed4d4ff43e87e6b1f6752108279570ec973c7",
+      "hash": "b1a0cf58cc7959850dd75a6b313b7c10d70da3c8264c38750b7c94f9529b278b",
       "nfrs": [],
       "test_files": {
         "tests/dsl_format.rs": {
@@ -1152,6 +1155,12 @@
             "reject-zero-indent-in-block"
           ],
           "hash": "61d787e36479d9d619313f1a6a2df8d9153e82df4808c417903616f36d725f3d"
+        },
+        "tests/validate_spec.rs": {
+          "covers": [
+            "reject-trailing-content"
+          ],
+          "hash": "fe2f3859d3931714d46912407f4c11547892c5f614b5d4ec0aa1c58df0337cf8"
         }
       }
     },

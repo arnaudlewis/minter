@@ -1,4 +1,4 @@
-spec spec-grammar v1.2.0
+spec spec-grammar v1.3.0
 title "Spec Grammar"
 
 description
@@ -883,3 +883,18 @@ behavior reject-depends-on-without-version [error_case]
 
   then emits process_exit
     assert code == 1
+
+
+# Format errors — trailing content
+
+behavior reject-trailing-content [error_case]
+  "Reject non-whitespace content after the last valid section"
+
+  given
+    A spec file with valid structure followed by unexpected text after the last depends-on or behavior
+
+  when minter validate is run
+
+  then
+    assert validation fails with an error indicating unexpected trailing content
+    assert the error includes the line number where the trailing content starts

@@ -980,6 +980,160 @@ fn validate_file_exceeds_max_size() {
         ));
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Trailing content (spec-grammar.spec: reject-trailing-content)
+// ═══════════════════════════════════════════════════════════════
+
+// @minter:e2e spec-grammar/reject-trailing-content
+#[test]
+fn trailing_text_after_depends_on() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  A test.
+
+motivation
+  Testing.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+depends on user-auth >= 1.0.0
+
+this is unexpected trailing content
+";
+    let (_dir, path) = temp_spec("trailing-after-deps", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Unexpected content after end of spec",
+        ));
+}
+
+// @minter:e2e spec-grammar/reject-trailing-content
+#[test]
+fn trailing_text_after_last_behavior() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  A test.
+
+motivation
+  Testing.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+this is unexpected garbage
+";
+    let (_dir, path) = temp_spec("trailing-after-behavior", spec);
+    // Trailing content after behaviors (no deps) is caught by parse_behaviors
+    // as an unrecognized line — either error wording is acceptable
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(
+            predicate::str::contains("Unexpected content after end of spec")
+                .or(predicate::str::contains("Expected 'behavior'")),
+        );
+}
+
+// @minter:e2e spec-grammar/reject-trailing-content
+#[test]
+fn trailing_whitespace_after_spec_is_ok() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  A test.
+
+motivation
+  Testing.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+
+
+";
+    let (_dir, path) = temp_spec("trailing-whitespace-ok", spec);
+    minter().arg("validate").arg(&path).assert().success();
+}
+
+// @minter:e2e spec-grammar/reject-trailing-content
+#[test]
+fn trailing_garbage_lines_after_spec() {
+    let spec = "\
+spec test-spec v1.0.0
+title \"Test\"
+
+description
+  A test.
+
+motivation
+  Testing.
+
+behavior do-thing [happy_path]
+  \"Do it\"
+
+  given
+    Ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+
+depends on user-auth >= 1.0.0
+
+random garbage that is not a valid section
+more garbage here
+";
+    let (_dir, path) = temp_spec("trailing-garbage", spec);
+    minter()
+        .arg("validate")
+        .arg(&path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "Unexpected content after end of spec",
+        ));
+}
+
 #[test]
 fn reject_excessive_depth() {
     let dir = tempfile::TempDir::new().expect("create temp dir");
