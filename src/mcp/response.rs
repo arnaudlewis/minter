@@ -83,6 +83,72 @@ pub struct ConstraintTypeDist {
     pub rule: usize,
 }
 
+// ── List Specs response types ──────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct ListSpecsResponse {
+    pub specs: Vec<SpecEntry>,
+    pub next_steps: Vec<&'static str>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SpecEntry {
+    pub name: String,
+    pub version: String,
+    pub path: String,
+    pub behavior_count: usize,
+    pub validation_status: String,
+    pub nfr_refs: Vec<String>,
+    pub dependencies: Vec<DependencyRef>,
+}
+
+// ── List NFRs response types ──────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct ListNfrsResponse {
+    pub nfrs: Vec<NfrEntry>,
+    pub next_steps: Vec<&'static str>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct NfrEntry {
+    pub category: String,
+    pub version: String,
+    pub path: String,
+    pub constraint_count: usize,
+    pub constraints: Vec<NfrConstraintEntry>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct NfrConstraintEntry {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub constraint_type: String,
+    pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub threshold: Option<String>,
+    pub overridable: bool,
+}
+
+// ── Search response types ─────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct SearchResponse {
+    pub results: Vec<SearchResult>,
+    pub next_steps: Vec<&'static str>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SearchResult {
+    pub result_type: String,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spec_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    pub path: String,
+}
+
 // ── Graph response types ───────────────────────────────
 
 #[derive(Debug, Serialize)]

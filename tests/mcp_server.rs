@@ -527,12 +527,32 @@ fn list_tools() {
         .map(|t| t["name"].as_str().unwrap())
         .collect();
 
+    assert_eq!(
+        tool_names.len(),
+        10,
+        "should have 10 tools, got: {:?}",
+        tool_names
+    );
     assert!(tool_names.contains(&"validate"), "missing validate tool");
     assert!(tool_names.contains(&"inspect"), "missing inspect tool");
     assert!(tool_names.contains(&"scaffold"), "missing scaffold tool");
     assert!(tool_names.contains(&"format"), "missing format tool");
     assert!(tool_names.contains(&"graph"), "missing graph tool");
-    assert!(tool_names.contains(&"coverage"), "missing coverage tool");
+    assert!(
+        tool_names.contains(&"list_specs"),
+        "missing list_specs tool"
+    );
+    assert!(tool_names.contains(&"list_nfrs"), "missing list_nfrs tool");
+    assert!(tool_names.contains(&"search"), "missing search tool");
+    assert!(
+        tool_names.contains(&"initialize_minter"),
+        "missing initialize_minter tool"
+    );
+    assert!(tool_names.contains(&"guide"), "missing guide tool");
+    assert!(
+        !tool_names.contains(&"coverage"),
+        "coverage tool should be removed"
+    );
 
     // Each tool has description and inputSchema
     for tool in tools.as_array().unwrap() {
@@ -1585,6 +1605,70 @@ fn guide_context_management() {
     );
 }
 
+/// mcp-agent-guidance: guide-config-topic
+// @minter:e2e mcp-agent-guidance/guide-config-topic
+#[test]
+fn mcp_guide_config_topic() {
+    let mut client = McpClient::new();
+    let result = client.call_tool("guide", json!({ "topic": "config" }));
+    assert!(!is_error(&result), "guide config should succeed");
+    let text = text_content(&result);
+    assert!(
+        text.contains("minter.config.json"),
+        "config guide should mention minter.config.json, got: {}",
+        &text[..text.len().min(200)]
+    );
+}
+
+/// mcp-agent-guidance: guide-lock-topic
+// @minter:e2e mcp-agent-guidance/guide-lock-topic
+#[test]
+fn mcp_guide_lock_topic() {
+    let mut client = McpClient::new();
+    let result = client.call_tool("guide", json!({ "topic": "lock" }));
+    assert!(!is_error(&result), "guide lock should succeed");
+    let text = text_content(&result);
+    assert!(
+        text.contains("minter.lock"),
+        "lock guide should mention minter.lock, got: {}",
+        &text[..text.len().min(200)]
+    );
+    assert!(
+        text.contains("SHA-256") || text.contains("integrity"),
+        "lock guide should mention SHA-256 or integrity"
+    );
+}
+
+/// mcp-agent-guidance: guide-ci-topic
+// @minter:e2e mcp-agent-guidance/guide-ci-topic
+#[test]
+fn mcp_guide_ci_topic() {
+    let mut client = McpClient::new();
+    let result = client.call_tool("guide", json!({ "topic": "ci" }));
+    assert!(!is_error(&result), "guide ci should succeed");
+    let text = text_content(&result);
+    assert!(
+        text.contains("spec integrity") || text.contains("coverage"),
+        "ci guide should mention spec integrity or coverage, got: {}",
+        &text[..text.len().min(200)]
+    );
+}
+
+/// mcp-agent-guidance: guide-web-topic
+// @minter:e2e mcp-agent-guidance/guide-web-topic
+#[test]
+fn mcp_guide_web_topic() {
+    let mut client = McpClient::new();
+    let result = client.call_tool("guide", json!({ "topic": "web" }));
+    assert!(!is_error(&result), "guide web should succeed");
+    let text = text_content(&result);
+    assert!(
+        text.contains("minter web") || text.contains("dashboard"),
+        "web guide should mention minter web or dashboard, got: {}",
+        &text[..text.len().min(200)]
+    );
+}
+
 // @minter:e2e mcp-agent-guidance/guide-unknown-topic
 #[test]
 fn guide_unknown_topic() {
@@ -1609,6 +1693,10 @@ fn guide_unknown_topic() {
         text.contains("coverage"),
         "should list coverage as valid topic"
     );
+    assert!(text.contains("config"), "should list config as valid topic");
+    assert!(text.contains("lock"), "should list lock as valid topic");
+    assert!(text.contains("ci"), "should list ci as valid topic");
+    assert!(text.contains("web"), "should list web as valid topic");
 }
 
 // @minter:e2e guide-coverage-tagging
@@ -2168,110 +2256,298 @@ fn graph_nonexistent_directory() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Coverage tool
+// List Specs tool (mcp-server.spec)
 // ═══════════════════════════════════════════════════════════════
 
-// @minter:e2e coverage-full
+/// mcp-server: list-specs-returns-all
+// @minter:e2e list-specs-returns-all
 #[test]
-/// mcp-server: coverage returns JSON report for fully covered specs
-fn mcp_coverage_full() {
+fn list_specs_returns_all_specs() {
+    let mut client = McpClient::new();
     let dir = TempDir::new().unwrap();
+    write_spec(&dir, "alpha", VALID_SPEC);
     write_spec(
         &dir,
-        "auth",
-        "spec auth v1.0.0\ntitle \"Auth\"\n\ndescription\n  Auth spec.\n\nmotivation\n  Testing.\n\nbehavior login [happy_path]\n  \"login\"\n\n  given\n    The system is ready\n\n  when login\n\n  then emits stdout\n    assert output contains \"ok\"\n",
+        "beta",
+        &common::spec_one_behavior("beta", "1.0.0", "do-beta"),
     );
-    // Create a test file with a coverage tag
-    let test_path = dir.path().join("test.rs");
-    std::fs::write(
-        &test_path,
-        "// @minter:e2e login\n#[test]\nfn test_login() {}\n",
-    )
-    .unwrap();
 
-    let mut client = McpClient::new();
     let result = client.call_tool(
-        "coverage",
-        json!({
-            "spec_path": dir.path().to_str().unwrap(),
-        }),
+        "list_specs",
+        json!({ "path": dir.path().to_str().unwrap() }),
     );
     assert!(
         !is_error(&result),
-        "coverage should succeed, got: {}",
+        "list_specs should succeed, got: {}",
         text_content(&result)
     );
     let data = json_content(&result);
-    assert_eq!(data["total_behaviors"], 1);
-    assert_eq!(data["covered_behaviors"], 1);
-    assert_eq!(data["coverage_percentage"], 100);
+    let specs = data["specs"].as_array().expect("specs should be an array");
+    assert_eq!(
+        specs.len(),
+        2,
+        "should return 2 specs, got: {}",
+        specs.len()
+    );
+
+    // Check each spec has the required fields
+    for spec in specs {
+        assert!(spec["name"].is_string(), "spec should have name");
+        assert!(spec["version"].is_string(), "spec should have version");
+        assert!(
+            spec["behavior_count"].is_number(),
+            "spec should have behavior_count"
+        );
+        assert!(
+            spec["validation_status"].is_string(),
+            "spec should have validation_status"
+        );
+    }
+
+    // Check both specs are present
+    let names: Vec<&str> = specs.iter().map(|s| s["name"].as_str().unwrap()).collect();
+    assert!(names.contains(&"test-spec"), "should contain test-spec");
+    assert!(names.contains(&"beta"), "should contain beta");
 }
 
-// @minter:e2e coverage-uncovered
+/// mcp-server: list-specs-empty-project
+// @minter:e2e list-specs-empty-project
 #[test]
-/// mcp-server: coverage reports uncovered behaviors
-fn mcp_coverage_uncovered() {
+fn list_specs_empty_project() {
+    let mut client = McpClient::new();
+    let dir = TempDir::new().unwrap();
+
+    let result = client.call_tool(
+        "list_specs",
+        json!({ "path": dir.path().to_str().unwrap() }),
+    );
+    assert!(
+        !is_error(&result),
+        "list_specs should succeed for empty dir"
+    );
+    let data = json_content(&result);
+    let specs = data["specs"].as_array().expect("specs should be an array");
+    assert!(
+        specs.is_empty(),
+        "empty project should return empty specs list"
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// List NFRs tool (mcp-server.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// mcp-server: list-nfrs-returns-categories
+// @minter:e2e list-nfrs-returns-categories
+#[test]
+fn list_nfrs_returns_categories_with_constraints() {
+    let mut client = McpClient::new();
+    let dir = TempDir::new().unwrap();
+    write_nfr(&dir, "performance", common::nfr_performance());
+
+    let result = client.call_tool("list_nfrs", json!({ "path": dir.path().to_str().unwrap() }));
+    assert!(
+        !is_error(&result),
+        "list_nfrs should succeed, got: {}",
+        text_content(&result)
+    );
+    let data = json_content(&result);
+    let nfrs = data["nfrs"].as_array().expect("nfrs should be an array");
+    assert_eq!(nfrs.len(), 1, "should return 1 NFR");
+
+    let nfr = &nfrs[0];
+    assert_eq!(nfr["category"].as_str().unwrap(), "performance");
+    assert!(nfr["version"].is_string(), "NFR should have version");
+    assert!(
+        nfr["constraint_count"].is_number(),
+        "NFR should have constraint_count"
+    );
+
+    // Check constraints array has entries with name and type
+    let constraints = nfr["constraints"]
+        .as_array()
+        .expect("constraints should be an array");
+    assert!(
+        !constraints.is_empty(),
+        "should have at least one constraint"
+    );
+    for constraint in constraints {
+        assert!(
+            constraint["name"].is_string(),
+            "constraint should have name"
+        );
+        assert!(
+            constraint["type"].is_string(),
+            "constraint should have type"
+        );
+    }
+}
+
+/// mcp-server: list-nfrs-empty-project
+// @minter:e2e list-nfrs-empty-project
+#[test]
+fn list_nfrs_empty_project() {
+    let mut client = McpClient::new();
+    let dir = TempDir::new().unwrap();
+    // Write a spec but no NFR files
+    write_spec(&dir, "test-spec", VALID_SPEC);
+
+    let result = client.call_tool("list_nfrs", json!({ "path": dir.path().to_str().unwrap() }));
+    assert!(
+        !is_error(&result),
+        "list_nfrs should succeed for dir with no nfrs"
+    );
+    let data = json_content(&result);
+    let nfrs = data["nfrs"].as_array().expect("nfrs should be an array");
+    assert!(
+        nfrs.is_empty(),
+        "should return empty nfrs list when no .nfr files exist"
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Search tool (mcp-server.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// mcp-server: search-finds-specs
+// @minter:e2e search-finds-specs
+#[test]
+fn search_finds_specs_by_name() {
+    let mut client = McpClient::new();
     let dir = TempDir::new().unwrap();
     write_spec(
         &dir,
-        "auth",
-        "spec auth v1.0.0\ntitle \"Auth\"\n\ndescription\n  Auth spec.\n\nmotivation\n  Testing.\n\nbehavior login [happy_path]\n  \"login\"\n\n  given\n    The system is ready\n\n  when login\n\n  then emits stdout\n    assert output contains \"ok\"\n",
+        "auth-command",
+        &common::spec_one_behavior("auth-command", "1.0.0", "login"),
+    );
+    write_spec(
+        &dir,
+        "billing-command",
+        &common::spec_one_behavior("billing-command", "1.0.0", "charge"),
     );
 
-    let mut client = McpClient::new();
     let result = client.call_tool(
-        "coverage",
-        json!({
-            "spec_path": dir.path().to_str().unwrap(),
-        }),
+        "search",
+        json!({ "path": dir.path().to_str().unwrap(), "query": "auth" }),
     );
-    assert!(!is_error(&result), "coverage should succeed");
+    assert!(
+        !is_error(&result),
+        "search should succeed, got: {}",
+        text_content(&result)
+    );
     let data = json_content(&result);
-    assert_eq!(data["total_behaviors"], 1);
-    assert_eq!(data["covered_behaviors"], 0);
-}
+    let results = data["results"]
+        .as_array()
+        .expect("results should be an array");
 
-// @minter:e2e coverage-nonexistent-path
-#[test]
-/// mcp-server: coverage errors on nonexistent path
-fn mcp_coverage_nonexistent_path() {
-    let mut client = McpClient::new();
-    let result = client.call_tool(
-        "coverage",
-        json!({ "spec_path": "/tmp/minter-nonexistent-coverage-12345" }),
+    // Should find auth-command
+    let names: Vec<String> = results
+        .iter()
+        .filter_map(|r| r["name"].as_str().map(String::from))
+        .collect();
+    assert!(
+        names.iter().any(|n| n.contains("auth")),
+        "should find auth-command in results, got: {:?}",
+        names
     );
-    assert!(is_error(&result));
+    // Should not include billing-command
+    assert!(
+        !names.iter().any(|n| n.contains("billing")),
+        "should not find billing-command in results, got: {:?}",
+        names
+    );
 }
 
-// @minter:e2e coverage-with-scan-dirs
+/// mcp-server: search-finds-behaviors
+// @minter:e2e search-finds-behaviors
 #[test]
-/// mcp-server: coverage respects scan directories
-fn mcp_coverage_with_scan_dirs() {
+fn search_finds_behaviors_across_specs() {
+    let mut client = McpClient::new();
     let dir = TempDir::new().unwrap();
-    let specs_dir = dir.path().join("specs");
-    let tests_dir = dir.path().join("tests");
-    std::fs::create_dir_all(&specs_dir).unwrap();
-    std::fs::create_dir_all(&tests_dir).unwrap();
-
-    std::fs::write(
-        specs_dir.join("auth.spec"),
-        "spec auth v1.0.0\ntitle \"Auth\"\n\ndescription\n  Auth spec.\n\nmotivation\n  Testing.\n\nbehavior login [happy_path]\n  \"login\"\n\n  given\n    The system is ready\n\n  when login\n\n  then emits stdout\n    assert output contains \"ok\"\n",
-    ).unwrap();
-    std::fs::write(
-        tests_dir.join("test.rs"),
-        "// @minter:e2e login\n#[test]\nfn test_login() {}\n",
-    )
-    .unwrap();
-
-    let mut client = McpClient::new();
-    let result = client.call_tool(
-        "coverage",
-        json!({
-            "spec_path": specs_dir.to_str().unwrap(),
-            "scan": [tests_dir.to_str().unwrap()],
-        }),
+    write_spec(
+        &dir,
+        "auth-command",
+        &common::spec_one_behavior("auth-command", "1.0.0", "login"),
     );
-    assert!(!is_error(&result));
+
+    let result = client.call_tool(
+        "search",
+        json!({ "path": dir.path().to_str().unwrap(), "query": "login" }),
+    );
+    assert!(
+        !is_error(&result),
+        "search should succeed, got: {}",
+        text_content(&result)
+    );
     let data = json_content(&result);
-    assert_eq!(data["covered_behaviors"], 1);
+    let results = data["results"]
+        .as_array()
+        .expect("results should be an array");
+
+    // Should find the login behavior and show which spec it belongs to
+    let text = serde_json::to_string(&results).unwrap();
+    assert!(
+        text.contains("login"),
+        "should find login behavior in results"
+    );
+    assert!(
+        text.contains("auth-command"),
+        "should show parent spec name for the behavior"
+    );
+}
+
+/// mcp-server: search-finds-nfr-constraints
+// @minter:e2e search-finds-nfr-constraints
+#[test]
+fn search_finds_nfr_constraints() {
+    let mut client = McpClient::new();
+    let dir = TempDir::new().unwrap();
+    write_nfr(&dir, "performance", common::nfr_performance());
+
+    let result = client.call_tool(
+        "search",
+        json!({ "path": dir.path().to_str().unwrap(), "query": "latency" }),
+    );
+    assert!(
+        !is_error(&result),
+        "search should succeed, got: {}",
+        text_content(&result)
+    );
+    let data = json_content(&result);
+    let results = data["results"]
+        .as_array()
+        .expect("results should be an array");
+
+    // Should find the api-latency constraint
+    let text = serde_json::to_string(&results).unwrap();
+    assert!(
+        text.contains("latency"),
+        "should find latency constraint in results"
+    );
+}
+
+/// mcp-server: search-no-results
+// @minter:e2e search-no-results
+#[test]
+fn search_returns_empty_for_no_match() {
+    let mut client = McpClient::new();
+    let dir = TempDir::new().unwrap();
+    write_spec(&dir, "test-spec", VALID_SPEC);
+
+    let result = client.call_tool(
+        "search",
+        json!({ "path": dir.path().to_str().unwrap(), "query": "nonexistent-xyz" }),
+    );
+    assert!(
+        !is_error(&result),
+        "search should succeed even with no results"
+    );
+    let data = json_content(&result);
+    let results = data["results"]
+        .as_array()
+        .expect("results should be an array");
+    assert!(
+        results.is_empty(),
+        "should return empty results for no match"
+    );
 }

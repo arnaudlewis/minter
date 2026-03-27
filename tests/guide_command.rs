@@ -302,5 +302,81 @@ fn guide_missing_topic() {
         .stdout(predicate::str::contains("nfr"))
         .stdout(predicate::str::contains("context"))
         .stdout(predicate::str::contains("methodology"))
-        .stdout(predicate::str::contains("coverage"));
+        .stdout(predicate::str::contains("coverage"))
+        .stdout(predicate::str::contains("config"))
+        .stdout(predicate::str::contains("lock"))
+        .stdout(predicate::str::contains("ci"))
+        .stdout(predicate::str::contains("web"));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Config topic (guide-command.spec)
+// ═══════════════════════════════════════════════════════════════
+
+// @minter:e2e guide-config-topic
+#[test]
+fn guide_config_topic() {
+    minter()
+        .args(&["guide", "config"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Configuration"))
+        .stdout(predicate::str::contains("minter.config.json"))
+        .stdout(predicate::str::contains("convention"))
+        .stdout(predicate::str::contains("specs/"))
+        .stdout(predicate::str::contains("tests/"));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Lock topic (guide-command.spec)
+// ═══════════════════════════════════════════════════════════════
+
+// @minter:e2e guide-lock-topic
+#[test]
+fn guide_lock_topic() {
+    minter()
+        .args(&["guide", "lock"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Lock File"))
+        .stdout(predicate::str::contains("SHA-256"))
+        .stdout(predicate::str::contains("minter lock"))
+        .stdout(predicate::str::contains("drift"))
+        .stdout(predicate::str::contains("atomic"));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CI topic (guide-command.spec)
+// ═══════════════════════════════════════════════════════════════
+
+// @minter:e2e guide-ci-topic
+#[test]
+fn guide_ci_topic() {
+    minter()
+        .args(&["guide", "ci"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("CI Verification"))
+        .stdout(predicate::str::contains("six checks"))
+        .stdout(predicate::str::contains("Exit 0"))
+        .stdout(predicate::str::contains("Exit 1"))
+        .stdout(predicate::str::contains("minter ci"));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Web topic (guide-command.spec)
+// ═══════════════════════════════════════════════════════════════
+
+// @minter:e2e guide-web-topic
+#[test]
+fn guide_web_topic() {
+    minter()
+        .args(&["guide", "web"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Web Dashboard"))
+        .stdout(predicate::str::contains("minter web"))
+        .stdout(predicate::str::contains("WebSocket"))
+        .stdout(predicate::str::contains("Axum"))
+        .stdout(predicate::str::contains("React"));
 }

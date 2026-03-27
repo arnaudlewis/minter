@@ -1,4 +1,4 @@
-spec mcp-agent-guidance v1.3.0
+spec mcp-agent-guidance v1.4.0
 title "MCP Agent Guidance"
 
 description
@@ -194,6 +194,63 @@ behavior guide-coverage-tagging [happy_path]
     assert content describes when NFR coverage is derived automatically
 
 
+behavior guide-config-topic [happy_path]
+  "Return guidance on minter configuration"
+
+  given
+    An agent requests guidance on project configuration
+
+  when tools/call guide
+    topic = "config"
+
+  then returns guidance_text
+    assert output explains minter.config.json structure
+    assert output covers specs directory and test directories
+
+
+behavior guide-lock-topic [happy_path]
+  "Return guidance on lock file concepts"
+
+  given
+    An agent requests guidance on lock files
+
+  when tools/call guide
+    topic = "lock"
+
+  then returns guidance_text
+    assert output explains minter.lock purpose
+    assert output covers SHA-256 integrity checking
+    assert output explains when to regenerate
+
+
+behavior guide-ci-topic [happy_path]
+  "Return guidance on CI verification"
+
+  given
+    An agent requests guidance on CI
+
+  when tools/call guide
+    topic = "ci"
+
+  then returns guidance_text
+    assert output explains the six CI checks
+    assert output covers spec integrity, nfr integrity, dependencies, test integrity, coverage, orphans
+
+
+behavior guide-web-topic [happy_path]
+  "Return guidance on the web dashboard"
+
+  given
+    An agent requests guidance on the web dashboard
+
+  when tools/call guide
+    topic = "web"
+
+  then returns guidance_text
+    assert output explains minter web command
+    assert output covers real-time updates via WebSocket
+
+
 behavior guide-unknown-topic [error_case]
   "Return error listing valid topics when given an unknown topic"
 
@@ -213,6 +270,10 @@ behavior guide-unknown-topic [error_case]
     assert error message lists "context" as valid topic
     assert error message lists "coverage" as valid topic
     assert error message lists "methodology" as valid topic
+    assert error message lists "config" as valid topic
+    assert error message lists "lock" as valid topic
+    assert error message lists "ci" as valid topic
+    assert error message lists "web" as valid topic
 
 
 # Workflow enforcement via next_steps
@@ -327,5 +388,5 @@ behavior list-tools-includes-agent-guidance [happy_path]
     assert guide description contains "spec-driven development practices"
 
 
-depends on mcp-server >= 1.3.0
+depends on mcp-server >= 2.0.0
 depends on mcp-response-format >= 1.0.0

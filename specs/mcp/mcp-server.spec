@@ -1,13 +1,14 @@
-spec mcp-server v1.4.0
+spec mcp-server v2.0.0
 title "MCP Server"
 
 description
-  The minter MCP server exposes minter capabilities as tools over the
+  The minter MCP server is a spec authoring assistant exposed over the
   Model Context Protocol using stdio transport. It enables AI agents
   and MCP-compatible hosts to validate specs, inspect metadata, generate
-  scaffolds, retrieve grammar references, query dependency graphs, and
-  discover the spec-driven methodology. The server shares the same core
-  logic as the CLI but delegates response formatting to mcp-response-format.
+  scaffolds, retrieve grammar references, query dependency graphs, browse
+  project specs and NFRs, search across the spec graph, and discover the
+  spec-driven methodology. The server shares the same core logic as the
+  CLI but delegates response formatting to mcp-response-format.
   Distributed as a second binary (minter-mcp) in the same crate, so
   cargo install minter provides both the CLI and the MCP server.
 
@@ -18,8 +19,8 @@ motivation
   through MCP enables agents to integrate minter into their workflows
   — validating specs they author, discovering the methodology, and
   querying the dependency graph — without parsing terminal output.
-  The MCP server makes minter a first-class tool in any agent
-  toolchain that supports the Model Context Protocol.
+  The MCP server makes minter a first-class authoring assistant in
+  any agent toolchain that supports the Model Context Protocol.
 
 nfr
   operability#deterministic-output
@@ -49,7 +50,7 @@ behavior initialize-server [happy_path]
     assert capabilities contains tools
 
 behavior list-tools [happy_path]
-  "Return all eight tool definitions with descriptions and input schemas"
+  "Return all ten tool definitions with descriptions and input schemas"
 
   given
     The MCP server has been initialized
@@ -57,13 +58,15 @@ behavior list-tools [happy_path]
   when tools/list
 
   then returns tool_list
-    assert tool_count == 8
+    assert tool_count == 10
     assert tools contains tool named "validate"
     assert tools contains tool named "inspect"
     assert tools contains tool named "scaffold"
     assert tools contains tool named "format"
     assert tools contains tool named "graph"
-    assert tools contains tool named "coverage"
+    assert tools contains tool named "list_specs"
+    assert tools contains tool named "list_nfrs"
+    assert tools contains tool named "search"
     assert tools contains tool named "initialize_minter"
     assert tools contains tool named "guide"
     assert each tool has a description
@@ -597,61 +600,113 @@ behavior graph-nonexistent-directory [error_case]
     assert error message contains "nonexistent-dir"
 
 
-# Coverage tool
+# List Specs tool
 
-behavior coverage-full [happy_path]
-  "Return JSON coverage report for specs with all behaviors covered"
-
-  given
-    A directory contains a valid spec with one behavior
-    A test file in the same directory tags that behavior with @minter:e2e
-
-  when tools/call coverage
-    spec_path = "specs/"
-
-  then returns tool_result
-    assert result contains total_behaviors
-    assert result contains covered_behaviors
-    assert result contains coverage_percentage
-
-behavior coverage-uncovered [happy_path]
-  "Return JSON coverage report showing uncovered behaviors"
+behavior list-specs-returns-all [happy_path]
+  "Return all specs in the project with metadata"
 
   given
-    A directory contains a valid spec with one behavior
-    No test files exist with @minter tags
+    A project with 5 .spec files
 
-  when tools/call coverage
-    spec_path = "specs/"
+  when list_specs
 
-  then returns tool_result
-    assert covered_behaviors == 0
+  then returns specs_list
+    assert each spec has name, version, behavior_count, validation_status
+    assert each spec has nfr_refs and dependencies arrays
+    assert specs are sorted alphabetically
 
-behavior coverage-with-scan-dirs [happy_path]
-  "Respect explicit scan directories for tag discovery"
 
-  given
-    Spec files are in specs/ directory
-    Test files with @minter tags are in tests/ directory
-
-  when tools/call coverage
-    spec_path = "specs/"
-    scan = ["tests/"]
-
-  then returns tool_result
-    assert covered_behaviors == 1
-
-behavior coverage-nonexistent-path [error_case]
-  "Return error when the spec path does not exist"
+behavior list-specs-empty-project [edge_case]
+  "Return empty list when no specs exist"
 
   given
-    The path does not exist on disk
+    An empty project with no .spec files
 
-  when tools/call coverage
-    spec_path = "nonexistent/"
+  when list_specs
 
-  then returns tool_result
-    assert isError == true
+  then returns specs_list
+    assert list is empty
+
+
+# List NFRs tool
+
+behavior list-nfrs-returns-categories [happy_path]
+  "Return all NFR categories with their constraints"
+
+  given
+    A project with performance.nfr (3 constraints) and reliability.nfr (2 constraints)
+
+  when list_nfrs
+
+  then returns nfrs_list
+    assert each NFR has category, version, constraint_count
+    assert each NFR includes constraints with name, type, and description
+    assert metric constraints include threshold
+    assert rule constraints include rule text
+
+
+behavior list-nfrs-empty-project [edge_case]
+  "Return empty list when no NFR files exist"
+
+  given
+    A project with no .nfr files
+
+  when list_nfrs
+
+  then returns nfrs_list
+    assert list is empty
+
+
+# Search tool
+
+behavior search-finds-specs [happy_path]
+  "Search finds matching specs by name"
+
+  given
+    A project with specs: auth-command, billing-command, user-profile
+
+  when search query "auth"
+
+  then returns search_results
+    assert results include auth-command
+    assert results do not include billing-command
+
+
+behavior search-finds-behaviors [happy_path]
+  "Search finds matching behaviors across specs"
+
+  given
+    A project with auth-command containing behaviors login, logout
+
+  when search query "login"
+
+  then returns search_results
+    assert results include auth-command/login behavior
+    assert result shows which spec the behavior belongs to
+
+
+behavior search-finds-nfr-constraints [happy_path]
+  "Search finds matching NFR constraints"
+
+  given
+    A project with performance.nfr containing api-latency constraint
+
+  when search query "latency"
+
+  then returns search_results
+    assert results include performance/api-latency constraint
+
+
+behavior search-no-results [edge_case]
+  "Search returns empty results for no match"
+
+  given
+    A project with specs
+
+  when search query "nonexistent-xyz"
+
+  then returns search_results
+    assert results is empty
 
 
 depends on validate-command >= 2.1.0
@@ -659,5 +714,4 @@ depends on inspect-command >= 1.1.0
 depends on scaffold-command >= 1.1.0
 depends on format-command >= 1.1.0
 depends on graph-command >= 1.3.0
-depends on coverage-command >= 1.0.0
 depends on mcp-response-format >= 1.0.0

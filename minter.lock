@@ -496,7 +496,7 @@
             "guide-unknown-topic",
             "guide-workflow-topic"
           ],
-          "hash": "4fa49947a860500bc3c6f18199e5fcc8daada38793f03c47e5288c385855b6cc"
+          "hash": "2c61c72497e19fc8828e403784a734e8096532ce962e5eb856e3b61d971b2a98"
         }
       }
     },
@@ -1274,6 +1274,10 @@
         "guide-nfr-design",
         "guide-context-management",
         "guide-coverage-tagging",
+        "guide-config-topic",
+        "guide-lock-topic",
+        "guide-ci-topic",
+        "guide-web-topic",
         "guide-unknown-topic",
         "next-steps-after-scaffold",
         "next-steps-after-validate-pass",
@@ -1287,20 +1291,33 @@
         "specs/mcp/mcp-server.spec",
         "specs/mcp/mcp-response-format.spec"
       ],
-      "hash": "33ae589da0b1fd65b01f01996de3fe8c467443bb221581d3e5b231190f9092f3",
+      "hash": "5f733fff63398ea607e6320371e27c54d4e4c3d9b869477ad62eab5675b4ad57",
       "nfrs": [
         "operability#deterministic-output",
         "operability#mcp-protocol-compliance"
       ],
       "test_files": {
+        "tests/guide_command.rs": {
+          "covers": [
+            "guide-ci-topic",
+            "guide-config-topic",
+            "guide-lock-topic",
+            "guide-web-topic"
+          ],
+          "hash": "2c61c72497e19fc8828e403784a734e8096532ce962e5eb856e3b61d971b2a98"
+        },
         "tests/mcp_server.rs": {
           "covers": [
+            "guide-ci-topic",
+            "guide-config-topic",
             "guide-context-management",
             "guide-coverage-tagging",
+            "guide-lock-topic",
             "guide-nfr-design",
             "guide-requirements-smells",
             "guide-spec-authoring",
             "guide-unknown-topic",
+            "guide-web-topic",
             "guide-workflow-phases",
             "initialize-includes-methodology-instructions",
             "initialize-minter-lists-available-tools",
@@ -1313,7 +1330,7 @@
             "next-steps-after-validate-fail",
             "next-steps-after-validate-pass"
           ],
-          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
+          "hash": "a5e846449fb98857331c0cce32627ee007874438a4749f69c9c00c81185eb1ad"
         }
       }
     },
@@ -1372,7 +1389,7 @@
             "validate-pass-result-fields",
             "validate-summary-fields"
           ],
-          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
+          "hash": "a5e846449fb98857331c0cce32627ee007874438a4749f69c9c00c81185eb1ad"
         }
       }
     },
@@ -1416,10 +1433,14 @@
         "graph-unknown-spec",
         "graph-empty-directory",
         "graph-nonexistent-directory",
-        "coverage-full",
-        "coverage-uncovered",
-        "coverage-with-scan-dirs",
-        "coverage-nonexistent-path"
+        "list-specs-returns-all",
+        "list-specs-empty-project",
+        "list-nfrs-returns-categories",
+        "list-nfrs-empty-project",
+        "search-finds-specs",
+        "search-finds-behaviors",
+        "search-finds-nfr-constraints",
+        "search-no-results"
       ],
       "dependencies": [
         "specs/core/commands/validate-command.spec",
@@ -1427,10 +1448,9 @@
         "specs/core/commands/scaffold-command.spec",
         "specs/core/commands/format-command.spec",
         "specs/core/commands/graph-command.spec",
-        "specs/core/commands/coverage-command.spec",
         "specs/mcp/mcp-response-format.spec"
       ],
-      "hash": "1b74daa1c199d2dc857d231e8ee6647cf03fa2e210e6b2bed9c312367a17d45f",
+      "hash": "bfd85befcf4d07b19112f22456446c10523b92862be821c546f430b01eae70f0",
       "nfrs": [
         "operability#deterministic-output",
         "operability#input-schema-accuracy",
@@ -1444,10 +1464,6 @@
       "test_files": {
         "tests/mcp_server.rs": {
           "covers": [
-            "coverage-full",
-            "coverage-nonexistent-path",
-            "coverage-uncovered",
-            "coverage-with-scan-dirs",
             "format-nfr-grammar",
             "format-spec-grammar",
             "format-unknown-type",
@@ -1465,12 +1481,20 @@
             "inspect-reject-non-spec-extension",
             "inspect-reject-oversized-file",
             "inspect-spec-file",
+            "list-nfrs-empty-project",
+            "list-nfrs-returns-categories",
+            "list-specs-empty-project",
+            "list-specs-returns-all",
             "list-tools",
             "scaffold-nfr-missing-category",
             "scaffold-nfr-template",
             "scaffold-spec-template",
             "scaffold-unknown-category",
             "scaffold-unknown-type",
+            "search-finds-behaviors",
+            "search-finds-nfr-constraints",
+            "search-finds-specs",
+            "search-no-results",
             "validate-content-takes-precedence",
             "validate-deep-mode",
             "validate-directory",
@@ -1487,7 +1511,7 @@
             "validate-reject-unreadable-file",
             "validate-require-path-or-content"
           ],
-          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
+          "hash": "a5e846449fb98857331c0cce32627ee007874438a4749f69c9c00c81185eb1ad"
         }
       }
     },

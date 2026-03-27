@@ -91,17 +91,35 @@ pub struct GraphParams {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
-pub struct CoverageParams {
-    #[schemars(description = "Spec file or directory path")]
-    pub spec_path: String,
-    #[schemars(description = "Directories to scan for @minter tags (default: spec directory)")]
-    pub scan: Option<Vec<String>>,
+pub struct ListSpecsParams {
+    #[schemars(
+        description = "Directory path containing spec files (defaults to working directory)"
+    )]
+    pub path: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ListNfrsParams {
+    #[schemars(
+        description = "Directory path containing NFR files (defaults to working directory)"
+    )]
+    pub path: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct SearchParams {
+    #[schemars(
+        description = "Search query to match against spec names, behavior names, and NFR constraint names"
+    )]
+    pub query: String,
+    #[schemars(description = "Directory path to search in (defaults to working directory)")]
+    pub path: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct GuideParams {
     #[schemars(
-        description = "Topic: workflow, authoring, smells, nfr, context, methodology, or coverage"
+        description = "Topic: workflow, authoring, smells, nfr, context, methodology, coverage, config, lock, ci, or web"
     )]
     pub topic: String,
 }
@@ -216,6 +234,14 @@ pub(super) fn sanitize_path(path: &Path) -> Result<PathBuf, String> {
             format!("Cannot resolve path {}: {}", path.display(), e)
         }
     })
+}
+
+/// Resolve an optional directory path parameter: sanitize if provided, fall back to cwd.
+fn resolve_dir(path: Option<&str>) -> Result<PathBuf, String> {
+    match path {
+        Some(p) => sanitize_path(Path::new(p)),
+        None => std::env::current_dir().map_err(|e| e.to_string()),
+    }
 }
 
 pub(super) fn format_dep_constraint(dep: &crate::model::Dependency) -> response::DependencyRef {
@@ -456,36 +482,231 @@ impl MinterServer {
     }
 
     #[tool(
-        description = "Compute test coverage of spec behaviors by scanning for @minter tags. Returns JSON with per-spec behavior coverage, NFR coverage, and summary statistics."
+        description = "List all specs in the project with metadata. Returns name, version, behavior count, validation status, NFR references, and dependencies for each spec."
     )]
-    fn coverage(
+    fn list_specs(
         &self,
-        Parameters(params): Parameters<CoverageParams>,
+        Parameters(params): Parameters<ListSpecsParams>,
     ) -> Result<CallToolResult, ErrorData> {
-        let raw_path = Path::new(&params.spec_path);
-        let path = match sanitize_path(raw_path) {
+        use crate::core::validation::semantic;
+
+        let dir = match resolve_dir(params.path.as_deref()) {
             Ok(p) => p,
             Err(msg) => return Ok(tool_error(msg)),
         };
 
-        let scan_paths: Vec<PathBuf> = params
-            .scan
-            .unwrap_or_default()
-            .iter()
-            .map(PathBuf::from)
-            .collect();
+        let spec_files = match discover::discover_spec_files(&dir) {
+            Ok(files) => files,
+            Err(e) => return Ok(tool_error(e)),
+        };
 
-        // Validate scan paths
-        for scan in &scan_paths {
-            if let Err(msg) = sanitize_path(scan) {
-                return Ok(tool_error(msg));
+        let mut entries: Vec<response::SpecEntry> = Vec::new();
+        for spec_path in &spec_files {
+            let source = match read_file_checked(spec_path) {
+                Ok(s) => s,
+                Err(_) => continue,
+            };
+            let spec = match parser::parse(&source) {
+                Ok(s) => s,
+                Err(_) => continue,
+            };
+
+            let validation_status = if semantic::validate(&spec).is_ok() {
+                "valid"
+            } else {
+                "invalid"
+            }
+            .to_string();
+
+            let nfr_refs: Vec<String> = spec.all_nfr_categories();
+            let dependencies: Vec<response::DependencyRef> = spec
+                .dependencies
+                .iter()
+                .map(format_dep_constraint)
+                .collect();
+
+            entries.push(response::SpecEntry {
+                name: spec.name,
+                version: spec.version,
+                path: spec_path.display().to_string(),
+                behavior_count: spec.behaviors.len(),
+                validation_status,
+                nfr_refs,
+                dependencies,
+            });
+        }
+
+        entries.sort_by(|a, b| a.name.cmp(&b.name));
+
+        let resp = response::ListSpecsResponse {
+            specs: entries,
+            next_steps: next_steps::after_list_specs(),
+        };
+        let json = serde_json::to_string(&resp).map_err(|e| mcp_error(e.to_string()))?;
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(
+        description = "List all NFR categories with their constraints. Returns category, version, constraint count, and constraint details for each NFR file."
+    )]
+    fn list_nfrs(
+        &self,
+        Parameters(params): Parameters<ListNfrsParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::model::ConstraintBody;
+
+        let dir = match resolve_dir(params.path.as_deref()) {
+            Ok(p) => p,
+            Err(msg) => return Ok(tool_error(msg)),
+        };
+
+        let nfr_files = discover::discover_nfr_files(&dir);
+
+        let mut entries: Vec<response::NfrEntry> = Vec::new();
+        for nfr_path in &nfr_files {
+            let source = match read_file_checked(nfr_path) {
+                Ok(s) => s,
+                Err(_) => continue,
+            };
+            let nfr = match parser::parse_nfr(&source) {
+                Ok(n) => n,
+                Err(_) => continue,
+            };
+
+            let constraints: Vec<response::NfrConstraintEntry> = nfr
+                .constraints
+                .iter()
+                .map(|c| {
+                    let (type_str, threshold) = match &c.body {
+                        ConstraintBody::Metric {
+                            threshold_operator,
+                            threshold_value,
+                            ..
+                        } => (
+                            "metric",
+                            Some(format!("{} {}", threshold_operator, threshold_value)),
+                        ),
+                        ConstraintBody::Rule { .. } => ("rule", None),
+                    };
+                    response::NfrConstraintEntry {
+                        name: c.name.clone(),
+                        constraint_type: type_str.to_string(),
+                        description: c.description.clone(),
+                        threshold,
+                        overridable: c.overridable,
+                    }
+                })
+                .collect();
+
+            entries.push(response::NfrEntry {
+                category: nfr.category.clone(),
+                version: nfr.version.clone(),
+                path: nfr_path.display().to_string(),
+                constraint_count: nfr.constraints.len(),
+                constraints,
+            });
+        }
+
+        entries.sort_by(|a, b| a.category.cmp(&b.category));
+
+        let resp = response::ListNfrsResponse {
+            nfrs: entries,
+            next_steps: next_steps::after_list_nfrs(),
+        };
+        let json = serde_json::to_string(&resp).map_err(|e| mcp_error(e.to_string()))?;
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(
+        description = "Search for specs, behaviors, and NFR constraints by name. Returns matching items across all project specs and NFRs."
+    )]
+    fn search(
+        &self,
+        Parameters(params): Parameters<SearchParams>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let dir = match resolve_dir(params.path.as_deref()) {
+            Ok(p) => p,
+            Err(msg) => return Ok(tool_error(msg)),
+        };
+        let query_lower = params.query.to_lowercase();
+
+        let mut results: Vec<response::SearchResult> = Vec::new();
+
+        // Search specs and behaviors
+        if let Ok(spec_files) = discover::discover_spec_files(&dir) {
+            for spec_path in &spec_files {
+                let source = match read_file_checked(spec_path) {
+                    Ok(s) => s,
+                    Err(_) => continue,
+                };
+                let spec = match parser::parse(&source) {
+                    Ok(s) => s,
+                    Err(_) => continue,
+                };
+
+                let path_str = spec_path.display().to_string();
+
+                // Match spec name
+                if spec.name.to_lowercase().contains(&query_lower) {
+                    results.push(response::SearchResult {
+                        result_type: "spec".to_string(),
+                        name: spec.name.clone(),
+                        spec_name: None,
+                        category: None,
+                        path: path_str.clone(),
+                    });
+                }
+
+                // Match behavior names
+                for behavior in &spec.behaviors {
+                    if behavior.name.to_lowercase().contains(&query_lower) {
+                        results.push(response::SearchResult {
+                            result_type: "behavior".to_string(),
+                            name: behavior.name.clone(),
+                            spec_name: Some(spec.name.clone()),
+                            category: None,
+                            path: path_str.clone(),
+                        });
+                    }
+                }
             }
         }
 
-        match crate::core::commands::coverage::run_coverage_json(&path, &scan_paths) {
-            Ok(json) => Ok(CallToolResult::success(vec![Content::text(json)])),
-            Err(msg) => Ok(tool_error(msg)),
+        // Search NFR constraints
+        let nfr_files = discover::discover_nfr_files(&dir);
+        for nfr_path in &nfr_files {
+            let source = match read_file_checked(nfr_path) {
+                Ok(s) => s,
+                Err(_) => continue,
+            };
+            let nfr = match parser::parse_nfr(&source) {
+                Ok(n) => n,
+                Err(_) => continue,
+            };
+
+            let path_str = nfr_path.display().to_string();
+
+            for constraint in &nfr.constraints {
+                if constraint.name.to_lowercase().contains(&query_lower) {
+                    results.push(response::SearchResult {
+                        result_type: "nfr_constraint".to_string(),
+                        name: constraint.name.clone(),
+                        spec_name: None,
+                        category: Some(nfr.category.clone()),
+                        path: path_str.clone(),
+                    });
+                }
+            }
         }
+
+        results.sort_by(|a, b| a.name.cmp(&b.name));
+
+        let resp = response::SearchResponse {
+            results,
+            next_steps: next_steps::after_search(),
+        };
+        let json = serde_json::to_string(&resp).map_err(|e| mcp_error(e.to_string()))?;
+        Ok(CallToolResult::success(vec![Content::text(json)]))
     }
 }
 

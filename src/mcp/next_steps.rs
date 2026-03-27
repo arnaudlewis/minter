@@ -38,3 +38,25 @@ pub fn after_inspect(has_error_case: bool) -> Vec<&'static str> {
 pub fn after_graph() -> Vec<&'static str> {
     vec!["review impacted specs when changing a dependency"]
 }
+
+pub fn after_list_specs() -> Vec<&'static str> {
+    vec![
+        "inspect a specific spec for full details",
+        "validate specs to check for errors",
+        "use graph to visualize dependencies",
+    ]
+}
+
+pub fn after_list_nfrs() -> Vec<&'static str> {
+    vec![
+        "reference NFR constraints in your spec's nfr section",
+        "use guide topic 'nfr' for NFR design patterns",
+    ]
+}
+
+pub fn after_search() -> Vec<&'static str> {
+    vec![
+        "inspect matching specs for full details",
+        "use the results to find dependencies for your spec",
+    ]
+}

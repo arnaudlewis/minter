@@ -636,6 +636,157 @@ Override Rules
   - Overrides are behavior-level only (not spec-level)"
 }
 
+/// Configuration guide for the guide tool.
+pub fn guide_config() -> &'static str {
+    "\
+Configuration
+=============
+
+minter uses convention-over-configuration with optional overrides.
+
+Default Conventions
+-------------------
+- Specs directory: `specs/`
+- Test directories: `tests/`, `benches/`
+
+minter.config.json
+------------------
+Optional configuration file at the project root:
+```json
+{
+  \"specs\": \"specs/\",
+  \"tests\": [\"tests/\", \"benches/\"]
+}
+```
+
+When to Use Config
+------------------
+- Non-standard directory layout
+- Additional test directories (e.g., `web/tests/`)
+- Monorepo with specs in a subdirectory
+
+How Commands Use Config
+-----------------------
+All commands that discover specs or tests read the config:
+- `minter validate specs/` uses the specs directory
+- `minter coverage` scans configured test directories
+- `minter lock` and `minter ci` use both specs and test directories
+- `minter web` watches all configured directories for live updates
+
+If no config file exists, minter falls back to conventions."
+}
+
+/// Lock file guide for the guide tool.
+pub fn guide_lock() -> &'static str {
+    "\
+Lock File
+=========
+
+`minter.lock` is an integrity snapshot of your spec project.
+
+What It Captures
+----------------
+- SHA-256 hash of every .spec file
+- SHA-256 hash of every .nfr file
+- SHA-256 hash of every test file with @minter tags
+- Behavior-to-test mapping (which tests cover which behaviors)
+- Benchmark file hashes (for NFR constraint coverage)
+
+Commands
+--------
+- `minter lock` — regenerate the lock file
+- `minter ci` — verify lock file integrity (hash mismatches = drift)
+
+When to Regenerate
+------------------
+- After modifying any .spec, .nfr, or tagged test file
+- After adding or removing spec/test files
+- Before committing (ensures CI passes)
+
+Drift
+-----
+When a file changes but the lock hasn't been regenerated, the file
+is 'drifted'. The web dashboard shows drift in the header with a
+Regenerate button. The CI command reports drift as a failure.
+
+Atomic Writes
+-------------
+Lock files are written atomically: write to .tmp, then rename.
+This prevents corruption if the process is interrupted."
+}
+
+/// CI verification guide for the guide tool.
+pub fn guide_ci() -> &'static str {
+    "\
+CI Verification
+===============
+
+`minter ci` runs six checks against the lock file.
+
+The Six Checks
+--------------
+1. spec integrity — every .spec file hash matches the lock
+2. NFR integrity — every .nfr file hash matches the lock
+3. dependency structure — all dependency edges resolve correctly
+4. test integrity — every tagged test file hash matches the lock
+5. coverage — all spec behaviors are covered by @minter tags (100%)
+6. orphan detection — no @minter tags reference non-existent behaviors
+
+Exit Codes
+----------
+- Exit 0: all checks pass
+- Exit 1: one or more checks failed
+
+CI Integration
+--------------
+Run `minter ci` in your CI pipeline after `minter lock`:
+```yaml
+- run: minter lock
+- run: minter ci
+```
+
+What Each Failure Means
+-----------------------
+- Spec/NFR/test integrity failure: files changed since last lock
+- Dependency failure: missing or incompatible dependency version
+- Coverage failure: behaviors without @minter-tagged tests
+- Orphan failure: tests referencing deleted/renamed behaviors"
+}
+
+/// Web dashboard guide for the guide tool.
+pub fn guide_web() -> &'static str {
+    "\
+Web Dashboard
+=============
+
+`minter web` launches a real-time web dashboard for your spec project.
+
+Quick Start
+-----------
+```
+minter web                    # opens browser at localhost:4321
+minter web --port 8080        # custom port
+minter web --no-open           # don't open browser
+```
+
+Features
+--------
+- Spec cards — grid view of all specs with validation status, coverage, NFR badges
+- NFR cards — grid view of NFR files with constraint counts
+- Slide panel — click a spec/NFR card for full details (behaviors, coverage, deps, errors)
+- Live updates — WebSocket pushes state on any file change (300ms debounce)
+- Lock regeneration — one-click regenerate with visual feedback
+- Invalid tag detection — header badge shows orphaned @minter tags
+- Search — filter specs by name
+
+Architecture
+------------
+- Backend: Axum server with WebSocket
+- Frontend: React + shadcn/ui (embedded in binary)
+- File watcher: notify with 300ms debounce
+- No separate frontend build step for users"
+}
+
 /// Coverage tagging guide for the guide tool.
 pub fn guide_coverage() -> &'static str {
     concat!(
@@ -907,5 +1058,55 @@ mod tests {
         assert!(text.contains("benchmark"));
         assert!(text.contains("Qualified Names"));
         assert!(text.contains("Common Mistakes"));
+    }
+
+    /// content: guide-config-contains-sections
+    #[test]
+    fn guide_config_contains_sections() {
+        let text = guide_config();
+        assert!(text.contains("Configuration"));
+        assert!(text.contains("minter.config.json"));
+        assert!(text.contains("convention"));
+        assert!(text.contains("specs/"));
+        assert!(text.contains("tests/"));
+        assert!(text.contains("How Commands Use Config"));
+    }
+
+    /// content: guide-lock-contains-sections
+    #[test]
+    fn guide_lock_contains_sections() {
+        let text = guide_lock();
+        assert!(text.contains("Lock File"));
+        assert!(text.contains("SHA-256"));
+        assert!(text.contains("minter lock"));
+        assert!(text.contains("drift"));
+        assert!(text.contains("atomic"));
+        assert!(text.contains("Behavior-to-test mapping"));
+    }
+
+    /// content: guide-ci-contains-sections
+    #[test]
+    fn guide_ci_contains_sections() {
+        let text = guide_ci();
+        assert!(text.contains("CI Verification"));
+        assert!(text.contains("six"));
+        assert!(text.contains("Exit 0"));
+        assert!(text.contains("Exit 1"));
+        assert!(text.contains("minter ci"));
+        assert!(text.contains("Coverage"));
+        assert!(text.contains("Orphan"));
+    }
+
+    /// content: guide-web-contains-sections
+    #[test]
+    fn guide_web_contains_sections() {
+        let text = guide_web();
+        assert!(text.contains("Web Dashboard"));
+        assert!(text.contains("minter web"));
+        assert!(text.contains("WebSocket"));
+        assert!(text.contains("Axum"));
+        assert!(text.contains("React"));
+        assert!(text.contains("Live updates"));
+        assert!(text.contains("Spec cards"));
     }
 }
