@@ -123,7 +123,7 @@
         "route-coverage-with-format",
         "route-lock",
         "route-ci",
-        "route-web",
+        "route-ui",
         "reject-unknown-command",
         "reject-unknown-flag",
         "reject-missing-required-argument",
@@ -150,7 +150,7 @@
         "specs/core/commands/ci-command.spec",
         "specs/core/commands/web-command.spec"
       ],
-      "hash": "9803e20eacd7571173e011cfe68a9baa393d11d3dd3858b50f6af4e83aeac5fa",
+      "hash": "2a73dda8ab18d5acb9efb118fdce14c362d3e772d290eb297df262ec9973335b",
       "nfrs": [
         "operability#ci-friendly-output",
         "operability#zero-config"
@@ -178,6 +178,7 @@
             "route-lock",
             "route-scaffold-nfr",
             "route-scaffold-spec",
+            "route-ui",
             "route-validate-file",
             "route-validate-file-deep",
             "route-validate-folder",
@@ -186,11 +187,10 @@
             "route-watch-file",
             "route-watch-folder",
             "route-watch-nfr-file",
-            "route-web",
             "show-help",
             "show-version"
           ],
-          "hash": "8f204ddaf12411963a3c68c59df75885a50bf4746ae0a05bed57d89e9cc29c44"
+          "hash": "93ea72a2694f6303b9000a8b8c3dbcfed42b491c35cf85ecffebea45b13dbd75"
         }
       }
     },
@@ -496,7 +496,7 @@
             "guide-unknown-topic",
             "guide-workflow-topic"
           ],
-          "hash": "4fa49947a860500bc3c6f18199e5fcc8daada38793f03c47e5288c385855b6cc"
+          "hash": "0bdc667fde689cdc47da2dcf797dcfe31ea35b7a5af07b1886b5d782a919722a"
         }
       }
     },
@@ -832,7 +832,7 @@
         "specs/core/commands/coverage-command.spec",
         "specs/core/commands/lock-command.spec"
       ],
-      "hash": "27528c721134cb5a1bedce7f87f82434387509610af29aafe5976d4c3c810b03",
+      "hash": "320820468c8e69edd962611849b3120952331b9e4869b0f66b1c6216972a23e3",
       "nfrs": [
         "operability#zero-config",
         "performance#watch-revalidation-latency",
@@ -1274,6 +1274,10 @@
         "guide-nfr-design",
         "guide-context-management",
         "guide-coverage-tagging",
+        "guide-config-topic",
+        "guide-lock-topic",
+        "guide-ci-topic",
+        "guide-web-topic",
         "guide-unknown-topic",
         "next-steps-after-scaffold",
         "next-steps-after-validate-pass",
@@ -1281,26 +1285,41 @@
         "next-steps-after-format",
         "next-steps-after-inspect",
         "next-steps-after-nfr-scaffold",
+        "tool-descriptions-guide-workflow",
+        "next-steps-include-tool-references",
         "list-tools-includes-agent-guidance"
       ],
       "dependencies": [
         "specs/mcp/mcp-server.spec",
         "specs/mcp/mcp-response-format.spec"
       ],
-      "hash": "33ae589da0b1fd65b01f01996de3fe8c467443bb221581d3e5b231190f9092f3",
+      "hash": "9b1fb5989bf5f0cea2d6e9c830100db0119d82ecd0456055b842a772055f7a97",
       "nfrs": [
         "operability#deterministic-output",
         "operability#mcp-protocol-compliance"
       ],
       "test_files": {
+        "tests/guide_command.rs": {
+          "covers": [
+            "guide-ci-topic",
+            "guide-config-topic",
+            "guide-lock-topic",
+            "guide-web-topic"
+          ],
+          "hash": "0bdc667fde689cdc47da2dcf797dcfe31ea35b7a5af07b1886b5d782a919722a"
+        },
         "tests/mcp_server.rs": {
           "covers": [
+            "guide-ci-topic",
+            "guide-config-topic",
             "guide-context-management",
             "guide-coverage-tagging",
+            "guide-lock-topic",
             "guide-nfr-design",
             "guide-requirements-smells",
             "guide-spec-authoring",
             "guide-unknown-topic",
+            "guide-web-topic",
             "guide-workflow-phases",
             "initialize-includes-methodology-instructions",
             "initialize-minter-lists-available-tools",
@@ -1311,9 +1330,11 @@
             "next-steps-after-nfr-scaffold",
             "next-steps-after-scaffold",
             "next-steps-after-validate-fail",
-            "next-steps-after-validate-pass"
+            "next-steps-after-validate-pass",
+            "next-steps-include-tool-references",
+            "tool-descriptions-guide-workflow"
           ],
-          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
+          "hash": "566b9deec1925383ad4fdadf8472fa6dbe7672733ccbf4964d94e4af4d96e7a7"
         }
       }
     },
@@ -1372,7 +1393,7 @@
             "validate-pass-result-fields",
             "validate-summary-fields"
           ],
-          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
+          "hash": "566b9deec1925383ad4fdadf8472fa6dbe7672733ccbf4964d94e4af4d96e7a7"
         }
       }
     },
@@ -1395,6 +1416,7 @@
         "validate-content-takes-precedence",
         "validate-reject-unknown-content-type",
         "validate-require-path-or-content",
+        "validate-error-includes-fix",
         "inspect-spec-file",
         "inspect-nfr-file",
         "inspect-inline-content",
@@ -1416,10 +1438,20 @@
         "graph-unknown-spec",
         "graph-empty-directory",
         "graph-nonexistent-directory",
-        "coverage-full",
-        "coverage-uncovered",
-        "coverage-with-scan-dirs",
-        "coverage-nonexistent-path"
+        "list-specs-returns-all",
+        "list-specs-empty-project",
+        "list-nfrs-returns-categories",
+        "list-nfrs-empty-project",
+        "search-finds-specs",
+        "search-finds-behaviors",
+        "search-finds-nfr-constraints",
+        "search-no-results",
+        "assess-coverage-balance",
+        "assess-detects-smells",
+        "assess-suggests-missing-behaviors",
+        "assess-nfr-gaps",
+        "assess-clean-spec",
+        "assess-inline-content"
       ],
       "dependencies": [
         "specs/core/commands/validate-command.spec",
@@ -1427,10 +1459,9 @@
         "specs/core/commands/scaffold-command.spec",
         "specs/core/commands/format-command.spec",
         "specs/core/commands/graph-command.spec",
-        "specs/core/commands/coverage-command.spec",
         "specs/mcp/mcp-response-format.spec"
       ],
-      "hash": "1b74daa1c199d2dc857d231e8ee6647cf03fa2e210e6b2bed9c312367a17d45f",
+      "hash": "9ed2de75e8274107f3386b4cadf6534b7e2590ac5c28792c793eb85844703ede",
       "nfrs": [
         "operability#deterministic-output",
         "operability#input-schema-accuracy",
@@ -1444,10 +1475,12 @@
       "test_files": {
         "tests/mcp_server.rs": {
           "covers": [
-            "coverage-full",
-            "coverage-nonexistent-path",
-            "coverage-uncovered",
-            "coverage-with-scan-dirs",
+            "assess-clean-spec",
+            "assess-coverage-balance",
+            "assess-detects-smells",
+            "assess-inline-content",
+            "assess-nfr-gaps",
+            "assess-suggests-missing-behaviors",
             "format-nfr-grammar",
             "format-spec-grammar",
             "format-unknown-type",
@@ -1465,15 +1498,24 @@
             "inspect-reject-non-spec-extension",
             "inspect-reject-oversized-file",
             "inspect-spec-file",
+            "list-nfrs-empty-project",
+            "list-nfrs-returns-categories",
+            "list-specs-empty-project",
+            "list-specs-returns-all",
             "list-tools",
             "scaffold-nfr-missing-category",
             "scaffold-nfr-template",
             "scaffold-spec-template",
             "scaffold-unknown-category",
             "scaffold-unknown-type",
+            "search-finds-behaviors",
+            "search-finds-nfr-constraints",
+            "search-finds-specs",
+            "search-no-results",
             "validate-content-takes-precedence",
             "validate-deep-mode",
             "validate-directory",
+            "validate-error-includes-fix",
             "validate-file-fail",
             "validate-file-pass",
             "validate-inline-content",
@@ -1487,7 +1529,7 @@
             "validate-reject-unreadable-file",
             "validate-require-path-or-content"
           ],
-          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
+          "hash": "566b9deec1925383ad4fdadf8472fa6dbe7672733ccbf4964d94e4af4d96e7a7"
         }
       }
     },

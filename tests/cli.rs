@@ -76,7 +76,7 @@ fn show_help() {
         .stdout(predicate::str::contains("coverage"))
         .stdout(predicate::str::contains("lock"))
         .stdout(predicate::str::contains("ci"))
-        .stdout(predicate::str::contains("web"));
+        .stdout(predicate::str::contains("ui"));
 
     // No arguments also prints usage
     minter()
@@ -842,14 +842,14 @@ fn route_ci() {
         .success();
 }
 
-/// cli: route-web
-// @minter:e2e route-web
+/// cli: route-ui
+// @minter:e2e route-ui
 #[test]
-fn route_web() {
+fn route_ui() {
     // web starts a server, so we test via --help to verify routing
     minter()
-        .args(&["web", "--help"])
+        .args(&["ui", "--help"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("web"));
+        .stdout(predicate::str::contains("ui"));
 }

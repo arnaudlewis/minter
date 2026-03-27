@@ -1,12 +1,23 @@
 use serde::Serialize;
 
+// ── Structured next step ───────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct NextStep {
+    pub action: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub params: Option<serde_json::Value>,
+}
+
 // ── Validate response types ────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct ValidateResponse {
     pub results: Vec<ValidateResult>,
     pub summary: ValidateSummary,
-    pub next_steps: Vec<&'static str>,
+    pub next_steps: Vec<NextStep>,
 }
 
 #[derive(Debug, Serialize)]
@@ -33,6 +44,8 @@ pub struct ValidationError {
     pub file: Option<String>,
     pub line: usize,
     pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fix: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -61,7 +74,7 @@ pub struct InspectSpecResponse {
     pub categories: std::collections::HashMap<String, usize>,
     pub dependencies: Vec<DependencyRef>,
     pub assertion_types: Vec<String>,
-    pub next_steps: Vec<&'static str>,
+    pub next_steps: Vec<NextStep>,
 }
 
 #[derive(Debug, Serialize)]
@@ -74,7 +87,7 @@ pub struct InspectNfrResponse {
     pub category: String,
     pub constraint_count: usize,
     pub types: ConstraintTypeDist,
-    pub next_steps: Vec<&'static str>,
+    pub next_steps: Vec<NextStep>,
 }
 
 #[derive(Debug, Serialize)]
@@ -83,13 +96,79 @@ pub struct ConstraintTypeDist {
     pub rule: usize,
 }
 
+// ── List Specs response types ──────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct ListSpecsResponse {
+    pub specs: Vec<SpecEntry>,
+    pub next_steps: Vec<NextStep>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SpecEntry {
+    pub name: String,
+    pub version: String,
+    pub path: String,
+    pub behavior_count: usize,
+    pub validation_status: String,
+    pub nfr_refs: Vec<String>,
+    pub dependencies: Vec<DependencyRef>,
+}
+
+// ── List NFRs response types ──────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct ListNfrsResponse {
+    pub nfrs: Vec<NfrEntry>,
+    pub next_steps: Vec<NextStep>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct NfrEntry {
+    pub category: String,
+    pub version: String,
+    pub path: String,
+    pub constraint_count: usize,
+    pub constraints: Vec<NfrConstraintEntry>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct NfrConstraintEntry {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub constraint_type: String,
+    pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub threshold: Option<String>,
+    pub overridable: bool,
+}
+
+// ── Search response types ─────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct SearchResponse {
+    pub results: Vec<SearchResult>,
+    pub next_steps: Vec<NextStep>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SearchResult {
+    pub result_type: String,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spec_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    pub path: String,
+}
+
 // ── Graph response types ───────────────────────────────
 
 #[derive(Debug, Serialize)]
 pub struct GraphFullResponse {
     pub specs: Vec<GraphSpecEntry>,
     pub edges: Vec<GraphEdge>,
-    pub next_steps: Vec<&'static str>,
+    pub next_steps: Vec<NextStep>,
 }
 
 #[derive(Debug, Serialize)]
@@ -110,5 +189,45 @@ pub struct GraphEdge {
 pub struct GraphImpactedResponse {
     pub target: String,
     pub impacted: Vec<GraphSpecEntry>,
-    pub next_steps: Vec<&'static str>,
+    pub next_steps: Vec<NextStep>,
+}
+
+// ── Assess response types ──────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct AssessResponse {
+    pub coverage_balance: CoverageBalance,
+    pub smells: Vec<SmellEntry>,
+    pub missing: Vec<MissingEntry>,
+    pub nfr_gaps: Vec<NfrGapEntry>,
+    pub next_steps: Vec<NextStep>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CoverageBalance {
+    pub happy_path: usize,
+    pub error_case: usize,
+    pub edge_case: usize,
+    pub assessment: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SmellEntry {
+    pub behavior: String,
+    #[serde(rename = "type")]
+    pub smell_type: String,
+    pub detail: String,
+    pub fix: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MissingEntry {
+    pub missing_type: String,
+    pub for_behavior: String,
+    pub suggestion: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct NfrGapEntry {
+    pub suggestion: String,
 }
