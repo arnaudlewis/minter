@@ -2,7 +2,7 @@ spec web-command v1.0.0
 title "Web Dashboard Command"
 
 description
-  The minter web command launches a local web dashboard (axum + React)
+  The minter ui command launches a local web dashboard (axum + React)
   that provides a real-time view of an entire minter project. Specs
   are displayed as compact cards in a grid. Clicking a card opens a
   slide-over panel from the right (Notion-style) showing full spec
@@ -31,7 +31,7 @@ behavior launch-starts-server [happy_path]
     A project with specs/ directory containing valid .spec files
     Port 4321 is available
 
-  when minter web
+  when minter ui
 
   then emits stdout
     assert output contains "4321"
@@ -47,7 +47,7 @@ behavior server-port-fallback [error_case]
   given
     Port 4321 is already in use by another process
 
-  when minter web
+  when minter ui
 
   then
     assert the server starts on port 4322

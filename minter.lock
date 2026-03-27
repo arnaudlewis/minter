@@ -123,7 +123,7 @@
         "route-coverage-with-format",
         "route-lock",
         "route-ci",
-        "route-web",
+        "route-ui",
         "reject-unknown-command",
         "reject-unknown-flag",
         "reject-missing-required-argument",
@@ -150,7 +150,7 @@
         "specs/core/commands/ci-command.spec",
         "specs/core/commands/web-command.spec"
       ],
-      "hash": "9803e20eacd7571173e011cfe68a9baa393d11d3dd3858b50f6af4e83aeac5fa",
+      "hash": "2a73dda8ab18d5acb9efb118fdce14c362d3e772d290eb297df262ec9973335b",
       "nfrs": [
         "operability#ci-friendly-output",
         "operability#zero-config"
@@ -178,6 +178,7 @@
             "route-lock",
             "route-scaffold-nfr",
             "route-scaffold-spec",
+            "route-ui",
             "route-validate-file",
             "route-validate-file-deep",
             "route-validate-folder",
@@ -186,11 +187,10 @@
             "route-watch-file",
             "route-watch-folder",
             "route-watch-nfr-file",
-            "route-web",
             "show-help",
             "show-version"
           ],
-          "hash": "8f204ddaf12411963a3c68c59df75885a50bf4746ae0a05bed57d89e9cc29c44"
+          "hash": "93ea72a2694f6303b9000a8b8c3dbcfed42b491c35cf85ecffebea45b13dbd75"
         }
       }
     },
@@ -496,7 +496,7 @@
             "guide-unknown-topic",
             "guide-workflow-topic"
           ],
-          "hash": "2c61c72497e19fc8828e403784a734e8096532ce962e5eb856e3b61d971b2a98"
+          "hash": "0bdc667fde689cdc47da2dcf797dcfe31ea35b7a5af07b1886b5d782a919722a"
         }
       }
     },
@@ -832,7 +832,7 @@
         "specs/core/commands/coverage-command.spec",
         "specs/core/commands/lock-command.spec"
       ],
-      "hash": "27528c721134cb5a1bedce7f87f82434387509610af29aafe5976d4c3c810b03",
+      "hash": "320820468c8e69edd962611849b3120952331b9e4869b0f66b1c6216972a23e3",
       "nfrs": [
         "operability#zero-config",
         "performance#watch-revalidation-latency",
@@ -1293,7 +1293,7 @@
         "specs/mcp/mcp-server.spec",
         "specs/mcp/mcp-response-format.spec"
       ],
-      "hash": "a00fe70d6150303f4db6ce549eb875ef595c1ebf86c37193ac541531526557d5",
+      "hash": "9b1fb5989bf5f0cea2d6e9c830100db0119d82ecd0456055b842a772055f7a97",
       "nfrs": [
         "operability#deterministic-output",
         "operability#mcp-protocol-compliance"
@@ -1306,7 +1306,7 @@
             "guide-lock-topic",
             "guide-web-topic"
           ],
-          "hash": "2c61c72497e19fc8828e403784a734e8096532ce962e5eb856e3b61d971b2a98"
+          "hash": "0bdc667fde689cdc47da2dcf797dcfe31ea35b7a5af07b1886b5d782a919722a"
         },
         "tests/mcp_server.rs": {
           "covers": [
@@ -1334,7 +1334,7 @@
             "next-steps-include-tool-references",
             "tool-descriptions-guide-workflow"
           ],
-          "hash": "157a264f7ee882f9c433d8a2c53d8eb004fd4501ab59630744bb183e9d7f5d97"
+          "hash": "566b9deec1925383ad4fdadf8472fa6dbe7672733ccbf4964d94e4af4d96e7a7"
         }
       }
     },
@@ -1393,7 +1393,7 @@
             "validate-pass-result-fields",
             "validate-summary-fields"
           ],
-          "hash": "157a264f7ee882f9c433d8a2c53d8eb004fd4501ab59630744bb183e9d7f5d97"
+          "hash": "566b9deec1925383ad4fdadf8472fa6dbe7672733ccbf4964d94e4af4d96e7a7"
         }
       }
     },
@@ -1529,7 +1529,7 @@
             "validate-reject-unreadable-file",
             "validate-require-path-or-content"
           ],
-          "hash": "157a264f7ee882f9c433d8a2c53d8eb004fd4501ab59630744bb183e9d7f5d97"
+          "hash": "566b9deec1925383ad4fdadf8472fa6dbe7672733ccbf4964d94e4af4d96e7a7"
         }
       }
     },

@@ -375,7 +375,7 @@ fn guide_web_topic() {
         .assert()
         .success()
         .stdout(predicate::str::contains("Web Dashboard"))
-        .stdout(predicate::str::contains("minter web"))
+        .stdout(predicate::str::contains("minter ui"))
         .stdout(predicate::str::contains("WebSocket"))
         .stdout(predicate::str::contains("Axum"))
         .stdout(predicate::str::contains("React"));

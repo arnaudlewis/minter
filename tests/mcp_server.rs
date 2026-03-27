@@ -1664,8 +1664,8 @@ fn mcp_guide_web_topic() {
     assert!(!is_error(&result), "guide web should succeed");
     let text = text_content(&result);
     assert!(
-        text.contains("minter web") || text.contains("dashboard"),
-        "web guide should mention minter web or dashboard, got: {}",
+        text.contains("minter ui") || text.contains("dashboard"),
+        "web guide should mention minter ui or dashboard, got: {}",
         &text[..text.len().min(200)]
     );
 }

@@ -247,7 +247,7 @@ behavior guide-web-topic [happy_path]
     topic = "web"
 
   then returns guidance_text
-    assert output explains minter web command
+    assert output explains minter ui command
     assert output covers real-time updates via WebSocket
 
 

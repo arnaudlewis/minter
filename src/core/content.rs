@@ -671,7 +671,7 @@ All commands that discover specs or tests read the config:
 - `minter validate specs/` uses the specs directory
 - `minter coverage` scans configured test directories
 - `minter lock` and `minter ci` use both specs and test directories
-- `minter web` watches all configured directories for live updates
+- `minter ui` watches all configured directories for live updates
 
 If no config file exists, minter falls back to conventions."
 }
@@ -759,14 +759,14 @@ pub fn guide_web() -> &'static str {
 Web Dashboard
 =============
 
-`minter web` launches a real-time web dashboard for your spec project.
+`minter ui` launches a real-time web dashboard for your spec project.
 
 Quick Start
 -----------
 ```
-minter web                    # opens browser at localhost:4321
-minter web --port 8080        # custom port
-minter web --no-open           # don't open browser
+minter ui                    # opens browser at localhost:4321
+minter ui --port 8080        # custom port
+minter ui --no-open           # don't open browser
 ```
 
 Features
@@ -1102,7 +1102,7 @@ mod tests {
     fn guide_web_contains_sections() {
         let text = guide_web();
         assert!(text.contains("Web Dashboard"));
-        assert!(text.contains("minter web"));
+        assert!(text.contains("minter ui"));
         assert!(text.contains("WebSocket"));
         assert!(text.contains("Axum"));
         assert!(text.contains("React"));
