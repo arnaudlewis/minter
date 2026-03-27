@@ -2,6 +2,8 @@
 
 This is the authoritative formal reference for both the Functional Requirement (.spec) and Non-Functional Requirement (.nfr) DSL formats parsed and validated by minter.
 
+For a narrative introduction to the formats, see [spec-format.md](spec-format.md) and [nfr-format.md](nfr-format.md).
+
 ---
 
 ## Table of Contents
