@@ -784,6 +784,45 @@
         }
       }
     },
+    "specs/core/commands/web-command.spec": {
+      "behaviors": [
+        "launch-starts-server",
+        "server-port-fallback",
+        "header-displays-metrics",
+        "lock-regeneration-feedback",
+        "lock-drift-tooltip",
+        "header-shows-invalid-tags-badge",
+        "spec-card-displays-summary",
+        "spec-card-status-green",
+        "spec-card-status-warning",
+        "spec-card-status-error",
+        "spec-card-shows-dep-errors",
+        "panel-opens-on-card-click",
+        "panel-shows-behaviors",
+        "panel-shows-nfr-refs",
+        "panel-shows-dependencies",
+        "panel-shows-errors",
+        "panel-search-behaviors",
+        "panel-behavior-detail",
+        "filter-specs-by-search",
+        "live-update-on-file-change",
+        "reconnect-on-disconnect",
+        "broken-spec-stays-visible"
+      ],
+      "dependencies": [
+        "specs/core/config.spec",
+        "specs/core/commands/validate-command.spec",
+        "specs/core/commands/coverage-command.spec",
+        "specs/core/commands/lock-command.spec"
+      ],
+      "hash": "1df8d264718780d406aa1d6ea378848f3f6f2efefdfe482b6f211a75cf28c504",
+      "nfrs": [
+        "operability#zero-config",
+        "performance#watch-revalidation-latency",
+        "reliability#no-silent-data-loss"
+      ],
+      "test_files": {}
+    },
     "specs/core/config.spec": {
       "behaviors": [
         "load-default-conventions",

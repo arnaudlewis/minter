@@ -427,4 +427,49 @@ describe("MetricsBar", () => {
       expect(onShow).toHaveBeenCalled()
     })
   })
+
+  /// lock-regeneration-feedback
+  describe("lock-regeneration-feedback", () => {
+    it("shows success indicator after lock regeneration", () => {
+      render(
+        <MetricsBar
+          state={mockState()}
+          connected={true}
+          loading={false}
+          lockLoading={false}
+          onRegenerateLock={vi.fn()}
+          lockSuccess={true}
+        />
+      )
+      expect(screen.getByText(/regenerated/i)).toBeInTheDocument()
+    })
+  })
+
+  /// lock-drift-tooltip
+  describe("lock-drift-tooltip", () => {
+    it("shows drift reasons in tooltip when drifted", async () => {
+      const user = userEvent.setup()
+      render(
+        <MetricsBar
+          state={mockState({
+            integrity: { specs: "Drifted", nfrs: "Aligned", tests: "Aligned", lock_status: "Drifted" },
+            drift: {
+              modified_specs: ["specs/auth.spec"],
+              unlocked_specs: ["specs/new-feature.spec"],
+              modified_nfrs: [], unlocked_nfrs: [],
+              modified_tests: [], missing_tests: [],
+            },
+          })}
+          connected={true}
+          loading={false}
+          lockLoading={false}
+          onRegenerateLock={vi.fn()}
+        />
+      )
+      const driftedText = screen.getByText("drifted")
+      await user.hover(driftedText)
+      expect(screen.getByText(/auth\.spec/)).toBeInTheDocument()
+      expect(screen.getByText(/new-feature\.spec/)).toBeInTheDocument()
+    })
+  })
 })

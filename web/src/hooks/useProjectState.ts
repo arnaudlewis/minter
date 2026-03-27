@@ -6,6 +6,7 @@ export function useProjectState() {
   const [state, setState] = useState<ProjectState | null>(null)
   const [loading, setLoading] = useState(true)
   const [lockLoading, setLockLoading] = useState(false)
+  const [lockSuccess, setLockSuccess] = useState(false)
 
   const fetchedRef = useRef(false)
 
@@ -53,12 +54,11 @@ export function useProjectState() {
   const regenerateLock = useCallback(async () => {
     setLockLoading(true)
     try {
-      const res = await fetch("/api/action/lock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      })
+      const res = await fetch("/api/action/lock", { method: "POST" })
       if (res.ok) {
         await fetchState()
+        setLockSuccess(true)
+        setTimeout(() => setLockSuccess(false), 2000)
       }
     } catch {
       // Lock failed silently
@@ -72,6 +72,7 @@ export function useProjectState() {
     loading,
     connected,
     lockLoading,
+    lockSuccess,
     regenerateLock,
   }
 }

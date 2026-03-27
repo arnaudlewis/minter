@@ -1,6 +1,12 @@
 import type { ProjectState } from "@/types"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, Loader2, RefreshCw } from "lucide-react"
+import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 function CoverageBar({
   covered,
@@ -39,14 +45,37 @@ function CoverageBar({
   )
 }
 
+function DriftTooltipContent({ drift }: { drift: ProjectState["drift"] }) {
+  const items: string[] = [
+    ...drift.modified_specs.map(f => `${f} (modified)`),
+    ...drift.unlocked_specs.map(f => `${f} (unlocked)`),
+    ...drift.modified_nfrs.map(f => `${f} (modified)`),
+    ...drift.unlocked_nfrs.map(f => `${f} (unlocked)`),
+    ...drift.modified_tests.map(f => `${f} (modified)`),
+    ...drift.missing_tests.map(f => `${f} (missing)`),
+  ]
+  if (items.length === 0) return <span>Lock file is out of date</span>
+  return (
+    <div className="space-y-0.5 text-xs">
+      {items.map((item, i) => (
+        <div key={i} className="font-mono">{item}</div>
+      ))}
+    </div>
+  )
+}
+
 function LockStatus({
   lockStatus,
   lockLoading,
+  lockSuccess,
   onRegenerateLock,
+  drift,
 }: {
   lockStatus: "Aligned" | "Drifted" | "NoLock"
   lockLoading: boolean
+  lockSuccess: boolean
   onRegenerateLock: () => void
+  drift?: ProjectState["drift"]
 }) {
   const label =
     lockStatus === "Aligned"
@@ -65,26 +94,45 @@ function LockStatus({
   const showRegenerate = lockStatus === "Drifted" || lockStatus === "NoLock"
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Lock:</span>
-      <span className={`text-sm font-medium ${statusColor}`}>{label}</span>
-      {showRegenerate && (
-        <Button
-          variant="ghost"
-          size="xs"
-          disabled={lockLoading}
-          onClick={onRegenerateLock}
-          aria-label="Regenerate"
-        >
-          {lockLoading ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <RefreshCw />
-          )}
-          <span>{lockLoading ? "Regenerating..." : "Regenerate"}</span>
-        </Button>
-      )}
-    </div>
+    <TooltipProvider>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">Lock:</span>
+        {lockStatus === "Drifted" && drift ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={`cursor-help text-sm font-medium ${statusColor}`}>{label}</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <DriftTooltipContent drift={drift} />
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <span className={`text-sm font-medium ${statusColor}`}>{label}</span>
+        )}
+        {lockSuccess && (
+          <span className="flex items-center gap-1 text-xs text-emerald-400">
+            <CheckCircle2 className="size-3" />
+            Regenerated
+          </span>
+        )}
+        {showRegenerate && !lockSuccess && (
+          <Button
+            variant="ghost"
+            size="xs"
+            disabled={lockLoading}
+            onClick={onRegenerateLock}
+            aria-label="Regenerate"
+          >
+            {lockLoading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <RefreshCw />
+            )}
+            <span>{lockLoading ? "Regenerating..." : "Regenerate"}</span>
+          </Button>
+        )}
+      </div>
+    </TooltipProvider>
   )
 }
 
@@ -93,6 +141,7 @@ interface MetricsBarProps {
   connected: boolean
   loading: boolean
   lockLoading: boolean
+  lockSuccess?: boolean
   onRegenerateLock: () => void
   invalidTagCount?: number
   onShowInvalidTags?: () => void
@@ -103,13 +152,14 @@ export function MetricsBar({
   connected,
   loading,
   lockLoading,
+  lockSuccess = false,
   onRegenerateLock,
   invalidTagCount = 0,
   onShowInvalidTags,
 }: MetricsBarProps) {
   if (loading || !state) {
     return (
-      <header className="border-b border-border bg-card px-5 py-2.5">
+      <header className="border-b border-border bg-card px-5 py-3.5">
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold tracking-tight">minter</span>
           <div className="flex-1" />
@@ -125,7 +175,7 @@ export function MetricsBar({
   )
 
   return (
-    <header className="border-b border-border bg-card px-5 py-2.5">
+    <header className="border-b border-border bg-card px-5 py-3.5">
       <div className="flex items-center gap-4 text-sm">
         <span className="font-semibold tracking-tight">minter</span>
 
@@ -177,7 +227,9 @@ export function MetricsBar({
         <LockStatus
           lockStatus={state.integrity.lock_status}
           lockLoading={lockLoading}
+          lockSuccess={lockSuccess}
           onRegenerateLock={onRegenerateLock}
+          drift={state.drift}
         />
       </div>
     </header>

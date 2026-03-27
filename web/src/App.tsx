@@ -7,7 +7,7 @@ import { InvalidTagsPanel } from "@/components/InvalidTagsPanel"
 import type { SpecInfo } from "@/types"
 
 function App() {
-  const { state, loading, connected, lockLoading, regenerateLock } =
+  const { state, loading, connected, lockLoading, lockSuccess, regenerateLock } =
     useProjectState()
 
   const [selectedSpec, setSelectedSpec] = useState<SpecInfo | null>(null)
@@ -24,6 +24,7 @@ function App() {
         connected={connected}
         loading={loading}
         lockLoading={lockLoading}
+        lockSuccess={lockSuccess}
         onRegenerateLock={regenerateLock}
         invalidTagCount={state?.invalid_tags.length ?? 0}
         onShowInvalidTags={() => setShowInvalidTags(true)}

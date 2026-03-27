@@ -86,6 +86,22 @@ behavior lock-regeneration-feedback [happy_path]
     assert a brief success indicator appears for 2 seconds
 
 
+behavior lock-drift-tooltip [happy_path]
+  "Drifted lock status shows a tooltip explaining the drift reasons"
+
+  given
+    Lock status is drifted
+    specs/auth.spec has been modified since lock
+    specs/new-feature.spec is not in the lock
+
+  when user hovers over the drifted lock status
+
+  then
+    assert a tooltip appears listing the drift reasons
+    assert the tooltip shows auth.spec as modified
+    assert the tooltip shows new-feature.spec as unlocked
+
+
 behavior header-shows-invalid-tags-badge [happy_path]
   "Header shows a red error badge when there are invalid @minter tags"
 
