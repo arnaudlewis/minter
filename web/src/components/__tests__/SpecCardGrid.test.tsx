@@ -2,20 +2,20 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, it, expect, vi } from "vitest"
 import { SpecCardGrid } from "../SpecCardGrid"
-import { mockSpec } from "@/test/fixtures"
+import { mockSpec, mockNfr } from "@/test/fixtures"
 
 describe("SpecCardGrid", () => {
   /// spec-card-displays-summary: Each spec card shows name, version, behavior count, and coverage
   describe("spec-card-displays-summary", () => {
     it("shows spec name on the card", () => {
       const spec = mockSpec({ name: "auth-command", version: "1.2.0" })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText("auth-command")).toBeInTheDocument()
     })
 
     it("shows spec version on the card", () => {
       const spec = mockSpec({ name: "auth-command", version: "1.2.0" })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText("v1.2.0")).toBeInTheDocument()
     })
 
@@ -31,7 +31,7 @@ describe("SpecCardGrid", () => {
           nfr_refs: [],
         })),
       })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText(/12 behaviors/)).toBeInTheDocument()
     })
 
@@ -47,7 +47,7 @@ describe("SpecCardGrid", () => {
           nfr_refs: [],
         })),
       })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
       // Coverage appears in both the text summary and the mini-bar
       const matches = screen.getAllByText(/83%/)
       expect(matches.length).toBeGreaterThanOrEqual(1)
@@ -58,19 +58,35 @@ describe("SpecCardGrid", () => {
         name: "auth-command",
         description: "Handles user authentication flows",
       })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText("Handles user authentication flows")).toBeInTheDocument()
     })
 
-    it("shows NFR category badges on the card", () => {
+    it("shows NFR category badges from real NFR data", () => {
       const spec = mockSpec({
         name: "auth-command",
-        nfr_refs: ["performance#api-latency", "performance#throughput", "reliability#no-data-loss"],
+        nfr_refs: ["performance#api-latency", "reliability#no-data-loss"],
       })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
-      // Should show unique categories: performance, reliability
+      const nfrs = [
+        mockNfr({ category: "performance" }),
+        mockNfr({ category: "reliability" }),
+      ]
+      render(<SpecCardGrid specs={[spec]} nfrs={nfrs} onSelectSpec={vi.fn()} />)
       expect(screen.getByText("performance")).toBeInTheDocument()
       expect(screen.getByText("reliability")).toBeInTheDocument()
+    })
+
+    it("clicking NFR badge opens NFR panel", async () => {
+      const user = userEvent.setup()
+      const spec = mockSpec({
+        name: "auth-command",
+        nfr_refs: ["performance#api-latency"],
+      })
+      const perfNfr = mockNfr({ category: "performance" })
+      const onSelectNfr = vi.fn()
+      render(<SpecCardGrid specs={[spec]} nfrs={[perfNfr]} onSelectSpec={vi.fn()} onSelectNfr={onSelectNfr} />)
+      await user.click(screen.getByText("performance"))
+      expect(onSelectNfr).toHaveBeenCalledWith(perfNfr)
     })
 
     it("hides NFR badges when no NFR refs", () => {
@@ -78,7 +94,7 @@ describe("SpecCardGrid", () => {
         name: "auth-command",
         nfr_refs: [],
       })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
       expect(screen.queryByText("performance")).not.toBeInTheDocument()
       expect(screen.queryByText("reliability")).not.toBeInTheDocument()
     })
@@ -100,7 +116,7 @@ describe("SpecCardGrid", () => {
         })),
       })
       const { container } = render(
-        <SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />
       )
       const card = screen.getByText("auth-command").closest("[data-testid='spec-card']")!
       const svgs = card.querySelectorAll("svg")
@@ -127,7 +143,7 @@ describe("SpecCardGrid", () => {
         })),
       })
       const { container } = render(
-        <SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />
       )
       const card = screen.getByText("auth-command").closest("[data-testid='spec-card']")!
       const svgs = card.querySelectorAll("svg")
@@ -148,7 +164,7 @@ describe("SpecCardGrid", () => {
           { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
         ],
       })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText(/2 uncovered behaviors/i)).toBeInTheDocument()
     })
   })
@@ -163,7 +179,7 @@ describe("SpecCardGrid", () => {
         behavior_count: 0,
       })
       const { container } = render(
-        <SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />
       )
       const card = screen.getByText("scaffold-command").closest("[data-testid='spec-card']")!
       const svgs = card.querySelectorAll("svg")
@@ -180,7 +196,7 @@ describe("SpecCardGrid", () => {
         behaviors: [],
         behavior_count: 0,
       })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText(/1 validation error/)).toBeInTheDocument()
     })
 
@@ -191,7 +207,7 @@ describe("SpecCardGrid", () => {
         behaviors: [],
         behavior_count: 0,
       })
-      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText(/0 behaviors/)).toBeInTheDocument()
     })
   })
@@ -207,6 +223,7 @@ describe("SpecCardGrid", () => {
       render(
         <SpecCardGrid
           specs={[spec]}
+          nfrs={[]}
           onSelectSpec={vi.fn()}
         />
       )
@@ -225,7 +242,7 @@ describe("SpecCardGrid", () => {
         mockSpec({ name: "user-profile" }),
       ]
       render(
-        <SpecCardGrid specs={specs} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={specs} nfrs={[]} onSelectSpec={vi.fn()} />
       )
 
       expect(screen.getByText("auth")).toBeInTheDocument()
@@ -249,7 +266,7 @@ describe("SpecCardGrid", () => {
         mockSpec({ name: "billing" }),
       ]
       render(
-        <SpecCardGrid specs={specs} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={specs} nfrs={[]} onSelectSpec={vi.fn()} />
       )
 
       const searchInput = screen.getByPlaceholderText(/search/i)
@@ -272,7 +289,7 @@ describe("SpecCardGrid", () => {
         behavior_count: 0,
       })
       render(
-        <SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />
       )
       expect(screen.getByText("auth")).toBeInTheDocument()
       expect(screen.getByText(/0 behaviors/)).toBeInTheDocument()
@@ -292,7 +309,7 @@ describe("SpecCardGrid", () => {
       const onSelectSpec = vi.fn()
       const spec = mockSpec({ name: "auth" })
       render(
-        <SpecCardGrid specs={[spec]} onSelectSpec={onSelectSpec} />
+        <SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={onSelectSpec} />
       )
       await user.click(screen.getByText("auth"))
       expect(onSelectSpec).toHaveBeenCalledWith(spec)

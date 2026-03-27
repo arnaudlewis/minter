@@ -28,6 +28,23 @@ function ConstraintTypeBadge({ type }: { type: string }) {
   )
 }
 
+const VIOLATION_COLORS: Record<string, string> = {
+  critical: "bg-red-500/20 text-red-400",
+  high: "bg-orange-500/20 text-orange-400",
+  medium: "bg-amber-500/20 text-amber-400",
+  low: "bg-zinc-500/20 text-zinc-400",
+  warning: "bg-amber-500/20 text-amber-400",
+}
+
+function ViolationBadge({ level }: { level: string }) {
+  const colors = VIOLATION_COLORS[level.toLowerCase()] ?? "bg-zinc-500/20 text-zinc-400"
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${colors}`}>
+      {level}
+    </span>
+  )
+}
+
 interface NfrSlidePanelProps {
   nfr: NfrInfo | null
   isOpen: boolean
@@ -163,14 +180,14 @@ export function NfrSlidePanel({ nfr, isOpen, onClose }: NfrSlidePanelProps) {
                               </div>
                             )}
                             {constraint.constraint_type === "rule" && constraint.rule_text && (
-                              <div className="flex items-center gap-2 text-xs">
+                              <div className="text-xs">
                                 <span className="text-muted-foreground">Rule:</span>
-                                <span className="text-foreground">{constraint.rule_text}</span>
+                                <p className="mt-0.5 text-foreground/80 leading-relaxed">{constraint.rule_text}</p>
                               </div>
                             )}
                             <div className="flex items-center gap-2 text-xs">
                               <span className="text-muted-foreground">Violation:</span>
-                              <span className="text-foreground">{constraint.violation}</span>
+                              <ViolationBadge level={constraint.violation} />
                             </div>
                             <div className="flex items-center gap-2 text-xs">
                               <span className="text-muted-foreground">Overridable:</span>

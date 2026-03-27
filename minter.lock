@@ -819,7 +819,7 @@
         "specs/core/commands/coverage-command.spec",
         "specs/core/commands/lock-command.spec"
       ],
-      "hash": "2377b3894fa87230494ccf4521cd2d08ad56ee05e6e4075adbdc411bb8f6a986",
+      "hash": "f74a65fd0202460ada87cd99c05f5b4d0de7bcd0f82a71b826307dfc1aecf32e",
       "nfrs": [
         "operability#zero-config",
         "performance#watch-revalidation-latency",

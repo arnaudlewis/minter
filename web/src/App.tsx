@@ -36,7 +36,9 @@ function App() {
       <main className="mx-auto max-w-6xl px-6 py-4">
         <SpecCardGrid
           specs={state?.specs ?? []}
+          nfrs={state?.nfrs ?? []}
           onSelectSpec={handleSelectSpec}
+          onSelectNfr={setSelectedNfr}
         />
         <div className="mt-6">
           <NfrCardGrid
