@@ -84,7 +84,7 @@ function SpecCard({
       {/* Line 1: status icon + name + version */}
       <div className="flex items-center gap-2">
         <StatusIcon status={status} />
-        <span className="truncate font-mono text-[13px] font-medium text-foreground">
+        <span className="truncate font-mono text-sm font-medium text-foreground">
           {spec.name}
         </span>
         <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
@@ -94,13 +94,13 @@ function SpecCard({
 
       {/* Description */}
       {spec.description && (
-        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+        <p className="mt-1 line-clamp-2 text-[13px] text-muted-foreground">
           {spec.description}
         </p>
       )}
 
       {/* Behavior count + coverage */}
-      <div className="mt-1.5 text-xs text-muted-foreground">
+      <div className="mt-1.5 text-[13px] text-muted-foreground">
         {spec.behavior_count} behaviors
         {!isInvalid && spec.behavior_count > 0 && (
           <> &middot; {Math.round((coveredCount / spec.behavior_count) * 100)}% coverage</>

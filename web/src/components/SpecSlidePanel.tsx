@@ -353,7 +353,7 @@ export function SpecSlidePanel({ spec, isOpen, onClose, onSelectNfrCategory }: S
                             ) : (
                               <AlertTriangle className="size-3.5 shrink-0 text-amber-400" />
                             )}
-                            <span className="min-w-0 flex-1 truncate font-mono text-xs">{behavior.name}</span>
+                            <span className="min-w-0 flex-1 truncate font-mono text-[13px]">{behavior.name}</span>
                             {behavior.covered ? (
                               <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
                                 covered
@@ -366,7 +366,7 @@ export function SpecSlidePanel({ spec, isOpen, onClose, onSelectNfrCategory }: S
                           </div>
                           {/* Description */}
                           {behavior.description && (
-                            <p className="ml-[22px] mt-0.5 text-[11px] leading-tight text-muted-foreground">{behavior.description}</p>
+                            <p className="ml-[22px] mt-0.5 text-[13px] leading-tight text-muted-foreground">{behavior.description}</p>
                           )}
                           {/* Detail section (always visible) */}
                           <div className="ml-[22px] mt-1.5 space-y-1 rounded-md border border-border/50 bg-muted/40 px-3 py-2 shadow-sm">

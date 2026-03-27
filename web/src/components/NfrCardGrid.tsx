@@ -26,7 +26,7 @@ function NfrCard({
     >
       <div className="flex items-center gap-2">
         <NfrStatusIcon nfr={nfr} />
-        <span className="truncate font-mono text-[13px] font-medium text-foreground">
+        <span className="truncate font-mono text-sm font-medium text-foreground">
           {nfr.category}
         </span>
         <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">

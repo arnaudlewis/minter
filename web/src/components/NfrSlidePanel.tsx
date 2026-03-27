@@ -190,7 +190,7 @@ export function NfrSlidePanel({ nfr, isOpen, onClose }: NfrSlidePanelProps) {
                         >
                           {/* Name + type badge */}
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-medium text-foreground">
+                            <span className="font-mono text-[13px] font-medium text-foreground">
                               {constraint.name}
                             </span>
                             <ConstraintTypeBadge type={constraint.constraint_type} />
@@ -198,7 +198,7 @@ export function NfrSlidePanel({ nfr, isOpen, onClose }: NfrSlidePanelProps) {
 
                           {/* Description */}
                           {constraint.description && (
-                            <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
+                            <p className="mt-0.5 text-[13px] leading-tight text-muted-foreground">
                               {constraint.description}
                             </p>
                           )}
