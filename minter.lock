@@ -1285,13 +1285,15 @@
         "next-steps-after-format",
         "next-steps-after-inspect",
         "next-steps-after-nfr-scaffold",
+        "tool-descriptions-guide-workflow",
+        "next-steps-include-tool-references",
         "list-tools-includes-agent-guidance"
       ],
       "dependencies": [
         "specs/mcp/mcp-server.spec",
         "specs/mcp/mcp-response-format.spec"
       ],
-      "hash": "5f733fff63398ea607e6320371e27c54d4e4c3d9b869477ad62eab5675b4ad57",
+      "hash": "a00fe70d6150303f4db6ce549eb875ef595c1ebf86c37193ac541531526557d5",
       "nfrs": [
         "operability#deterministic-output",
         "operability#mcp-protocol-compliance"
@@ -1328,9 +1330,11 @@
             "next-steps-after-nfr-scaffold",
             "next-steps-after-scaffold",
             "next-steps-after-validate-fail",
-            "next-steps-after-validate-pass"
+            "next-steps-after-validate-pass",
+            "next-steps-include-tool-references",
+            "tool-descriptions-guide-workflow"
           ],
-          "hash": "a5e846449fb98857331c0cce32627ee007874438a4749f69c9c00c81185eb1ad"
+          "hash": "157a264f7ee882f9c433d8a2c53d8eb004fd4501ab59630744bb183e9d7f5d97"
         }
       }
     },
@@ -1389,7 +1393,7 @@
             "validate-pass-result-fields",
             "validate-summary-fields"
           ],
-          "hash": "a5e846449fb98857331c0cce32627ee007874438a4749f69c9c00c81185eb1ad"
+          "hash": "157a264f7ee882f9c433d8a2c53d8eb004fd4501ab59630744bb183e9d7f5d97"
         }
       }
     },
@@ -1412,6 +1416,7 @@
         "validate-content-takes-precedence",
         "validate-reject-unknown-content-type",
         "validate-require-path-or-content",
+        "validate-error-includes-fix",
         "inspect-spec-file",
         "inspect-nfr-file",
         "inspect-inline-content",
@@ -1440,7 +1445,13 @@
         "search-finds-specs",
         "search-finds-behaviors",
         "search-finds-nfr-constraints",
-        "search-no-results"
+        "search-no-results",
+        "assess-coverage-balance",
+        "assess-detects-smells",
+        "assess-suggests-missing-behaviors",
+        "assess-nfr-gaps",
+        "assess-clean-spec",
+        "assess-inline-content"
       ],
       "dependencies": [
         "specs/core/commands/validate-command.spec",
@@ -1450,7 +1461,7 @@
         "specs/core/commands/graph-command.spec",
         "specs/mcp/mcp-response-format.spec"
       ],
-      "hash": "bfd85befcf4d07b19112f22456446c10523b92862be821c546f430b01eae70f0",
+      "hash": "9ed2de75e8274107f3386b4cadf6534b7e2590ac5c28792c793eb85844703ede",
       "nfrs": [
         "operability#deterministic-output",
         "operability#input-schema-accuracy",
@@ -1464,6 +1475,12 @@
       "test_files": {
         "tests/mcp_server.rs": {
           "covers": [
+            "assess-clean-spec",
+            "assess-coverage-balance",
+            "assess-detects-smells",
+            "assess-inline-content",
+            "assess-nfr-gaps",
+            "assess-suggests-missing-behaviors",
             "format-nfr-grammar",
             "format-spec-grammar",
             "format-unknown-type",
@@ -1498,6 +1515,7 @@
             "validate-content-takes-precedence",
             "validate-deep-mode",
             "validate-directory",
+            "validate-error-includes-fix",
             "validate-file-fail",
             "validate-file-pass",
             "validate-inline-content",
@@ -1511,7 +1529,7 @@
             "validate-reject-unreadable-file",
             "validate-require-path-or-content"
           ],
-          "hash": "a5e846449fb98857331c0cce32627ee007874438a4749f69c9c00c81185eb1ad"
+          "hash": "157a264f7ee882f9c433d8a2c53d8eb004fd4501ab59630744bb183e9d7f5d97"
         }
       }
     },

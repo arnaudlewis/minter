@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "minter-mcp": {
+      "command": "minter-mcp",
+      "args": []
+    }
+  }
+}

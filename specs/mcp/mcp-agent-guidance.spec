@@ -1,4 +1,4 @@
-spec mcp-agent-guidance v1.4.0
+spec mcp-agent-guidance v1.5.0
 title "MCP Agent Guidance"
 
 description
@@ -371,6 +371,37 @@ behavior next-steps-after-nfr-scaffold [happy_path]
     assert next_steps contains "reference from functional specs using nfr section"
 
 
+# Workflow-aware descriptions
+
+behavior tool-descriptions-guide-workflow [happy_path]
+  "Tool descriptions include workflow phase context and next actions"
+
+  given
+    An agent discovers minter tools via list_tools
+
+  when the agent reads tool descriptions
+
+  then
+    assert validate description mentions calling after writing or editing specs
+    assert validate description warns against implementing before validation passes
+    assert scaffold description mentions filling behaviors for user-observable outcomes
+    assert assess description mentions checking for smells and coverage balance
+
+
+behavior next-steps-include-tool-references [happy_path]
+  "Next steps include tool name and parameters for actionable guidance"
+
+  given
+    An agent calls validate and all specs pass
+
+  when the response includes next_steps
+
+  then
+    assert at least one next_step includes a tool field
+    assert at least one next_step includes a params field
+    assert next_steps guide the agent to the next workflow phase
+
+
 # Tool listing
 
 behavior list-tools-includes-agent-guidance [happy_path]
@@ -388,5 +419,5 @@ behavior list-tools-includes-agent-guidance [happy_path]
     assert guide description contains "spec-driven development practices"
 
 
-depends on mcp-server >= 2.0.0
+depends on mcp-server >= 2.1.0
 depends on mcp-response-format >= 1.0.0

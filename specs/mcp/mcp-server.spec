@@ -1,4 +1,4 @@
-spec mcp-server v2.0.0
+spec mcp-server v2.1.0
 title "MCP Server"
 
 description
@@ -50,7 +50,7 @@ behavior initialize-server [happy_path]
     assert capabilities contains tools
 
 behavior list-tools [happy_path]
-  "Return all ten tool definitions with descriptions and input schemas"
+  "Return all eleven tool definitions with descriptions and input schemas"
 
   given
     The MCP server has been initialized
@@ -58,7 +58,7 @@ behavior list-tools [happy_path]
   when tools/list
 
   then returns tool_list
-    assert tool_count == 10
+    assert tool_count == 11
     assert tools contains tool named "validate"
     assert tools contains tool named "inspect"
     assert tools contains tool named "scaffold"
@@ -67,6 +67,7 @@ behavior list-tools [happy_path]
     assert tools contains tool named "list_specs"
     assert tools contains tool named "list_nfrs"
     assert tools contains tool named "search"
+    assert tools contains tool named "assess"
     assert tools contains tool named "initialize_minter"
     assert tools contains tool named "guide"
     assert each tool has a description
@@ -298,6 +299,18 @@ behavior validate-require-path-or-content [error_case]
     assert isError == true
     assert error message contains "path"
     assert error message contains "content"
+
+behavior validate-error-includes-fix [happy_path]
+  "Validation errors include actionable fix suggestions"
+
+  given
+    A spec with a behavior name containing a space
+
+  when validate
+
+  then returns validation_result
+    assert error includes the line number
+    assert error includes a fix suggestion explaining how to correct the issue
 
 
 # Inspect tool
@@ -707,6 +720,87 @@ behavior search-no-results [edge_case]
 
   then returns search_results
     assert results is empty
+
+
+# Assess tool
+
+behavior assess-coverage-balance [happy_path]
+  "Assess reports coverage balance across behavior categories"
+
+  given
+    A spec with 5 happy_path behaviors and 0 error_case behaviors
+
+  when assess
+
+  then returns assessment
+    assert assessment includes coverage_balance with happy_path, error_case, edge_case counts
+    assert assessment warns about missing error_case behaviors
+
+
+behavior assess-detects-smells [happy_path]
+  "Assess detects requirement smells in behavior names and descriptions"
+
+  given
+    A spec with a behavior named process-queue that mentions an internal component
+
+  when assess
+
+  then returns assessment
+    assert assessment includes smells array
+    assert smells include implementation_leak for the offending behavior
+    assert each smell includes the behavior name, smell type, and fix suggestion
+
+
+behavior assess-suggests-missing-behaviors [happy_path]
+  "Assess suggests missing error_case behaviors for each happy_path"
+
+  given
+    A spec with behavior create-user as happy_path and no error_case behaviors
+
+  when assess
+
+  then returns assessment
+    assert assessment includes missing array
+    assert missing suggests an error_case for create-user
+
+
+behavior assess-nfr-gaps [happy_path]
+  "Assess detects missing NFR references"
+
+  given
+    A spec with 5 behaviors and no nfr section
+
+  when assess
+
+  then returns assessment
+    assert assessment includes nfr_gaps
+    assert nfr_gaps suggests adding NFR references
+
+
+behavior assess-clean-spec [happy_path]
+  "Assess returns clean report for a well-structured spec"
+
+  given
+    A spec with balanced categories, no smells, and NFR references
+
+  when assess
+
+  then returns assessment
+    assert smells is empty
+    assert missing is empty
+    assert nfr_gaps is empty
+
+
+behavior assess-inline-content [happy_path]
+  "Assess works on inline spec content without a file path"
+
+  given
+    Inline spec content passed as the content parameter
+
+  when assess
+
+  then returns assessment
+    assert assessment analyzes the inline content
 
 
 depends on validate-command >= 2.1.0

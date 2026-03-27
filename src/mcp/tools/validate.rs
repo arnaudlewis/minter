@@ -127,6 +127,51 @@ fn single_result_response(result: response::ValidateResult) -> Result<CallToolRe
     Ok(CallToolResult::success(vec![Content::text(json)]))
 }
 
+// ── Fix suggestion helper ─────────────────────────────
+
+fn suggest_fix(error_message: &str) -> Option<String> {
+    if error_message.contains("Expected 'motivation'") {
+        Some(
+            "Add a 'motivation' section after 'description' explaining why this spec exists"
+                .to_string(),
+        )
+    } else if error_message.contains("Expected 'description'") {
+        Some("Add a 'description' section after 'title' explaining what this spec does".to_string())
+    } else if error_message.contains("contains space")
+        || error_message.contains("not kebab-case")
+        || error_message.contains("kebab-case")
+    {
+        Some(
+            "Use kebab-case for names: lowercase letters separated by hyphens (e.g., 'my-behavior')"
+                .to_string(),
+        )
+    } else if error_message.contains("Expected 'behavior'") {
+        Some(
+            "Add at least one behavior with a category tag: behavior my-behavior [happy_path]"
+                .to_string(),
+        )
+    } else if error_message.contains("Expected 'given'") {
+        Some("Add a 'given' section with preconditions for this behavior".to_string())
+    } else if error_message.contains("Expected 'when'") {
+        Some("Add a 'when' section describing the action that triggers this behavior".to_string())
+    } else if error_message.contains("Expected 'then'") {
+        Some("Add a 'then' section with postconditions and assertions".to_string())
+    } else if error_message.contains("tab") || error_message.contains("Tab") {
+        Some("Use 2 spaces for indentation, not tabs".to_string())
+    } else if error_message.contains("trailing content")
+        || error_message.contains("Unexpected content")
+    {
+        Some(
+            "Remove the extra content after the last valid section (depends on or behavior)"
+                .to_string(),
+        )
+    } else if error_message.contains("version") {
+        Some("Use semantic versioning format: v1.0.0".to_string())
+    } else {
+        None
+    }
+}
+
 // ── Error converters ──────────────────────────────────
 
 /// Convert parse errors into `ValidationError` vec.
@@ -140,6 +185,7 @@ fn parse_errors_to_validation(
             file: file.clone(),
             line: e.line,
             message: e.message.clone(),
+            fix: suggest_fix(&e.message),
         })
         .collect()
 }
@@ -151,10 +197,15 @@ fn semantic_errors_to_validation(
 ) -> Vec<response::ValidationError> {
     errors
         .iter()
-        .map(|e| response::ValidationError {
-            file: file.clone(),
-            line: 0,
-            message: e.to_string(),
+        .map(|e| {
+            let msg = e.to_string();
+            let fix = suggest_fix(&msg);
+            response::ValidationError {
+                file: file.clone(),
+                line: 0,
+                message: msg,
+                fix,
+            }
         })
         .collect()
 }
@@ -166,10 +217,15 @@ fn errors_to_validation(
 ) -> Vec<response::ValidationError> {
     errors
         .iter()
-        .map(|e| response::ValidationError {
-            file: file.clone(),
-            line: 0,
-            message: e.to_string(),
+        .map(|e| {
+            let msg = e.to_string();
+            let fix = suggest_fix(&msg);
+            response::ValidationError {
+                file: file.clone(),
+                line: 0,
+                message: msg,
+                fix,
+            }
         })
         .collect()
 }
@@ -257,10 +313,12 @@ pub(super) fn validate_file(
     if !v.dep_errors.is_empty() {
         status = "fail";
         for err in &v.dep_errors {
+            let fix = suggest_fix(err);
             errors.push(response::ValidationError {
                 file: file.clone(),
                 line: 0,
                 message: err.clone(),
+                fix,
             });
         }
     }
@@ -344,13 +402,15 @@ pub(super) fn validate_directory(dir: &Path, path_str: &str) -> Result<CallToolR
             let source = match read_file_checked(file_path) {
                 Ok(s) => s,
                 Err(e) => {
+                    let msg = format!("Cannot read file: {}", e);
                     results.push(make_fail_result(
                         Some(file_str.clone()),
                         "nfr",
                         vec![response::ValidationError {
                             file: Some(file_str),
                             line: 0,
-                            message: format!("Cannot read file: {}", e),
+                            fix: suggest_fix(&msg),
+                            message: msg,
                         }],
                     ));
                     continue;
@@ -362,13 +422,15 @@ pub(super) fn validate_directory(dir: &Path, path_str: &str) -> Result<CallToolR
             let source = match read_file_checked(file_path) {
                 Ok(s) => s,
                 Err(e) => {
+                    let msg = format!("Cannot read file: {}", e);
                     results.push(make_fail_result(
                         Some(file_str.clone()),
                         "spec",
                         vec![response::ValidationError {
                             file: Some(file_str),
                             line: 0,
-                            message: format!("Cannot read file: {}", e),
+                            fix: suggest_fix(&msg),
+                            message: msg,
                         }],
                     ));
                     continue;
@@ -420,10 +482,12 @@ fn spec_validation_to_result(
     if !v.dep_errors.is_empty() {
         status = "fail";
         for err in &v.dep_errors {
+            let fix = suggest_fix(err);
             errors.push(response::ValidationError {
                 file: file.clone(),
                 line: 0,
                 message: err.clone(),
+                fix,
             });
         }
     }
