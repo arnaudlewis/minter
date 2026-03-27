@@ -12,6 +12,10 @@ pub fn run_guide_topic(topic: &str) -> Result<String, String> {
         "context" => Ok(content::guide_context().to_string()),
         "methodology" => Ok(content::methodology().to_string()),
         "coverage" => Ok(content::guide_coverage().to_string()),
+        "config" => Ok(content::guide_config().to_string()),
+        "lock" => Ok(content::guide_lock().to_string()),
+        "ci" => Ok(content::guide_ci().to_string()),
+        "web" => Ok(content::guide_web().to_string()),
         other => Err(format!(
             "Unknown topic '{}'. Valid topics: {}",
             other,
@@ -31,6 +35,10 @@ pub fn list_topics() -> i32 {
     println!("  context       Context management protocol for lazy loading specs");
     println!("  methodology   Full spec-driven development reference");
     println!("  coverage      Coverage tagging guide for linking tests to spec behaviors");
+    println!("  config        Project configuration and directory conventions");
+    println!("  lock          Lock file: integrity snapshots, drift detection, regeneration");
+    println!("  ci            CI verification: six integrity checks and exit codes");
+    println!("  web           Web dashboard: live spec/NFR monitoring and coverage view");
     println!();
     println!("Usage: minter guide <topic>");
     0

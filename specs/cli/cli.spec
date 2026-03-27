@@ -366,13 +366,13 @@ behavior route-ci [happy_path]
 
 # Web routing
 
-behavior route-web [happy_path]
-  "Route minter web to the web dashboard command"
+behavior route-ui [happy_path]
+  "Route minter ui to the web dashboard command"
 
   given
     A valid minter project
 
-  when minter web
+  when minter ui
 
   then
     assert the web server starts

@@ -146,7 +146,7 @@ pub async fn run_server(working_dir: PathBuf, port: u16, no_open: bool) -> i32 {
 
     let bound_port = addr.port();
     let url = format!("http://127.0.0.1:{}", bound_port);
-    eprintln!("Minter dashboard: {}", url);
+    eprintln!("minter ui: {}", url);
 
     // 5. Open browser unless --no-open
     if !no_open {
