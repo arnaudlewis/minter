@@ -1,7 +1,7 @@
 <svg width="120" height="120" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
   <style>
     .block {
-      fill: currentColor;
+      fill: white;
       transform-box: fill-box;
       transform-origin: center;
       animation-duration: 1.35s;
