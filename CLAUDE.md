@@ -17,3 +17,7 @@ cargo test
 ```
 
 Do not commit if any of these fail. Fix the issue first.
+
+## Pull Request Merging
+
+Always merge PRs with **squash and merge** into a single commit. The commit message must be a clear, concise summary of the entire PR using conventional commit format. Never use "Create a merge commit" or "Rebase and merge".
