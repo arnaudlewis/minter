@@ -328,65 +328,35 @@ describe("SpecSlidePanel", () => {
     })
   })
 
-  /// panel-behavior-detail: Clicking a behavior shows its details
+  /// panel-behavior-detail: Behavior details always visible
   describe("panel-behavior-detail", () => {
-    it("expands detail section when behavior is clicked", async () => {
-      const user = userEvent.setup()
+    it("shows test types, category, and covered badge without clicking", () => {
       const spec = mockSpec({
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit", "e2e"], category: "happy_path", nfr_refs: ["performance#api-latency"] },
+          { name: "login", description: "Auth", covered: true, test_types: ["unit", "e2e"], category: "happy_path", nfr_refs: ["performance#api-latency"] },
         ],
       })
       render(
         <SpecSlidePanel spec={spec} isOpen={true} onClose={vi.fn()} />
       )
-
-      const behaviorRow = screen.getByText("login").closest("[data-testid='behavior-row']")!
-      await user.click(behaviorRow)
-
-      // Detail section should show category, test types, and NFR refs
-      const detail = screen.getByTestId("behavior-detail")
-      expect(detail.textContent).toContain("happy_path")
-      expect(detail.textContent).toContain("unit")
-      expect(detail.textContent).toContain("e2e")
-      expect(detail.textContent).toContain("performance#api-latency")
+      expect(screen.getByText("covered")).toBeInTheDocument()
+      expect(screen.getByText("unit")).toBeInTheDocument()
+      expect(screen.getByText("e2e")).toBeInTheDocument()
+      expect(screen.getByText("happy_path")).toBeInTheDocument()
+      expect(screen.getAllByText("performance#api-latency").length).toBeGreaterThanOrEqual(1)
     })
 
-    it("shows covered status in detail", async () => {
-      const user = userEvent.setup()
+    it("shows uncovered badge for uncovered behaviors", () => {
       const spec = mockSpec({
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [] },
+          { name: "refresh", description: "Refresh", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
         ],
       })
       render(
         <SpecSlidePanel spec={spec} isOpen={true} onClose={vi.fn()} />
       )
-
-      const behaviorRow = screen.getByText("login").closest("[data-testid='behavior-row']")!
-      await user.click(behaviorRow)
-
-      const detail = screen.getByTestId("behavior-detail")
-      expect(detail.textContent).toContain("covered")
-    })
-
-    it("collapses detail when clicked again", async () => {
-      const user = userEvent.setup()
-      const spec = mockSpec({
-        behaviors: [
-          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [] },
-        ],
-      })
-      render(
-        <SpecSlidePanel spec={spec} isOpen={true} onClose={vi.fn()} />
-      )
-
-      const behaviorRow = screen.getByText("login").closest("[data-testid='behavior-row']")!
-      await user.click(behaviorRow)
-      expect(screen.getByTestId("behavior-detail")).toBeInTheDocument()
-
-      await user.click(behaviorRow)
-      expect(screen.queryByTestId("behavior-detail")).not.toBeInTheDocument()
+      expect(screen.getByText("uncovered")).toBeInTheDocument()
+      expect(screen.getByText("error_case")).toBeInTheDocument()
     })
   })
 

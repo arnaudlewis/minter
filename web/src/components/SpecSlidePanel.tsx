@@ -38,7 +38,7 @@ function TestTypeBadge({ type }: { type: string }) {
 
 function CategoryBadge({ category }: { category: string }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-zinc-500/20 px-2 py-0.5 text-xs font-medium text-zinc-400">
+    <span className="inline-flex items-center rounded-full bg-zinc-500/20 px-2 py-0.5 text-[10px] font-medium text-zinc-400">
       {category}
     </span>
   )
@@ -70,7 +70,7 @@ function BehaviorDetail({ behavior }: { behavior: BehaviorInfo }) {
       </div>
       <div className="flex items-center gap-2 text-xs">
         <span className="text-muted-foreground">Status:</span>
-        <span className={behavior.covered ? "text-emerald-400" : "text-zinc-500"}>
+        <span className={behavior.covered ? "text-emerald-400" : "text-amber-400"}>
           {behavior.covered ? "covered" : "uncovered"}
         </span>
       </div>
@@ -336,42 +336,58 @@ export function SpecSlidePanel({ spec, isOpen, onClose }: SpecSlidePanelProps) {
                     </h3>
                     <div className="space-y-1">
                       {filteredBehaviors.map((behavior) => (
-                        <div key={behavior.name}>
-                          <div
-                            data-testid="behavior-row"
-                            className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted/50"
-                            onClick={() => toggleBehavior(behavior.name)}
-                          >
+                        <div
+                          key={behavior.name}
+                          data-testid="behavior-row"
+                          className="rounded-md px-3 py-2"
+                        >
+                          {/* Title: icon + name + covered/uncovered badge */}
+                          <div className="flex items-center gap-2">
                             {behavior.covered ? (
                               <CheckCircle2 className="size-3.5 shrink-0 text-emerald-400" />
                             ) : (
-                              <XCircle className="size-3.5 shrink-0 text-zinc-500" />
+                              <AlertTriangle className="size-3.5 shrink-0 text-amber-400" />
                             )}
-                            <div className="min-w-0 flex-1">
-                              <span className="font-mono text-xs">{behavior.name}</span>
-                              {behavior.description && (
-                                <p className="mt-0.5 text-xs text-muted-foreground">{behavior.description}</p>
-                              )}
-                            </div>
-                            <CategoryBadge category={behavior.category} />
-                            <div className="flex shrink-0 items-center gap-1">
-                              {behavior.covered ? (
-                                behavior.test_types.map((type) => (
-                                  <TestTypeBadge key={type} type={type} />
-                                ))
-                              ) : (
-                                <span className="text-xs text-zinc-500">uncovered</span>
-                              )}
-                            </div>
-                            {behavior.nfr_refs.length > 0 && (
-                              <span className="ml-1 text-xs text-muted-foreground">
-                                {behavior.nfr_refs.join(", ")}
+                            <span className="min-w-0 flex-1 truncate font-mono text-xs">{behavior.name}</span>
+                            {behavior.covered ? (
+                              <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                                covered
+                              </span>
+                            ) : (
+                              <span className="inline-flex shrink-0 items-center rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+                                uncovered
                               </span>
                             )}
                           </div>
-                          {expandedBehavior === behavior.name && (
-                            <BehaviorDetail behavior={behavior} />
+                          {/* Description */}
+                          {behavior.description && (
+                            <p className="ml-[22px] mt-0.5 text-[11px] leading-tight text-muted-foreground">{behavior.description}</p>
                           )}
+                          {/* Detail section (always visible) */}
+                          <div className="ml-[22px] mt-1.5 space-y-1 rounded-md border border-border/50 bg-muted/40 px-3 py-2 shadow-sm">
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-muted-foreground">Category:</span>
+                              <CategoryBadge category={behavior.category} />
+                            </div>
+                            {behavior.covered && behavior.test_types.length > 0 && (
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-muted-foreground">Tests:</span>
+                                <div className="flex items-center gap-1">
+                                  {behavior.test_types.map((type) => (
+                                    <TestTypeBadge key={type} type={type} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {behavior.nfr_refs.length > 0 && (
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-muted-foreground">NFRs:</span>
+                                <span className="text-muted-foreground">
+                                  {behavior.nfr_refs.join(", ")}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
