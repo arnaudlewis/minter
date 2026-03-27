@@ -82,7 +82,6 @@ enum Commands {
     /// Verify project integrity against the lock file
     Ci,
     /// Launch the interactive dashboard
-    #[cfg(feature = "web")]
     Ui {
         /// Port to serve on
         #[arg(long, default_value = "4321")]
@@ -202,7 +201,6 @@ fn main() {
             let config = load_config_or_exit();
             process::exit(minter::core::commands::ci::run_ci(&config));
         }
-        #[cfg(feature = "web")]
         Some(Commands::Ui { port, no_open }) => {
             let cwd = std::env::current_dir().unwrap_or_else(|e| {
                 eprintln!("error: cannot determine working directory: {}", e);
