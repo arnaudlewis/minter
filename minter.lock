@@ -21,7 +21,7 @@
       "hash": "9e6735b56eac8afc7b9c31de91861f5f9c9731454206bc5fa09727ad4114d2ba"
     },
     "specs/nfr/performance.nfr": {
-      "hash": "bfd57f2acc1f7afbf38b95ab8bb6fff6814e7488e2917d8fd24edb623791e15d"
+      "hash": "8180013cfd1113c910fede8a1510407ff1d68603719fbf2148150f3342c2fc0c"
     },
     "specs/nfr/reliability.nfr": {
       "hash": "b128294ae87860e998cbdac86c7398aaf385d3900aa881c94a555f273cc17190"
@@ -667,7 +667,7 @@
         "specs/grammar/nfr-grammar.spec",
         "specs/nfr/nfr-cross-reference.spec"
       ],
-      "hash": "51f69799c1f28cee49c2f8940a4e06dc38f76a235b04e866f81d9a63e24e751c",
+      "hash": "b872dc4a113778ebac0a4963a86684ac277318e72205d282575db4166303c896",
       "nfrs": [
         "operability#ci-friendly-output",
         "performance#cache-skip-unchanged",
@@ -712,7 +712,7 @@
             "validate-valid-nfr",
             "validate-valid-spec"
           ],
-          "hash": "d5fa407f272af5e5712195a5233cd898ce5bdf1f195d1f90829b8b952d01b3d1"
+          "hash": "fe2f3859d3931714d46912407f4c11547892c5f614b5d4ec0aa1c58df0337cf8"
         }
       }
     },
@@ -821,7 +821,35 @@
         "performance#watch-revalidation-latency",
         "reliability#no-silent-data-loss"
       ],
-      "test_files": {}
+      "test_files": {
+        "web/tests/web-command.coverage.ts": {
+          "covers": [
+            "broken-spec-stays-visible",
+            "filter-specs-by-search",
+            "header-displays-metrics",
+            "header-shows-invalid-tags-badge",
+            "launch-starts-server",
+            "live-update-on-file-change",
+            "lock-drift-tooltip",
+            "lock-regeneration-feedback",
+            "panel-behavior-detail",
+            "panel-opens-on-card-click",
+            "panel-search-behaviors",
+            "panel-shows-behaviors",
+            "panel-shows-dependencies",
+            "panel-shows-errors",
+            "panel-shows-nfr-refs",
+            "reconnect-on-disconnect",
+            "server-port-fallback",
+            "spec-card-displays-summary",
+            "spec-card-shows-dep-errors",
+            "spec-card-status-error",
+            "spec-card-status-green",
+            "spec-card-status-warning"
+          ],
+          "hash": "db4cc1a80d5a94644a739c2f890ac822a7c2549c655e99d88a91f2cbe166af5e"
+        }
+      }
     },
     "specs/core/config.spec": {
       "behaviors": [
@@ -1199,7 +1227,7 @@
           "covers": [
             "reject-trailing-content"
           ],
-          "hash": "d5fa407f272af5e5712195a5233cd898ce5bdf1f195d1f90829b8b952d01b3d1"
+          "hash": "fe2f3859d3931714d46912407f4c11547892c5f614b5d4ec0aa1c58df0337cf8"
         }
       }
     },
