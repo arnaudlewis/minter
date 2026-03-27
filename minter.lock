@@ -121,6 +121,9 @@
         "route-coverage-file",
         "route-coverage-with-scan",
         "route-coverage-with-format",
+        "route-lock",
+        "route-ci",
+        "route-web",
         "reject-unknown-command",
         "reject-unknown-flag",
         "reject-missing-required-argument",
@@ -142,9 +145,12 @@
         "specs/core/commands/graph-command.spec",
         "specs/core/commands/guide-command.spec",
         "specs/core/commands/coverage-command.spec",
-        "specs/grammar/nfr-grammar.spec"
+        "specs/grammar/nfr-grammar.spec",
+        "specs/core/commands/lock-command.spec",
+        "specs/core/commands/ci-command.spec",
+        "specs/core/commands/web-command.spec"
       ],
-      "hash": "5b3777653d79c18bb60ce4cb70182aec24ecdc2ce5b70060635aca1b031e27a1",
+      "hash": "9803e20eacd7571173e011cfe68a9baa393d11d3dd3858b50f6af4e83aeac5fa",
       "nfrs": [
         "operability#ci-friendly-output",
         "operability#zero-config"
@@ -611,8 +617,10 @@
       "dependencies": [
         "specs/grammar/nfr-grammar.spec"
       ],
-      "hash": "6453a0c64919812d0a56d9fa528d6f5d8e9b542182eef8c15316805e3cffe7ff",
-      "nfrs": [],
+      "hash": "3e731886eb418fe8a57d6c4938949b48ee5b9db560512222fcca6ead63776ebc",
+      "nfrs": [
+        "operability#ci-friendly-output"
+      ],
       "test_files": {
         "tests/scaffold_command.rs": {
           "covers": [
@@ -819,7 +827,7 @@
         "specs/core/commands/coverage-command.spec",
         "specs/core/commands/lock-command.spec"
       ],
-      "hash": "f74a65fd0202460ada87cd99c05f5b4d0de7bcd0f82a71b826307dfc1aecf32e",
+      "hash": "27528c721134cb5a1bedce7f87f82434387509610af29aafe5976d4c3c810b03",
       "nfrs": [
         "operability#zero-config",
         "performance#watch-revalidation-latency",
@@ -1050,8 +1058,10 @@
         "reject-trailing-content"
       ],
       "dependencies": [],
-      "hash": "5fe6c9e1d8b2ae594e549bb9406c3caef8d2f9839ce3b75b591b0d56bcd6233f",
-      "nfrs": [],
+      "hash": "37fbefae4e91c84a8d603b894602b8f2914e0620c9720e6958fbbd04de1b6378",
+      "nfrs": [
+        "reliability#error-completeness"
+      ],
       "test_files": {
         "tests/nfr_format.rs": {
           "covers": [
@@ -1167,8 +1177,10 @@
         "reject-trailing-content"
       ],
       "dependencies": [],
-      "hash": "b1a0cf58cc7959850dd75a6b313b7c10d70da3c8264c38750b7c94f9529b278b",
-      "nfrs": [],
+      "hash": "6469ed461392eb04ff357f77d69ccb07062d69d61651b16698ff0edaa65afebd",
+      "nfrs": [
+        "reliability#error-completeness"
+      ],
       "test_files": {
         "tests/dsl_format.rs": {
           "covers": [
@@ -1501,8 +1513,10 @@
         "specs/grammar/spec-grammar.spec",
         "specs/grammar/nfr-grammar.spec"
       ],
-      "hash": "ef302056c40d2757fd6c249e9ae576a2711ea0cac1f40959e08063c7af51016a",
-      "nfrs": [],
+      "hash": "7cdbb35b607b9ae45102ebcfb4407ea5d5630e970f474ab1dcd09b8da7816bc3",
+      "nfrs": [
+        "reliability#error-completeness"
+      ],
       "test_files": {
         "tests/nfr_cross_ref.rs": {
           "covers": [

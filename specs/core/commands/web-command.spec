@@ -1,4 +1,4 @@
-spec web-command v4.0.0
+spec web-command v1.0.0
 title "Web Dashboard Command"
 
 description
