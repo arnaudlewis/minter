@@ -7,6 +7,7 @@ use crate::core::commands::coverage::{
     build_behavior_index, build_nfr_index, scan_for_tags, validate_tags,
 };
 use crate::core::graph::cache::content_hash;
+use crate::core::lock_types::LockFile;
 use crate::core::{config, deps, discover, io, parser, validation};
 use crate::model::{BehaviorCategory, ConstraintBody, NfrSpec};
 
@@ -152,52 +153,6 @@ pub enum ActionResult {
     Guide {
         topics: Vec<String>,
     },
-}
-
-// ── Lock file types (private) ───────────────────────────
-
-#[derive(Debug, Deserialize)]
-struct LockFile {
-    #[allow(dead_code)]
-    version: u64,
-    specs: BTreeMap<String, LockSpec>,
-    #[serde(default)]
-    nfrs: BTreeMap<String, LockNfr>,
-    #[serde(default)]
-    benchmark_files: BTreeMap<String, LockBenchmarkFile>,
-}
-
-#[derive(Debug, Deserialize)]
-struct LockBenchmarkFile {
-    hash: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct LockSpec {
-    hash: String,
-    #[allow(dead_code)]
-    behaviors: Vec<String>,
-    #[serde(default)]
-    #[allow(dead_code)]
-    dependencies: Vec<String>,
-    #[serde(default)]
-    #[allow(dead_code)]
-    nfrs: Vec<String>,
-    #[serde(default)]
-    test_files: BTreeMap<String, LockTestFile>,
-}
-
-#[derive(Debug, Deserialize)]
-struct LockNfr {
-    hash: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct LockTestFile {
-    hash: String,
-    #[serde(default)]
-    #[allow(dead_code)]
-    covers: Vec<String>,
 }
 
 // ── UiState ─────────────────────────────────────────────
@@ -844,73 +799,16 @@ impl UiState {
         self.drift = drift;
     }
 
-    // ── Public accessors ────────────────────────────────
+    // ── Accessors (test-only) ─────────────────────────────
 
-    pub fn spec_count(&self) -> usize {
-        self.specs.len()
-    }
-
-    pub fn behavior_count(&self) -> usize {
-        self.coverage_total
-    }
-
-    pub fn nfr_count(&self) -> usize {
+    #[cfg(test)]
+    pub(crate) fn nfr_count(&self) -> usize {
         self.nfr_count
     }
 
-    pub fn test_count(&self) -> usize {
-        self.test_count
-    }
-
-    pub fn coverage_percent(&self) -> usize {
-        if self.coverage_total == 0 {
-            return 0;
-        }
-        (self.coverage_covered as f64 / self.coverage_total as f64 * 100.0) as usize
-    }
-
-    pub fn lock_aligned(&self) -> bool {
-        self.integrity.lock_status == IntegrityStatus::Aligned
-    }
-
-    pub fn specs_list(&self) -> &[SpecInfo] {
-        &self.specs
-    }
-
-    pub fn nfrs_list(&self) -> &[NfrInfo] {
+    #[cfg(test)]
+    pub(crate) fn nfrs_list(&self) -> &[NfrInfo] {
         &self.nfrs
-    }
-
-    pub fn integrity(&self) -> &IntegrityInfo {
-        &self.integrity
-    }
-
-    pub fn drift_details(&self) -> &DriftDetails {
-        &self.drift
-    }
-
-    pub fn has_error(&self) -> bool {
-        !self.errors.is_empty()
-    }
-
-    pub fn error_message(&self) -> Option<&str> {
-        self.errors.first().map(|s| s.as_str())
-    }
-
-    pub fn errors(&self) -> &[String] {
-        &self.errors
-    }
-
-    pub fn invalid_tags(&self) -> &[InvalidTagInfo] {
-        &self.invalid_tags
-    }
-
-    pub fn dep_errors(&self) -> &[String] {
-        &self.dep_errors
-    }
-
-    pub fn working_dir(&self) -> &Path {
-        &self.working_dir
     }
 
     // ── Refresh ─────────────────────────────────────────
@@ -963,19 +861,6 @@ impl UiState {
     }
 
     // ── Actions ─────────────────────────────────────────
-
-    /// Get the spec path for a given index (for targeted actions).
-    pub fn spec_path(&self, index: usize) -> Option<&Path> {
-        self.specs.get(index).map(|s| s.path.as_path())
-    }
-
-    /// Find a spec by its file path.
-    pub fn spec_path_by_file(&self, file_path: &Path) -> Option<&Path> {
-        self.specs
-            .iter()
-            .find(|s| s.path == file_path)
-            .map(|s| s.path.as_path())
-    }
 
     pub fn run_action(&self, action: Action, spec_path: Option<&Path>) -> ActionResult {
         match action {

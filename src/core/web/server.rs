@@ -95,10 +95,13 @@ pub async fn run_server(working_dir: PathBuf, port: u16, no_open: bool) -> i32 {
                     let tx_clone = watcher_tx.clone();
                     rt.spawn(async move {
                         let json = {
-                            let mut state = state_clone.ui_state.lock().unwrap();
+                            let mut state = state_clone
+                                .ui_state
+                                .lock()
+                                .unwrap_or_else(|e| e.into_inner());
                             state.refresh();
                             state.validate_all();
-                            serde_json::to_string(&*state).unwrap_or_default()
+                            serde_json::to_string(&*state).unwrap_or_else(|_| "{}".to_string())
                         };
                         let _ = tx_clone.send(json);
                     });
@@ -112,6 +115,8 @@ pub async fn run_server(working_dir: PathBuf, port: u16, no_open: bool) -> i32 {
     });
 
     // 3. Build router
+    // SECURITY: localhost-only server, CORS is permissive by design.
+    // The server binds to 127.0.0.1 and is not exposed on the network.
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
@@ -235,7 +240,7 @@ async fn serve_root_file(Path(file): Path<String>) -> impl IntoResponse {
 
 /// GET /api/state — return the full UiState as JSON.
 async fn get_state(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let ui_state = state.ui_state.lock().unwrap();
+    let ui_state = state.ui_state.lock().unwrap_or_else(|e| e.into_inner());
     let json = serde_json::to_string(&*ui_state).unwrap_or_else(|_| "{}".to_string());
     Response::builder()
         .header(header::CONTENT_TYPE, "application/json")
@@ -269,7 +274,7 @@ async fn run_action(
     let spec_path = body.and_then(|b| b.spec_path.clone());
 
     let (result_json, is_lock) = {
-        let ui_state = state.ui_state.lock().unwrap();
+        let ui_state = state.ui_state.lock().unwrap_or_else(|e| e.into_inner());
         let result = ui_state.run_action(action, spec_path.as_deref());
         let json = serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string());
         (json, matches!(name.as_str(), "lock"))
@@ -278,10 +283,10 @@ async fn run_action(
     // For Lock action: refresh state and broadcast to WS clients
     if is_lock {
         let broadcast_json = {
-            let mut ui_state = state.ui_state.lock().unwrap();
+            let mut ui_state = state.ui_state.lock().unwrap_or_else(|e| e.into_inner());
             ui_state.refresh();
             ui_state.validate_all();
-            serde_json::to_string(&*ui_state).unwrap_or_default()
+            serde_json::to_string(&*ui_state).unwrap_or_else(|_| "{}".to_string())
         };
         let _ = state.tx.send(broadcast_json);
     }
@@ -302,8 +307,8 @@ async fn ws_handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) ->
 async fn handle_ws(mut socket: WebSocket, state: Arc<AppState>) {
     // Send initial state on connect
     let initial_json = {
-        let ui_state = state.ui_state.lock().unwrap();
-        serde_json::to_string(&*ui_state).unwrap_or_default()
+        let ui_state = state.ui_state.lock().unwrap_or_else(|e| e.into_inner());
+        serde_json::to_string(&*ui_state).unwrap_or_else(|_| "{}".to_string())
     };
     if socket
         .send(Message::Text(initial_json.into()))

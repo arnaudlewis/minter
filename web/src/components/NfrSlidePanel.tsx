@@ -1,12 +1,12 @@
 import { useEffect, useCallback } from "react"
 import type { NfrInfo } from "@/types"
 import {
-  CheckCircle2,
   XCircle,
   X,
   FileText,
   Info,
 } from "lucide-react"
+import { NfrStatusIcon } from "@/components/ui/NfrStatusIcon"
 import {
   Dialog,
   DialogTrigger,
@@ -15,15 +15,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-
-function NfrStatusIcon({ nfr }: { nfr: NfrInfo }) {
-  const isInvalid =
-    typeof nfr.validation_status === "object" && "Invalid" in nfr.validation_status
-  if (isInvalid) {
-    return <XCircle className="size-5 text-red-400" />
-  }
-  return <CheckCircle2 className="size-5 text-emerald-400" />
-}
 
 function ConstraintTypeBadge({ type }: { type: string }) {
   const colors =
@@ -141,7 +132,7 @@ export function NfrSlidePanel({ nfr, isOpen, onClose }: NfrSlidePanelProps) {
                 <X className="size-4" />
               </button>
               <div className="flex items-center gap-2">
-                <NfrStatusIcon nfr={nfr} />
+                <NfrStatusIcon nfr={nfr} size="size-5" />
                 <span className="font-mono text-sm font-medium text-foreground">
                   {nfr.category}
                 </span>
