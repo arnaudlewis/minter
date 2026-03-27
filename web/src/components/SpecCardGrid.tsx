@@ -86,15 +86,35 @@ function SpecCard({
         </span>
       </div>
 
-      {/* Line 2: behavior count + coverage */}
-      <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-        <span>
-          {spec.behavior_count} behaviors
-          {!isInvalid && spec.behavior_count > 0 && (
-            <> &middot; {Math.round((coveredCount / spec.behavior_count) * 100)}% coverage</>
-          )}
-        </span>
+      {/* Description */}
+      {spec.description && (
+        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+          {spec.description}
+        </p>
+      )}
+
+      {/* Behavior count + coverage */}
+      <div className="mt-1.5 text-xs text-muted-foreground">
+        {spec.behavior_count} behaviors
+        {!isInvalid && spec.behavior_count > 0 && (
+          <> &middot; {Math.round((coveredCount / spec.behavior_count) * 100)}% coverage</>
+        )}
       </div>
+
+      {/* NFR category badges */}
+      {(() => {
+        const categories = [...new Set(spec.nfr_refs.map(r => r.split("#")[0]))]
+        if (categories.length === 0) return null
+        return (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {categories.map(cat => (
+              <span key={cat} className="rounded-full bg-zinc-500/20 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                {cat}
+              </span>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Coverage mini-bar (only if valid with behaviors) */}
       {!isInvalid && spec.behavior_count > 0 && (

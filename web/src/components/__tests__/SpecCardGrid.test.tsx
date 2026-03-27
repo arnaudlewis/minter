@@ -52,6 +52,36 @@ describe("SpecCardGrid", () => {
       const matches = screen.getAllByText(/83%/)
       expect(matches.length).toBeGreaterThanOrEqual(1)
     })
+
+    it("shows spec description on the card", () => {
+      const spec = mockSpec({
+        name: "auth-command",
+        description: "Handles user authentication flows",
+      })
+      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      expect(screen.getByText("Handles user authentication flows")).toBeInTheDocument()
+    })
+
+    it("shows NFR category badges on the card", () => {
+      const spec = mockSpec({
+        name: "auth-command",
+        nfr_refs: ["performance#api-latency", "performance#throughput", "reliability#no-data-loss"],
+      })
+      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      // Should show unique categories: performance, reliability
+      expect(screen.getByText("performance")).toBeInTheDocument()
+      expect(screen.getByText("reliability")).toBeInTheDocument()
+    })
+
+    it("hides NFR badges when no NFR refs", () => {
+      const spec = mockSpec({
+        name: "auth-command",
+        nfr_refs: [],
+      })
+      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      expect(screen.queryByText("performance")).not.toBeInTheDocument()
+      expect(screen.queryByText("reliability")).not.toBeInTheDocument()
+    })
   })
 
   /// spec-card-valid-fully-covered: A valid spec with 100% coverage shows green status
@@ -113,8 +143,8 @@ describe("SpecCardGrid", () => {
         validation_status: "Valid",
         behavior_count: 3,
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [] },
-          { name: "logout", covered: false, test_types: [], category: "happy_path", nfr_refs: [] },
+          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [], description: "" },
+          { name: "logout", covered: false, test_types: [], category: "happy_path", nfr_refs: [], description: "" },
           { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
         ],
       })

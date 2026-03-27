@@ -104,16 +104,20 @@ behavior header-shows-invalid-tags-badge [happy_path]
 # Spec cards
 
 behavior spec-card-displays-summary [happy_path]
-  "Each card shows spec name, version, behavior count, and coverage bar"
+  "Each card shows spec name, version, description, behavior count, NFR categories, and coverage bar"
 
   given
     auth-command v1.2.0 has 12 behaviors, 10 covered, 2 uncovered
+    auth-command has description "Handles user authentication flows"
+    auth-command references NFR categories performance and reliability
 
   when the dashboard renders
 
   then
     assert auth-command card shows spec name and version
+    assert auth-command card shows the description text
     assert auth-command card shows behavior count
+    assert auth-command card shows NFR category names as badges
     assert auth-command card shows coverage mini-bar
 
 

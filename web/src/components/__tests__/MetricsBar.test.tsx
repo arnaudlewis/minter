@@ -20,6 +20,7 @@ describe("MetricsBar", () => {
             test_types: j < 24 ? ["unit"] : [],
             category: "happy_path",
             nfr_refs: [],
+            description: "",
           })),
           validation_status: "Valid" as const,
         })),

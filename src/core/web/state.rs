@@ -48,6 +48,8 @@ pub enum ValidationStatus {
 pub struct SpecInfo {
     pub name: String,
     pub version: String,
+    pub title: String,
+    pub description: String,
     pub path: PathBuf,
     pub behavior_count: usize,
     pub behaviors: Vec<BehaviorInfo>,
@@ -425,6 +427,8 @@ impl UiState {
                 spec_infos.push(SpecInfo {
                     name: name.clone(),
                     version: spec.version.clone(),
+                    title: spec.title.clone(),
+                    description: spec.description.clone(),
                     path: path.clone(),
                     behavior_count: spec.behaviors.len(),
                     behaviors,
@@ -437,6 +441,8 @@ impl UiState {
                 spec_infos.push(SpecInfo {
                     name: name.clone(),
                     version: String::new(),
+                    title: String::new(),
+                    description: String::new(),
                     path: path.clone(),
                     behavior_count: 0,
                     behaviors: Vec::new(),
