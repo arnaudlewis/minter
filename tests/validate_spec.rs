@@ -963,6 +963,8 @@ fn validate_mixed_spec_and_nfr_directory() {
     );
 }
 
+/// validate-command: reject-oversized-file
+// @minter:e2e validate-command/reject-oversized-file
 #[test]
 fn validate_file_exceeds_max_size() {
     let dir = tempfile::TempDir::new().expect("create temp dir");
@@ -1134,6 +1136,8 @@ more garbage here
         ));
 }
 
+/// dependency-resolution: reject-excessive-depth
+// @minter:e2e dependency-resolution/reject-excessive-depth
 #[test]
 fn reject_excessive_depth() {
     let dir = tempfile::TempDir::new().expect("create temp dir");

@@ -2,47 +2,9 @@ mod common;
 
 use std::fs;
 
-use common::minter;
+use common::{minter, spec_two_behaviors};
 use predicates::prelude::*;
 use tempfile::TempDir;
-
-// ── Spec fixtures ───────────────────────────────────────
-
-fn spec_two_behaviors() -> &'static str {
-    "\
-spec a v1.0.0
-title \"A\"
-
-description
-  Test.
-
-motivation
-  Test.
-
-behavior do-thing [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-
-
-behavior do-other [happy_path]
-  \"Does another\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-}
 
 fn spec_three_behaviors() -> &'static str {
     "\

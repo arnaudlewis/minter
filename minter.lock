@@ -97,7 +97,7 @@
             "color-deleted-file-red",
             "color-new-file-cyan"
           ],
-          "hash": "008ef16e3e6309fbe652a1b3877a81248acefd9c2049801d5593862713067fe1"
+          "hash": "31d60f0040b3eebfb1a38762772627d5f160412d698fde02ff2ea2cf274c27be"
         }
       }
     },
@@ -164,6 +164,7 @@
             "reject-non-spec-extension",
             "reject-unknown-command",
             "reject-unknown-flag",
+            "route-ci",
             "route-coverage-directory",
             "route-coverage-file",
             "route-coverage-with-format",
@@ -174,6 +175,7 @@
             "route-guide",
             "route-inspect",
             "route-inspect-nfr",
+            "route-lock",
             "route-scaffold-nfr",
             "route-scaffold-spec",
             "route-validate-file",
@@ -184,10 +186,11 @@
             "route-watch-file",
             "route-watch-folder",
             "route-watch-nfr-file",
+            "route-web",
             "show-help",
             "show-version"
           ],
-          "hash": "33a49c616882ad34514606cfc19e83f81c0b511eca713e3227e0a6e749a7a42b"
+          "hash": "8f204ddaf12411963a3c68c59df75885a50bf4746ae0a05bed57d89e9cc29c44"
         }
       }
     },
@@ -251,7 +254,7 @@
             "report-all-failures",
             "report-check-summary"
           ],
-          "hash": "b482df85d5f0331f518332487906ad9bafb01b00802355be10025b0057ffb430"
+          "hash": "1e21910c961167026b10f6a23254cf9e74ddb51ddb731f2c244e09fa50565720"
         }
       }
     },
@@ -356,7 +359,7 @@
             "verbose-expands-all",
             "warn-empty-tag"
           ],
-          "hash": "da2ecda4884ae7eabc2c93c4890995d2497e97d217f4bd75213b5e89075ec9da"
+          "hash": "3051d9ab0c4d00755cf146bec51cb058ab73c3bcc84848943095b00ef2d1c1a8"
         }
       }
     },
@@ -599,7 +602,7 @@
             "reject-no-specs-found",
             "reject-tag-errors"
           ],
-          "hash": "b490155f221e8b7a40dfd6ee5a066b1be74029737619b46365d83fb7063bc1ff"
+          "hash": "fc6ad8d96bccef6d5e9189023a748aec07ecd3e84f70856760b27692157c7d9b"
         }
       }
     },
@@ -657,6 +660,7 @@
         "reject-nonexistent-directory",
         "reject-unreadable-file",
         "reject-empty-file",
+        "reject-oversized-file",
         "report-all-errors",
         "skip-semantic-when-parse-fails",
         "exit-1-when-any-file-invalid",
@@ -675,7 +679,7 @@
         "specs/grammar/nfr-grammar.spec",
         "specs/nfr/nfr-cross-reference.spec"
       ],
-      "hash": "b872dc4a113778ebac0a4963a86684ac277318e72205d282575db4166303c896",
+      "hash": "3856cd161e035667021c74404a9af589a56c1338cba763f53cf6b6cf48fe7ad9",
       "nfrs": [
         "operability#ci-friendly-output",
         "performance#cache-skip-unchanged",
@@ -704,6 +708,7 @@
             "reject-no-happy-path",
             "reject-nonexistent-directory",
             "reject-nonexistent-file",
+            "reject-oversized-file",
             "reject-unreadable-file",
             "reject-unresolved-alias",
             "report-all-errors",
@@ -720,7 +725,7 @@
             "validate-valid-nfr",
             "validate-valid-spec"
           ],
-          "hash": "fe2f3859d3931714d46912407f4c11547892c5f614b5d4ec0aa1c58df0337cf8"
+          "hash": "f6971d61c38dc88e50f539cbe675e1c5abcd3d06aaca98a6b29c7696026a879a"
         }
       }
     },
@@ -788,7 +793,7 @@
             "watch-start-directory",
             "watch-start-single-file"
           ],
-          "hash": "008ef16e3e6309fbe652a1b3877a81248acefd9c2049801d5593862713067fe1"
+          "hash": "31d60f0040b3eebfb1a38762772627d5f160412d698fde02ff2ea2cf274c27be"
         }
       }
     },
@@ -932,6 +937,7 @@
         "reject-invalid-dependency-spec",
         "reject-duplicate-spec-names",
         "skip-deps-when-spec-invalid",
+        "reject-excessive-depth",
         "handle-no-dependencies",
         "report-all-resolution-errors",
         "cache-directory-location",
@@ -950,7 +956,7 @@
       "dependencies": [
         "specs/core/commands/validate-command.spec"
       ],
-      "hash": "3a6e3e0e14a923756e6344b0f31f754edf3f001d78c3f6c635d6df5855fb4c7a",
+      "hash": "fd5dee2af3004053bf531a61e831a4617c69e026e4b3f15c5e9d0c8f81399d30",
       "nfrs": [
         "operability#graph-location-predictability",
         "performance#cache-skip-unchanged",
@@ -975,13 +981,13 @@
             "rebuild-on-schema-mismatch",
             "validate-without-deep-ignores-graph"
           ],
-          "hash": "f873f0b376ac7898c7d170c881f04fd545cc8997b4070ec2a227040d546c7c08"
+          "hash": "a83bbb18bcc78f563eb3f49fadc17eab28a6d0176d7ad54b63cd3ee430919f6f"
         },
         "tests/incremental_validation.rs": {
           "covers": [
             "cache-integrates-new-files"
           ],
-          "hash": "fc99b24d769fe7dabaee967c9486c51a72b120e7a868a45da2a43157382bf9fa"
+          "hash": "ff40ea4945c85424c3b5cabdc09806e2795323f30b0fe5f001df69bb71e162a2"
         },
         "tests/validate_dependencies.rs": {
           "covers": [
@@ -1005,6 +1011,12 @@
             "version-constraint-satisfied"
           ],
           "hash": "67d12712e78a7f9315fe8900fda7705261bbe6dada9ae5c49347ca41485cd9ac"
+        },
+        "tests/validate_spec.rs": {
+          "covers": [
+            "reject-excessive-depth"
+          ],
+          "hash": "f6971d61c38dc88e50f539cbe675e1c5abcd3d06aaca98a6b29c7696026a879a"
         }
       }
     },
@@ -1247,7 +1259,7 @@
           "covers": [
             "reject-trailing-content"
           ],
-          "hash": "fe2f3859d3931714d46912407f4c11547892c5f614b5d4ec0aa1c58df0337cf8"
+          "hash": "f6971d61c38dc88e50f539cbe675e1c5abcd3d06aaca98a6b29c7696026a879a"
         }
       }
     },
@@ -1301,7 +1313,7 @@
             "next-steps-after-validate-fail",
             "next-steps-after-validate-pass"
           ],
-          "hash": "faea99692111a731b73ed8ed03001cb19acf84d10e7c1eff5c4e2781f4fa1a0e"
+          "hash": "69934917b6eda545953842185ea85283091fa6f26e8efe6cdc37ad76f9687aa5"
         }
       }
     },
@@ -1360,7 +1372,7 @@
             "validate-pass-result-fields",
             "validate-summary-fields"
           ],
-          "hash": "faea99692111a731b73ed8ed03001cb19acf84d10e7c1eff5c4e2781f4fa1a0e"
+          "hash": "69934917b6eda545953842185ea85283091fa6f26e8efe6cdc37ad76f9687aa5"
         }
       }
     },
@@ -1475,7 +1487,7 @@
             "validate-reject-unreadable-file",
             "validate-require-path-or-content"
           ],
-          "hash": "faea99692111a731b73ed8ed03001cb19acf84d10e7c1eff5c4e2781f4fa1a0e"
+          "hash": "69934917b6eda545953842185ea85283091fa6f26e8efe6cdc37ad76f9687aa5"
         }
       }
     },

@@ -138,6 +138,79 @@ pub fn temp_dir_with_spec_and_nfrs(
     (dir, dir_path)
 }
 
+/// Get the path to the minter binary.
+pub fn minter_bin() -> std::path::PathBuf {
+    assert_cmd::cargo::cargo_bin!("minter").to_path_buf()
+}
+
+/// Helper: a valid spec with a given name, version, and optional dependency.
+pub fn valid_spec(name: &str, version: &str, dep: Option<(&str, &str)>) -> String {
+    let dep_line = match dep {
+        Some((dep_name, dep_ver)) => format!("\ndepends on {} >= {}\n", dep_name, dep_ver),
+        None => String::new(),
+    };
+    format!(
+        "\
+spec {name} v{version}
+title \"{name}\"
+
+description
+  A spec for testing.
+
+motivation
+  Testing.
+
+behavior do-thing [happy_path]
+  \"Do the thing\"
+
+  given
+    The system is ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+{dep_line}"
+    )
+}
+
+/// A minimal spec with two behaviors, fixed as spec "a" v1.0.0.
+pub fn spec_two_behaviors() -> &'static str {
+    "\
+spec a v1.0.0
+title \"A\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Does a thing\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+
+
+behavior do-other [happy_path]
+  \"Does another\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+"
+}
+
 /// A minimal valid spec that exercises the core structure.
 pub const VALID_SPEC: &str = "\
 spec test-spec v1.0.0

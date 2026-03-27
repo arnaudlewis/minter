@@ -8,43 +8,7 @@ use std::time::Duration;
 
 use std::os::unix::fs::PermissionsExt;
 
-use common::read_graph_json;
-
-/// Helper: a valid spec with a given name, version, and optional dependency.
-fn valid_spec(name: &str, version: &str, dep: Option<(&str, &str)>) -> String {
-    let dep_line = match dep {
-        Some((dep_name, dep_ver)) => format!("\ndepends on {} >= {}\n", dep_name, dep_ver),
-        None => String::new(),
-    };
-    format!(
-        "\
-spec {name} v{version}
-title \"{name}\"
-
-description
-  A spec for testing.
-
-motivation
-  Testing watch mode.
-
-behavior do-thing [happy_path]
-  \"Do the thing\"
-
-  given
-    The system is ready
-
-  when act
-
-  then emits stdout
-    assert output contains \"done\"
-{dep_line}"
-    )
-}
-
-/// Get the path to the minter binary.
-fn minter_bin() -> std::path::PathBuf {
-    assert_cmd::cargo::cargo_bin!("minter").to_path_buf()
-}
+use common::{minter_bin, read_graph_json, valid_spec};
 
 /// A non-blocking line receiver backed by a background reader thread.
 struct LineReceiver {
