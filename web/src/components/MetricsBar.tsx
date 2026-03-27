@@ -46,19 +46,23 @@ function CoverageBar({
 }
 
 function DriftTooltipContent({ drift }: { drift: ProjectState["drift"] }) {
-  const items: string[] = [
-    ...drift.modified_specs.map(f => `${f} (modified)`),
-    ...drift.unlocked_specs.map(f => `${f} (unlocked)`),
-    ...drift.modified_nfrs.map(f => `${f} (modified)`),
-    ...drift.unlocked_nfrs.map(f => `${f} (unlocked)`),
-    ...drift.modified_tests.map(f => `${f} (modified)`),
-    ...drift.missing_tests.map(f => `${f} (missing)`),
-  ]
-  if (items.length === 0) return <span>Lock file is out of date</span>
+  const sections: { label: string; items: string[] }[] = [
+    { label: "Modified", items: [...drift.modified_specs, ...drift.modified_nfrs, ...drift.modified_tests] },
+    { label: "Unlocked", items: [...drift.unlocked_specs, ...drift.unlocked_nfrs] },
+    { label: "Missing", items: [...drift.missing_tests] },
+  ].filter(s => s.items.length > 0)
+
+  if (sections.length === 0) return <p className="text-xs text-muted-foreground">Lock file is out of date</p>
   return (
-    <div className="space-y-0.5 text-xs">
-      {items.map((item, i) => (
-        <div key={i} className="font-mono">{item}</div>
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-foreground">Lock file is out of sync</p>
+      {sections.map(s => (
+        <div key={s.label}>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{s.label}</p>
+          {s.items.map((item, i) => (
+            <p key={i} className="font-mono text-[11px] text-foreground/80">{item}</p>
+          ))}
+        </div>
       ))}
     </div>
   )
@@ -96,13 +100,13 @@ function LockStatus({
   return (
     <TooltipProvider>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Lock:</span>
+        <span className="text-sm text-muted-foreground">Integrity:</span>
         {lockStatus === "Drifted" && drift ? (
-          <Tooltip>
+          <Tooltip delayDuration={200}>
             <TooltipTrigger asChild>
-              <span className={`cursor-help text-sm font-medium ${statusColor}`}>{label}</span>
+              <span className={`cursor-help border-b border-dashed border-amber-400/50 text-sm font-medium ${statusColor}`}>{label}</span>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-xs">
+            <TooltipContent side="bottom" align="end" className="max-w-sm border border-border bg-card p-3 shadow-lg">
               <DriftTooltipContent drift={drift} />
             </TooltipContent>
           </Tooltip>
