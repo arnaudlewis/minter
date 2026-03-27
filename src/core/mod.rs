@@ -7,3 +7,5 @@ pub mod graph;
 pub mod io;
 pub mod parser;
 pub mod validation;
+#[cfg(feature = "web")]
+pub mod web;

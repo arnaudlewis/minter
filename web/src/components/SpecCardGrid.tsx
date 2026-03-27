@@ -1,0 +1,178 @@
+import { useState } from "react"
+import type { SpecInfo } from "@/types"
+import { Input } from "@/components/ui/input"
+import {
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Search,
+} from "lucide-react"
+
+function getSpecStatus(spec: SpecInfo): "valid" | "warning" | "error" {
+  if (typeof spec.validation_status === "object" && "Invalid" in spec.validation_status) {
+    return "error"
+  }
+  if (spec.validation_status === "Valid") {
+    const uncovered = spec.behaviors.filter((b) => !b.covered)
+    if (uncovered.length > 0) return "warning"
+    return "valid"
+  }
+  return "warning"
+}
+
+function StatusIcon({ status }: { status: "valid" | "warning" | "error" }) {
+  switch (status) {
+    case "valid":
+      return <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
+    case "warning":
+      return <AlertTriangle className="size-4 shrink-0 text-amber-400" />
+    case "error":
+      return <XCircle className="size-4 shrink-0 text-red-400" />
+  }
+}
+
+function CoverageMiniBar({ covered, total }: { covered: number; total: number }) {
+  const pct = total > 0 ? Math.round((covered / total) * 100) : 0
+  const color =
+    pct >= 80
+      ? "bg-emerald-400"
+      : pct >= 50
+        ? "bg-amber-400"
+        : "bg-red-400"
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="h-1.5 w-20 rounded-full bg-muted/50">
+        <div
+          className={`h-full rounded-full transition-all duration-300 ${color}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-xs tabular-nums text-muted-foreground">{pct}%</span>
+    </div>
+  )
+}
+
+function SpecCard({
+  spec,
+  depErrors,
+  onClick,
+}: {
+  spec: SpecInfo
+  depErrors: string[]
+  onClick: () => void
+}) {
+  const status = getSpecStatus(spec)
+  const isInvalid = typeof spec.validation_status === "object" && "Invalid" in spec.validation_status
+  const errors = isInvalid ? (spec.validation_status as { Invalid: string[] }).Invalid : []
+  const uncoveredBehaviors = spec.behaviors.filter((b) => !b.covered)
+  const coveredCount = spec.behaviors.filter((b) => b.covered).length
+
+  return (
+    <button
+      type="button"
+      data-testid="spec-card"
+      className="cursor-pointer rounded-lg border border-border bg-card p-3 text-left transition-all hover:border-zinc-600 hover:shadow-md"
+      onClick={onClick}
+    >
+      {/* Line 1: status icon + name + version */}
+      <div className="flex items-center gap-2">
+        <StatusIcon status={status} />
+        <span className="truncate font-mono text-[13px] font-medium text-foreground">
+          {spec.name}
+        </span>
+        <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
+          v{spec.version}
+        </span>
+      </div>
+
+      {/* Line 2: behavior count + coverage */}
+      <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+        <span>
+          {spec.behavior_count} behaviors
+          {!isInvalid && spec.behavior_count > 0 && (
+            <> &middot; {Math.round((coveredCount / spec.behavior_count) * 100)}% coverage</>
+          )}
+        </span>
+      </div>
+
+      {/* Coverage mini-bar (only if valid with behaviors) */}
+      {!isInvalid && spec.behavior_count > 0 && (
+        <div className="mt-1.5">
+          <CoverageMiniBar covered={coveredCount} total={spec.behavior_count} />
+        </div>
+      )}
+
+      {/* Errors (invalid spec) */}
+      {errors.map((err, i) => (
+        <div key={i} className="mt-1.5 flex items-start gap-1.5 text-xs text-red-400">
+          <XCircle className="mt-0.5 size-3 shrink-0 text-red-400" />
+          <span className="break-all">{err}</span>
+        </div>
+      ))}
+
+      {/* Dependency errors */}
+      {depErrors.map((err, i) => (
+        <div key={`dep-${i}`} className="mt-1.5 flex items-start gap-1.5 text-xs text-red-400">
+          <XCircle className="mt-0.5 size-3 shrink-0 text-red-400" />
+          <span className="break-all">{err}</span>
+        </div>
+      ))}
+
+      {/* Uncovered behaviors warning */}
+      {uncoveredBehaviors.length > 0 && (
+        <div className="mt-1.5 flex items-start gap-1.5 text-xs text-amber-400">
+          <AlertTriangle className="mt-0.5 size-3 shrink-0 text-amber-400" />
+          <span>{uncoveredBehaviors.length} uncovered behaviors</span>
+        </div>
+      )}
+    </button>
+  )
+}
+
+interface SpecCardGridProps {
+  specs: SpecInfo[]
+  depErrors: string[]
+  onSelectSpec: (spec: SpecInfo) => void
+}
+
+export function SpecCardGrid({ specs, depErrors, onSelectSpec }: SpecCardGridProps) {
+  const [search, setSearch] = useState("")
+
+  const filtered = specs.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <div>
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search specs..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {/* Card grid */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((spec) => (
+          <SpecCard
+            key={spec.path}
+            spec={spec}
+            depErrors={depErrors}
+            onClick={() => onSelectSpec(spec)}
+          />
+        ))}
+      </div>
+
+      {filtered.length === 0 && specs.length > 0 && (
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          No specs match &quot;{search}&quot;
+        </p>
+      )}
+    </div>
+  )
+}
