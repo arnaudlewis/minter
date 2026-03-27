@@ -143,6 +143,113 @@ pub fn minter_bin() -> std::path::PathBuf {
     assert_cmd::cargo::cargo_bin!("minter").to_path_buf()
 }
 
+/// Generate a spec with a single behavior.
+pub fn spec_one_behavior(name: &str, version: &str, behavior: &str) -> String {
+    format!(
+        "\
+spec {name} v{version}
+title \"{name}\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior {behavior} [happy_path]
+  \"Does a thing\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+"
+    )
+}
+
+/// Generate a spec with three parameterized behaviors.
+pub fn spec_three_behaviors(name: &str, version: &str, b1: &str, b2: &str, b3: &str) -> String {
+    format!(
+        "\
+spec {name} v{version}
+title \"{name}\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior {b1} [happy_path]
+  \"Does a thing\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+
+
+behavior {b2} [happy_path]
+  \"Does another\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+
+
+behavior {b3} [happy_path]
+  \"Does a third\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+"
+    )
+}
+
+/// A minimal NFR spec for performance testing.
+pub fn nfr_performance() -> &'static str {
+    "\
+nfr performance v1.0.0
+title \"Perf\"
+
+description
+  Perf.
+
+motivation
+  Perf.
+
+
+constraint api-latency [metric]
+  \"API latency\"
+
+  metric \"p95 response time\"
+  threshold < 500ms
+
+  verification
+    environment staging
+    benchmark \"load test\"
+    pass \"p95 < 500ms\"
+
+  violation high
+  overridable yes
+"
+}
+
 /// Helper: a valid spec with a given name, version, and optional dependency.
 pub fn valid_spec(name: &str, version: &str, dep: Option<(&str, &str)>) -> String {
     let dep_line = match dep {

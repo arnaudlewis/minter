@@ -254,7 +254,7 @@
             "report-all-failures",
             "report-check-summary"
           ],
-          "hash": "1e21910c961167026b10f6a23254cf9e74ddb51ddb731f2c244e09fa50565720"
+          "hash": "453d7de8f4d3545c8204acdadd8057a6b501b09a7006dc95c30fcdadab2a8ec9"
         }
       }
     },
@@ -359,7 +359,7 @@
             "verbose-expands-all",
             "warn-empty-tag"
           ],
-          "hash": "3051d9ab0c4d00755cf146bec51cb058ab73c3bcc84848943095b00ef2d1c1a8"
+          "hash": "b3218c1335e00c8f0e9a0a9d41a5bc4fc29b045222dc17d42c3a7d45f96edbbd"
         }
       }
     },
@@ -602,7 +602,7 @@
             "reject-no-specs-found",
             "reject-tag-errors"
           ],
-          "hash": "fc6ad8d96bccef6d5e9189023a748aec07ecd3e84f70856760b27692157c7d9b"
+          "hash": "d91e87a88c6402979e5d2943fbfaa941e0a7bd645fdcb4371db90ace0ff7843a"
         }
       }
     },
@@ -1313,7 +1313,7 @@
             "next-steps-after-validate-fail",
             "next-steps-after-validate-pass"
           ],
-          "hash": "69934917b6eda545953842185ea85283091fa6f26e8efe6cdc37ad76f9687aa5"
+          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
         }
       }
     },
@@ -1372,7 +1372,7 @@
             "validate-pass-result-fields",
             "validate-summary-fields"
           ],
-          "hash": "69934917b6eda545953842185ea85283091fa6f26e8efe6cdc37ad76f9687aa5"
+          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
         }
       }
     },
@@ -1487,7 +1487,7 @@
             "validate-reject-unreadable-file",
             "validate-require-path-or-content"
           ],
-          "hash": "69934917b6eda545953842185ea85283091fa6f26e8efe6cdc37ad76f9687aa5"
+          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
         }
       }
     },

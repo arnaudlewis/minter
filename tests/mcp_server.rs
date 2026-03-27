@@ -4,6 +4,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 
+use common::{VALID_NFR, VALID_SPEC};
 use serde_json::{Value, json};
 use tempfile::TempDir;
 
@@ -174,54 +175,6 @@ fn write_nfr(dir: &TempDir, name: &str, content: &str) -> PathBuf {
 }
 
 // ── Spec fixtures ──────────────────────────────────────
-
-const VALID_SPEC: &str = "\
-spec test-spec v1.0.0
-title \"Test Spec\"
-
-description
-  A test spec for validation.
-
-motivation
-  Testing minter.
-
-behavior do-thing [happy_path]
-  \"Do the thing\"
-
-  given
-    The system is ready
-
-  when act
-
-  then emits stdout
-    assert output contains \"done\"
-";
-
-const VALID_NFR: &str = "\
-nfr performance v1.0.0
-title \"Performance Requirements\"
-
-description
-  Defines performance constraints.
-
-motivation
-  Performance matters.
-
-
-constraint api-response-time [metric]
-  \"API endpoints must respond within acceptable latency bounds\"
-
-  metric \"HTTP response time, p95\"
-  threshold < 1s
-
-  verification
-    environment staging, production
-    benchmark \"100 concurrent requests per endpoint\"
-    pass \"p95 < threshold\"
-
-  violation high
-  overridable yes
-";
 
 const BROKEN_SPEC: &str = "\
 spec broken v2.0.0
