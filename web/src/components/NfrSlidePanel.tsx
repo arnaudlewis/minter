@@ -68,7 +68,7 @@ function NfrInfoDialog({ nfr }: { nfr: NfrInfo }) {
       >
         <Info className="size-4" />
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="z-[100]">
         <DialogHeader>
           <DialogTitle>{nfr.title || nfr.category}</DialogTitle>
           {nfr.description ? (

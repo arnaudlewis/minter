@@ -111,7 +111,7 @@ function SpecInfoDialog({ spec }: { spec: SpecInfo }) {
       >
         <Info className="size-4" />
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="z-[100]">
         <DialogHeader>
           <DialogTitle>{spec.title ?? spec.name}</DialogTitle>
           {hasDetails ? (
