@@ -9,13 +9,13 @@ describe("SpecCardGrid", () => {
   describe("spec-card-displays-summary", () => {
     it("shows spec name on the card", () => {
       const spec = mockSpec({ name: "auth-command", version: "1.2.0" })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText("auth-command")).toBeInTheDocument()
     })
 
     it("shows spec version on the card", () => {
       const spec = mockSpec({ name: "auth-command", version: "1.2.0" })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText("v1.2.0")).toBeInTheDocument()
     })
 
@@ -31,7 +31,7 @@ describe("SpecCardGrid", () => {
           nfr_refs: [],
         })),
       })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText(/12 behaviors/)).toBeInTheDocument()
     })
 
@@ -47,7 +47,7 @@ describe("SpecCardGrid", () => {
           nfr_refs: [],
         })),
       })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
       // Coverage appears in both the text summary and the mini-bar
       const matches = screen.getAllByText(/83%/)
       expect(matches.length).toBeGreaterThanOrEqual(1)
@@ -58,7 +58,7 @@ describe("SpecCardGrid", () => {
         name: "auth-command",
         description: "Handles user authentication flows",
       })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText("Handles user authentication flows")).toBeInTheDocument()
     })
 
@@ -67,7 +67,7 @@ describe("SpecCardGrid", () => {
         name: "auth-command",
         nfr_refs: ["performance#api-latency", "performance#throughput", "reliability#no-data-loss"],
       })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
       // Should show unique categories: performance, reliability
       expect(screen.getByText("performance")).toBeInTheDocument()
       expect(screen.getByText("reliability")).toBeInTheDocument()
@@ -78,7 +78,7 @@ describe("SpecCardGrid", () => {
         name: "auth-command",
         nfr_refs: [],
       })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
       expect(screen.queryByText("performance")).not.toBeInTheDocument()
       expect(screen.queryByText("reliability")).not.toBeInTheDocument()
     })
@@ -100,7 +100,7 @@ describe("SpecCardGrid", () => {
         })),
       })
       const { container } = render(
-        <SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />
       )
       const card = screen.getByText("auth-command").closest("[data-testid='spec-card']")!
       const svgs = card.querySelectorAll("svg")
@@ -127,7 +127,7 @@ describe("SpecCardGrid", () => {
         })),
       })
       const { container } = render(
-        <SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />
       )
       const card = screen.getByText("auth-command").closest("[data-testid='spec-card']")!
       const svgs = card.querySelectorAll("svg")
@@ -148,7 +148,7 @@ describe("SpecCardGrid", () => {
           { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
         ],
       })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText(/2 uncovered behaviors/i)).toBeInTheDocument()
     })
   })
@@ -163,7 +163,7 @@ describe("SpecCardGrid", () => {
         behavior_count: 0,
       })
       const { container } = render(
-        <SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />
       )
       const card = screen.getByText("scaffold-command").closest("[data-testid='spec-card']")!
       const svgs = card.querySelectorAll("svg")
@@ -173,15 +173,15 @@ describe("SpecCardGrid", () => {
       expect(redIcon).toBeTruthy()
     })
 
-    it("shows error message on the card", () => {
+    it("shows error count on the card (not full message)", () => {
       const spec = mockSpec({
         name: "scaffold-command",
         validation_status: { Invalid: ["line 5: Expected 'motivation'"] },
         behaviors: [],
         behavior_count: 0,
       })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
-      expect(screen.getByText(/line 5: Expected 'motivation'/)).toBeInTheDocument()
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
+      expect(screen.getByText(/1 validation error/)).toBeInTheDocument()
     })
 
     it("shows 0 behaviors for invalid spec", () => {
@@ -191,26 +191,26 @@ describe("SpecCardGrid", () => {
         behaviors: [],
         behavior_count: 0,
       })
-      render(<SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />)
+      render(<SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />)
       expect(screen.getByText(/0 behaviors/)).toBeInTheDocument()
     })
   })
 
   /// spec-card-shows-dependency-errors: A spec card shows dependency errors
   describe("spec-card-shows-dependency-errors", () => {
-    it("shows dependency error on the card", () => {
+    it("shows dependency error count on the card from spec.dep_errors", () => {
       const spec = mockSpec({
         name: "auth-command",
         version: "1.2.0",
+        dep_errors: ["missing dependency user-command >= 1.0.0"],
       })
       render(
         <SpecCardGrid
           specs={[spec]}
-          depErrors={["missing dep: user-command >= 1.0.0"]}
           onSelectSpec={vi.fn()}
         />
       )
-      expect(screen.getByText(/missing dep: user-command >= 1.0.0/)).toBeInTheDocument()
+      expect(screen.getByText(/1 dependency error/)).toBeInTheDocument()
     })
   })
 
@@ -225,7 +225,7 @@ describe("SpecCardGrid", () => {
         mockSpec({ name: "user-profile" }),
       ]
       render(
-        <SpecCardGrid specs={specs} depErrors={[]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={specs} onSelectSpec={vi.fn()} />
       )
 
       expect(screen.getByText("auth")).toBeInTheDocument()
@@ -249,7 +249,7 @@ describe("SpecCardGrid", () => {
         mockSpec({ name: "billing" }),
       ]
       render(
-        <SpecCardGrid specs={specs} depErrors={[]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={specs} onSelectSpec={vi.fn()} />
       )
 
       const searchInput = screen.getByPlaceholderText(/search/i)
@@ -272,7 +272,7 @@ describe("SpecCardGrid", () => {
         behavior_count: 0,
       })
       render(
-        <SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={vi.fn()} />
+        <SpecCardGrid specs={[spec]} onSelectSpec={vi.fn()} />
       )
       expect(screen.getByText("auth")).toBeInTheDocument()
       expect(screen.getByText(/0 behaviors/)).toBeInTheDocument()
@@ -292,7 +292,7 @@ describe("SpecCardGrid", () => {
       const onSelectSpec = vi.fn()
       const spec = mockSpec({ name: "auth" })
       render(
-        <SpecCardGrid specs={[spec]} depErrors={[]} onSelectSpec={onSelectSpec} />
+        <SpecCardGrid specs={[spec]} onSelectSpec={onSelectSpec} />
       )
       await user.click(screen.getByText("auth"))
       expect(onSelectSpec).toHaveBeenCalledWith(spec)

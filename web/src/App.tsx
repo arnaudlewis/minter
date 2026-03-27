@@ -33,7 +33,6 @@ function App() {
       <main className="mx-auto max-w-6xl px-6 py-4">
         <SpecCardGrid
           specs={state?.specs ?? []}
-          depErrors={state?.dep_errors ?? []}
           onSelectSpec={handleSelectSpec}
         />
       </main>

@@ -56,6 +56,7 @@ pub struct SpecInfo {
     pub validation_status: ValidationStatus,
     pub nfr_refs: Vec<String>,
     pub dependencies: Vec<String>,
+    pub dep_errors: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -435,6 +436,7 @@ impl UiState {
                     validation_status: status.clone(),
                     nfr_refs,
                     dependencies,
+                    dep_errors: Vec::new(),
                 });
             } else {
                 // Spec failed to parse — show it with error status
@@ -449,6 +451,7 @@ impl UiState {
                     validation_status: status.clone(),
                     nfr_refs: Vec::new(),
                     dependencies: Vec::new(),
+                    dep_errors: Vec::new(),
                 });
             }
         }
@@ -483,7 +486,7 @@ impl UiState {
             }
         }
 
-        // Resolve dependencies for each spec that has them
+        // Resolve dependencies for each spec and store errors per-spec
         for (_, _, maybe_spec, _) in parsed_specs {
             if let Some(spec) = maybe_spec {
                 if spec.dependencies.is_empty() {
@@ -496,8 +499,15 @@ impl UiState {
                     errors: Vec::new(),
                 };
                 deps::resolve_and_collect(&spec.dependencies, &mut ctx, 1);
-                for err in &ctx.errors {
-                    self.dep_errors.push(format!("{}: {}", spec.name, err));
+                if !ctx.errors.is_empty() {
+                    // Store errors in the corresponding SpecInfo
+                    if let Some(spec_info) = self.specs.iter_mut().find(|s| s.name == spec.name) {
+                        spec_info.dep_errors = ctx.errors.clone();
+                    }
+                    // Also keep in global list for backward compat
+                    for err in &ctx.errors {
+                        self.dep_errors.push(format!("{}: {}", spec.name, err));
+                    }
                 }
             }
         }

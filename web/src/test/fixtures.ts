@@ -14,6 +14,7 @@ export function mockSpec(overrides?: Partial<SpecInfo>): SpecInfo {
     validation_status: "Valid",
     nfr_refs: ["performance#api-latency", "reliability#no-data-loss"],
     dependencies: ["user-command >= 1.0.0"],
+    dep_errors: [],
     ...overrides,
   }
 }

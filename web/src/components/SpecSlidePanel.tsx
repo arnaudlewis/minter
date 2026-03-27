@@ -147,6 +147,7 @@ interface SpecSlidePanelProps {
 }
 
 export function SpecSlidePanel({ spec, isOpen, onClose }: SpecSlidePanelProps) {
+  const depErrors = spec?.dep_errors ?? []
   const [search, setSearch] = useState("")
   const [expandedBehavior, setExpandedBehavior] = useState<string | null>(null)
 
@@ -255,6 +256,26 @@ export function SpecSlidePanel({ spec, isOpen, onClose }: SpecSlidePanelProps) {
                         <div
                           key={i}
                           data-testid="error-message"
+                          className="flex items-start gap-2 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-400"
+                        >
+                          <XCircle className="mt-0.5 size-3 shrink-0" />
+                          <span>{err}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Dependency errors */}
+                {depErrors.length > 0 && (
+                  <div>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Dependency Errors
+                    </h3>
+                    <div className="space-y-1">
+                      {depErrors.map((err, i) => (
+                        <div
+                          key={i}
                           className="flex items-start gap-2 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-400"
                         >
                           <XCircle className="mt-0.5 size-3 shrink-0" />

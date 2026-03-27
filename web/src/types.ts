@@ -16,6 +16,7 @@ export interface SpecInfo {
   validation_status: "Valid" | { Invalid: string[] } | "Unknown"
   nfr_refs: string[]
   dependencies: string[]
+  dep_errors: string[]
   title?: string
   description?: string
   motivation?: string

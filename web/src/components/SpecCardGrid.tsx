@@ -8,8 +8,11 @@ import {
   Search,
 } from "lucide-react"
 
-function getSpecStatus(spec: SpecInfo): "valid" | "warning" | "error" {
+function getSpecStatus(spec: SpecInfo, depErrorCount: number): "valid" | "warning" | "error" {
   if (typeof spec.validation_status === "object" && "Invalid" in spec.validation_status) {
+    return "error"
+  }
+  if (depErrorCount > 0) {
     return "error"
   }
   if (spec.validation_status === "Valid") {
@@ -55,14 +58,13 @@ function CoverageMiniBar({ covered, total }: { covered: number; total: number })
 
 function SpecCard({
   spec,
-  depErrors,
   onClick,
 }: {
   spec: SpecInfo
-  depErrors: string[]
   onClick: () => void
 }) {
-  const status = getSpecStatus(spec)
+  const depErrors = spec.dep_errors ?? []
+  const status = getSpecStatus(spec, depErrors.length)
   const isInvalid = typeof spec.validation_status === "object" && "Invalid" in spec.validation_status
   const errors = isInvalid ? (spec.validation_status as { Invalid: string[] }).Invalid : []
   const uncoveredBehaviors = spec.behaviors.filter((b) => !b.covered)
@@ -123,21 +125,21 @@ function SpecCard({
         </div>
       )}
 
-      {/* Errors (invalid spec) */}
-      {errors.map((err, i) => (
-        <div key={i} className="mt-1.5 flex items-start gap-1.5 text-xs text-red-400">
-          <XCircle className="mt-0.5 size-3 shrink-0 text-red-400" />
-          <span className="break-all">{err}</span>
+      {/* Error count (details in panel) */}
+      {errors.length > 0 && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400">
+          <XCircle className="size-3 shrink-0" />
+          <span>{errors.length} validation error{errors.length !== 1 ? "s" : ""}</span>
         </div>
-      ))}
+      )}
 
-      {/* Dependency errors */}
-      {depErrors.map((err, i) => (
-        <div key={`dep-${i}`} className="mt-1.5 flex items-start gap-1.5 text-xs text-red-400">
-          <XCircle className="mt-0.5 size-3 shrink-0 text-red-400" />
-          <span className="break-all">{err}</span>
+      {/* Dep error count (details in panel) */}
+      {depErrors.length > 0 && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400">
+          <XCircle className="size-3 shrink-0" />
+          <span>{depErrors.length} dependency error{depErrors.length !== 1 ? "s" : ""}</span>
         </div>
-      ))}
+      )}
 
       {/* Uncovered behaviors warning */}
       {uncoveredBehaviors.length > 0 && (
@@ -152,11 +154,10 @@ function SpecCard({
 
 interface SpecCardGridProps {
   specs: SpecInfo[]
-  depErrors: string[]
   onSelectSpec: (spec: SpecInfo) => void
 }
 
-export function SpecCardGrid({ specs, depErrors, onSelectSpec }: SpecCardGridProps) {
+export function SpecCardGrid({ specs, onSelectSpec }: SpecCardGridProps) {
   const [search, setSearch] = useState("")
 
   const filtered = specs.filter((s) =>
@@ -182,7 +183,6 @@ export function SpecCardGrid({ specs, depErrors, onSelectSpec }: SpecCardGridPro
           <SpecCard
             key={spec.path}
             spec={spec}
-            depErrors={depErrors}
             onClick={() => onSelectSpec(spec)}
           />
         ))}
