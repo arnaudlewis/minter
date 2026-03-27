@@ -26,12 +26,12 @@ describe("NfrSlidePanel", () => {
       expect(screen.getByText(/v1\.1\.0/)).toBeInTheDocument()
     })
 
-    it("shows description", () => {
-      const nfr = mockNfr({ description: "Performance constraints for the system" })
+    it("shows info button for description", () => {
+      const nfr = mockNfr({ description: "Performance constraints" })
       render(
         <NfrSlidePanel nfr={nfr} isOpen={true} onClose={vi.fn()} />
       )
-      expect(screen.getByText("Performance constraints for the system")).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: /nfr info/i })).toBeInTheDocument()
     })
 
     it("has correct sliding animation classes when open", () => {

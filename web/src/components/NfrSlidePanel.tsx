@@ -5,7 +5,16 @@ import {
   XCircle,
   X,
   FileText,
+  Info,
 } from "lucide-react"
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 
 function NfrStatusIcon({ nfr }: { nfr: NfrInfo }) {
   const isInvalid =
@@ -45,6 +54,34 @@ function ViolationBadge({ level }: { level: string }) {
   )
 }
 
+function NfrInfoDialog({ nfr }: { nfr: NfrInfo }) {
+  return (
+    <Dialog>
+      <DialogTrigger
+        render={
+          <button
+            type="button"
+            aria-label="NFR info"
+            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          />
+        }
+      >
+        <Info className="size-4" />
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{nfr.title || nfr.category}</DialogTitle>
+          {nfr.description ? (
+            <DialogDescription>{nfr.description}</DialogDescription>
+          ) : (
+            <DialogDescription>No description available.</DialogDescription>
+          )}
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 interface NfrSlidePanelProps {
   nfr: NfrInfo | null
   isOpen: boolean
@@ -78,7 +115,7 @@ export function NfrSlidePanel({ nfr, isOpen, onClose }: NfrSlidePanelProps) {
       {/* Backdrop overlay */}
       <div
         data-testid="nfr-slide-panel-overlay"
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[55] bg-black/30 transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={onClose}
@@ -87,7 +124,7 @@ export function NfrSlidePanel({ nfr, isOpen, onClose }: NfrSlidePanelProps) {
       {/* Slide panel */}
       <div
         data-testid="nfr-slide-panel"
-        className={`fixed inset-y-0 right-0 z-50 w-[600px] transform border-l border-border bg-card shadow-2xl transition-transform duration-300 ${
+        className={`fixed inset-y-0 right-0 z-[60] w-[600px] transform border-l border-border bg-card shadow-2xl transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -111,18 +148,13 @@ export function NfrSlidePanel({ nfr, isOpen, onClose }: NfrSlidePanelProps) {
                 <span className="text-sm text-muted-foreground">
                   v{nfr.version}
                 </span>
+                <NfrInfoDialog nfr={nfr} />
               </div>
             </div>
 
             {/* Content */}
             <div className="overflow-y-auto" style={{ height: "calc(100% - 56px)" }}>
               <div className="space-y-4 px-4 py-4">
-                {/* Description */}
-                {nfr.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {nfr.description}
-                  </p>
-                )}
 
                 {/* Validation errors */}
                 {errors.length > 0 && (

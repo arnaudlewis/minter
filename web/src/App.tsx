@@ -52,6 +52,10 @@ function App() {
         spec={selectedSpec}
         isOpen={selectedSpec !== null}
         onClose={() => setSelectedSpec(null)}
+        onSelectNfrCategory={(category) => {
+          const nfr = (state?.nfrs ?? []).find(n => n.category === category)
+          if (nfr) setSelectedNfr(nfr)
+        }}
       />
 
       <NfrSlidePanel

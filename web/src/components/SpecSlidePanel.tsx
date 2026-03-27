@@ -144,9 +144,10 @@ interface SpecSlidePanelProps {
   spec: SpecInfo | null
   isOpen: boolean
   onClose: () => void
+  onSelectNfrCategory?: (category: string) => void
 }
 
-export function SpecSlidePanel({ spec, isOpen, onClose }: SpecSlidePanelProps) {
+export function SpecSlidePanel({ spec, isOpen, onClose, onSelectNfrCategory }: SpecSlidePanelProps) {
   const depErrors = spec?.dep_errors ?? []
   const [search, setSearch] = useState("")
   const [expandedBehavior, setExpandedBehavior] = useState<string | null>(null)
@@ -293,15 +294,19 @@ export function SpecSlidePanel({ spec, isOpen, onClose }: SpecSlidePanelProps) {
                       NFR References
                     </h3>
                     <div className="flex flex-wrap gap-1.5">
-                      {spec.nfr_refs.map((ref) => (
-                        <span
-                          key={ref}
-                          className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2.5 py-1 text-xs text-muted-foreground"
-                        >
-                          <Link className="size-3" />
-                          {ref}
-                        </span>
-                      ))}
+                      {spec.nfr_refs.map((ref) => {
+                        const category = ref.split("#")[0]
+                        return (
+                          <span
+                            key={ref}
+                            className={`inline-flex items-center gap-1 rounded-full bg-zinc-500/10 px-2.5 py-1 text-xs text-muted-foreground ${onSelectNfrCategory ? "cursor-pointer transition-colors hover:bg-zinc-500/20 hover:text-foreground" : ""}`}
+                            onClick={onSelectNfrCategory ? () => onSelectNfrCategory(category) : undefined}
+                          >
+                            <Link className="size-3" />
+                            {ref}
+                          </span>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
@@ -382,9 +387,20 @@ export function SpecSlidePanel({ spec, isOpen, onClose }: SpecSlidePanelProps) {
                             {behavior.nfr_refs.length > 0 && (
                               <div className="flex items-center gap-2 text-xs">
                                 <span className="text-muted-foreground">NFRs:</span>
-                                <span className="text-muted-foreground">
-                                  {behavior.nfr_refs.join(", ")}
-                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  {behavior.nfr_refs.map((ref) => {
+                                    const category = ref.split("#")[0]
+                                    return (
+                                      <span
+                                        key={ref}
+                                        className={`text-muted-foreground ${onSelectNfrCategory ? "cursor-pointer underline decoration-dotted hover:text-foreground" : ""}`}
+                                        onClick={onSelectNfrCategory ? () => onSelectNfrCategory(category) : undefined}
+                                      >
+                                        {ref}
+                                      </span>
+                                    )
+                                  })}
+                                </div>
                               </div>
                             )}
                           </div>
