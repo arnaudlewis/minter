@@ -4,3 +4,9 @@
 .idea/
 .vscode/
 *.swp
+
+# Web frontend
+web/node_modules/
+web/dist/
+.claude/worktrees/
+node_modules/

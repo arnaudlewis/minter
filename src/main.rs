@@ -81,6 +81,16 @@ enum Commands {
     Lock,
     /// Verify project integrity against the lock file
     Ci,
+    /// Launch the web dashboard
+    #[cfg(feature = "web")]
+    Web {
+        /// Port to serve on
+        #[arg(long, default_value = "4321")]
+        port: u16,
+        /// Do not open the browser automatically
+        #[arg(long)]
+        no_open: bool,
+    },
 }
 
 /// Load config from the current working directory, exiting on failure.
@@ -191,6 +201,19 @@ fn main() {
         Some(Commands::Ci) => {
             let config = load_config_or_exit();
             process::exit(minter::core::commands::ci::run_ci(&config));
+        }
+        #[cfg(feature = "web")]
+        Some(Commands::Web { port, no_open }) => {
+            let cwd = std::env::current_dir().unwrap_or_else(|e| {
+                eprintln!("error: cannot determine working directory: {}", e);
+                process::exit(1);
+            });
+            let rt = tokio::runtime::Runtime::new().unwrap_or_else(|e| {
+                eprintln!("error: cannot create async runtime: {}", e);
+                process::exit(1);
+            });
+            let code = rt.block_on(minter::core::web::server::run_server(cwd, port, no_open));
+            process::exit(code);
         }
         None => {
             use clap::CommandFactory;

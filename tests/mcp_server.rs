@@ -4,6 +4,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 
+use common::{VALID_NFR, VALID_SPEC};
 use serde_json::{Value, json};
 use tempfile::TempDir;
 
@@ -14,6 +15,7 @@ struct McpClient {
     reader: BufReader<std::process::ChildStdout>,
     stdin: std::process::ChildStdin,
     next_id: u64,
+    init_response: Value,
 }
 
 impl McpClient {
@@ -37,6 +39,7 @@ impl McpClient {
             reader,
             stdin,
             next_id: 1,
+            init_response: Value::Null,
         };
         client.initialize();
         client
@@ -103,6 +106,7 @@ impl McpClient {
             }),
         );
         assert!(resp.get("result").is_some(), "initialize should succeed");
+        self.init_response = resp["result"].clone();
         // Send initialized notification
         self.send_notification("notifications/initialized", json!({}));
     }
@@ -123,30 +127,8 @@ impl McpClient {
         resp["result"]["tools"].clone()
     }
 
-    fn server_info(&mut self) -> Value {
-        // server_info was returned by initialize, need to re-init
-        // For simplicity, just return the first initialize result
-        // Actually, let's just call initialize again to get the info
-        let id = self.next_id;
-        self.next_id += 1;
-        let request = json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {
-                    "name": "test-client",
-                    "version": "0.1.0"
-                }
-            }
-        });
-        let msg = serde_json::to_string(&request).unwrap();
-        writeln!(self.stdin, "{}", msg).expect("write request");
-        self.stdin.flush().expect("flush stdin");
-        let resp = self.read_response(id);
-        resp["result"].clone()
+    fn server_info(&self) -> Value {
+        self.init_response.clone()
     }
 }
 
@@ -193,54 +175,6 @@ fn write_nfr(dir: &TempDir, name: &str, content: &str) -> PathBuf {
 }
 
 // ── Spec fixtures ──────────────────────────────────────
-
-const VALID_SPEC: &str = "\
-spec test-spec v1.0.0
-title \"Test Spec\"
-
-description
-  A test spec for validation.
-
-motivation
-  Testing minter.
-
-behavior do-thing [happy_path]
-  \"Do the thing\"
-
-  given
-    The system is ready
-
-  when act
-
-  then emits stdout
-    assert output contains \"done\"
-";
-
-const VALID_NFR: &str = "\
-nfr performance v1.0.0
-title \"Performance Requirements\"
-
-description
-  Defines performance constraints.
-
-motivation
-  Performance matters.
-
-
-constraint api-response-time [metric]
-  \"API endpoints must respond within acceptable latency bounds\"
-
-  metric \"HTTP response time, p95\"
-  threshold < 1s
-
-  verification
-    environment staging, production
-    benchmark \"100 concurrent requests per endpoint\"
-    pass \"p95 < threshold\"
-
-  violation high
-  overridable yes
-";
 
 const BROKEN_SPEC: &str = "\
 spec broken v2.0.0
@@ -564,7 +498,7 @@ constraint no-blocking-io [rule]
 #[test]
 /// mcp-server: initialize-server
 fn initialize_server() {
-    let mut client = McpClient::new();
+    let client = McpClient::new();
     let info = client.server_info();
     let name = info["serverInfo"]["name"].as_str().unwrap();
     let version = info["serverInfo"]["version"].as_str().unwrap();
@@ -1434,7 +1368,7 @@ fn graph_no_edges_result() {
 #[test]
 /// mcp-agent-guidance: initialize-includes-methodology-instructions
 fn initialize_includes_methodology_instructions() {
-    let mut client = McpClient::new();
+    let client = McpClient::new();
     let info = client.server_info();
     let instructions = info["instructions"].as_str().unwrap_or("");
     // Should contain workflow guidance

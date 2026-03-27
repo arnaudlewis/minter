@@ -1,4 +1,4 @@
-spec cli v2.3.0
+spec cli v2.4.0
 title "CLI Interface"
 
 description
@@ -22,7 +22,7 @@ nfr
 # Help and version
 
 behavior show-help [happy_path]
-  "Print usage information listing all eight commands"
+  "Print usage information listing all eleven commands"
 
   given
     No arguments provided, or --help flag is used
@@ -39,6 +39,9 @@ behavior show-help [happy_path]
     assert output contains "graph"
     assert output contains "guide"
     assert output contains "coverage"
+    assert output contains "lock"
+    assert output contains "ci"
+    assert output contains "web"
 
   then emits process_exit
     assert code == 0
@@ -333,6 +336,48 @@ behavior route-coverage-with-format [happy_path]
     assert code == 0
 
 
+# Lock routing
+
+behavior route-lock [happy_path]
+  "Route minter lock to the lock command"
+
+  given
+    A valid minter project with specs and tests
+
+  when minter lock
+
+  then emits process_exit
+    assert code == 0
+
+
+# CI routing
+
+behavior route-ci [happy_path]
+  "Route minter ci to the CI verification command"
+
+  given
+    A valid minter project with a lock file
+
+  when minter ci
+
+  then emits process_exit
+    assert code == 0
+
+
+# Web routing
+
+behavior route-web [happy_path]
+  "Route minter web to the web dashboard command"
+
+  given
+    A valid minter project
+
+  when minter web
+
+  then
+    assert the web server starts
+
+
 # Error cases
 
 behavior reject-unknown-command [error_case]
@@ -509,3 +554,6 @@ depends on graph-command >= 1.0.0
 depends on guide-command >= 1.0.0
 depends on coverage-command >= 1.0.0
 depends on nfr-grammar >= 1.0.0
+depends on lock-command >= 1.0.0
+depends on ci-command >= 1.0.0
+depends on web-command >= 1.0.0

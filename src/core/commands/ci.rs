@@ -3,51 +3,8 @@ use std::path::{Path, PathBuf};
 
 use crate::core::commands::coverage::scan_for_tags;
 use crate::core::graph::cache::content_hash;
+use crate::core::lock_types::LockFile;
 use crate::core::{discover, io, parser};
-
-// ── Lock file types ─────────────────────────────────────
-
-#[derive(Debug, serde::Deserialize)]
-struct LockFile {
-    #[allow(dead_code)]
-    version: u64,
-    specs: BTreeMap<String, LockSpec>,
-    #[serde(default)]
-    nfrs: BTreeMap<String, LockNfr>,
-    #[serde(default)]
-    benchmark_files: BTreeMap<String, LockBenchmarkFile>,
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct LockBenchmarkFile {
-    hash: String,
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct LockSpec {
-    hash: String,
-    behaviors: Vec<String>,
-    #[serde(default)]
-    dependencies: Vec<String>,
-    #[serde(default)]
-    #[allow(dead_code)]
-    nfrs: Vec<String>,
-    #[serde(default)]
-    test_files: BTreeMap<String, LockTestFile>,
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct LockNfr {
-    hash: String,
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct LockTestFile {
-    hash: String,
-    #[serde(default)]
-    #[allow(dead_code)]
-    covers: Vec<String>,
-}
 
 // ── Check result types ──────────────────────────────────
 

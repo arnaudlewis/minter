@@ -323,6 +323,21 @@ behavior reject-empty-file [error_case]
     assert code == 1
 
 
+behavior reject-oversized-file [error_case]
+  "Reject a file that exceeds the maximum file size of 10MB"
+
+  given
+    A .spec file that is larger than 10MB
+
+  when minter validate huge.spec
+
+  then emits stderr
+    assert output contains "exceeds maximum file size of 10MB"
+
+  then emits process_exit
+    assert code == 1
+
+
 # Edge cases
 
 behavior report-all-errors [edge_case]

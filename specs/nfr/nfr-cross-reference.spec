@@ -14,6 +14,9 @@ motivation
   using invalid overrides. This spec ensures all references are mechanically
   verified.
 
+nfr
+  reliability#error-completeness
+
 # Spec-level nfr section parsing
 
 behavior parse-spec-level-whole-file-ref [happy_path]
