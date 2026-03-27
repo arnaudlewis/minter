@@ -4,6 +4,10 @@
 ![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+<p align="center">
+  <img src="assets/logo-static.svg" alt="minter" width="80" height="80" />
+</p>
+
 # minter
 
 The deterministic validation gate for spec-driven development.

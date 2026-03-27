@@ -165,7 +165,10 @@ export function MetricsBar({
     return (
       <header className="border-b border-border bg-card px-5 py-3.5">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold tracking-tight">minter</span>
+          <div className="flex items-center gap-2">
+            <img src="/logo-animated.svg" alt="minter" className="size-6" />
+            <span className="font-semibold tracking-tight">minter</span>
+          </div>
           <div className="flex-1" />
           <div className="h-3 w-40 animate-pulse rounded bg-muted" />
         </div>
@@ -181,7 +184,10 @@ export function MetricsBar({
   return (
     <header className="border-b border-border bg-card px-5 py-3.5">
       <div className="flex items-center gap-4 text-sm">
-        <span className="font-semibold tracking-tight">minter</span>
+        <div className="flex items-center gap-2">
+          <img src="/logo-animated.svg" alt="minter" className="size-6" />
+          <span className="font-semibold tracking-tight">minter</span>
+        </div>
 
         <div className="flex items-center gap-1.5">
           <span

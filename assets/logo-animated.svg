@@ -1,0 +1,134 @@
+<svg width="120" height="120" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <style>
+    .block {
+      fill: currentColor;
+      transform-box: fill-box;
+      transform-origin: center;
+      animation-duration: 1.35s;
+      animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+      animation-fill-mode: forwards;
+    }
+
+    .b1 { animation-name: split1; }
+    .b2 { animation-name: split2; }
+    .b3 { animation-name: split3; }
+
+    @keyframes split1 {
+      0% {
+        x: 8.5px;
+        y: 8.5px;
+        width: 7px;
+        height: 7px;
+        rx: 1.4px;
+      }
+      38% {
+        x: 8.5px;
+        y: 8.5px;
+        width: 7px;
+        height: 7px;
+        rx: 1.4px;
+      }
+      48% {
+        x: 8.25px;
+        y: 8.75px;
+        width: 7.5px;
+        height: 6.5px;
+        rx: 1.5px;
+      }
+      78% {
+        x: 2.6px;
+        y: 2.6px;
+        width: 7px;
+        height: 7px;
+        rx: 1px;
+      }
+      100% {
+        x: 3px;
+        y: 3px;
+        width: 7px;
+        height: 7px;
+        rx: 1px;
+      }
+    }
+
+    @keyframes split2 {
+      0% {
+        x: 8.5px;
+        y: 8.5px;
+        width: 7px;
+        height: 7px;
+        rx: 1.4px;
+      }
+      38% {
+        x: 8.5px;
+        y: 8.5px;
+        width: 7px;
+        height: 7px;
+        rx: 1.4px;
+      }
+      48% {
+        x: 8.25px;
+        y: 8.75px;
+        width: 7.5px;
+        height: 6.5px;
+        rx: 1.5px;
+      }
+      78% {
+        x: 14.4px;
+        y: 2.6px;
+        width: 7px;
+        height: 7px;
+        rx: 1px;
+      }
+      100% {
+        x: 14px;
+        y: 3px;
+        width: 7px;
+        height: 7px;
+        rx: 1px;
+      }
+    }
+
+    @keyframes split3 {
+      0% {
+        x: 8.5px;
+        y: 8.5px;
+        width: 7px;
+        height: 7px;
+        rx: 1.4px;
+      }
+      38% {
+        x: 8.5px;
+        y: 8.5px;
+        width: 7px;
+        height: 7px;
+        rx: 1.4px;
+      }
+      48% {
+        x: 8.25px;
+        y: 8.75px;
+        width: 7.5px;
+        height: 6.5px;
+        rx: 1.5px;
+      }
+      78% {
+        x: 8.5px;
+        y: 14.4px;
+        width: 7px;
+        height: 7px;
+        rx: 1px;
+      }
+      100% {
+        x: 8.5px;
+        y: 14px;
+        width: 7px;
+        height: 7px;
+        rx: 1px;
+      }
+    }
+  </style>
+
+  <rect class="block b1" x="8.5" y="8.5" width="7" height="7" rx="1.4"></rect>
+  <rect class="block b2" x="8.5" y="8.5" width="7" height="7" rx="1.4"></rect>
+  <rect class="block b3" x="8.5" y="8.5" width="7" height="7" rx="1.4"></rect>
+</svg>

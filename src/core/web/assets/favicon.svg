@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#1a1a2e"/>
-  <text x="16" y="23" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700" font-size="20" fill="#a78bfa">m</text>
+<svg width="32" height="32" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <g fill="#111111">
+    <rect x="4" y="4" width="6" height="6" rx="0.9"></rect>
+    <rect x="14" y="4" width="6" height="6" rx="0.9"></rect>
+    <rect x="9" y="14" width="6" height="6" rx="0.9"></rect>
+  </g>
 </svg>
