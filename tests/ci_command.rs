@@ -2,74 +2,10 @@ mod common;
 
 use std::fs;
 
-use common::minter;
+use common::{minter, nfr_performance, spec_one_behavior, spec_two_behaviors};
 use predicates::prelude::*;
 use sha2::{Digest, Sha256};
 use tempfile::TempDir;
-
-// ── Spec fixtures ───────────────────────────────────────
-
-fn spec_two_behaviors() -> &'static str {
-    "\
-spec a v1.0.0
-title \"A\"
-
-description
-  Test.
-
-motivation
-  Test.
-
-behavior do-thing [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-
-
-behavior do-other [happy_path]
-  \"Does another\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-}
-
-fn spec_one_behavior(name: &str, version: &str, behavior: &str) -> String {
-    format!(
-        "\
-spec {name} v{version}
-title \"{name}\"
-
-description
-  Test.
-
-motivation
-  Test.
-
-behavior {behavior} [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-    )
-}
 
 fn spec_with_dep(name: &str, version: &str, behavior: &str, dep_name: &str) -> String {
     format!(
@@ -126,34 +62,6 @@ behavior {behavior} [happy_path]
     assert status == \"ok\"
 "
     )
-}
-
-fn nfr_performance() -> &'static str {
-    "\
-nfr performance v1.0.0
-title \"Perf\"
-
-description
-  Perf.
-
-motivation
-  Perf.
-
-
-constraint api-latency [metric]
-  \"API latency\"
-
-  metric \"p95 response time\"
-  threshold < 500ms
-
-  verification
-    environment staging
-    benchmark \"load test\"
-    pass \"p95 < 500ms\"
-
-  violation high
-  overridable yes
-"
 }
 
 /// Compute SHA-256 hex hash of content.

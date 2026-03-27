@@ -2,121 +2,11 @@ mod common;
 
 use std::fs;
 
-use common::minter;
+use common::{
+    minter, nfr_performance, spec_one_behavior, spec_three_behaviors, spec_two_behaviors,
+};
 use predicates::prelude::*;
 use tempfile::TempDir;
-
-// ── Spec fixtures ───────────────────────────────────────
-
-fn spec_two_behaviors() -> &'static str {
-    "\
-spec a v1.0.0
-title \"A\"
-
-description
-  Test.
-
-motivation
-  Test.
-
-behavior do-thing [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-
-
-behavior do-other [happy_path]
-  \"Does another\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-}
-
-fn spec_three_behaviors() -> &'static str {
-    "\
-spec a v1.0.0
-title \"A\"
-
-description
-  Test.
-
-motivation
-  Test.
-
-behavior do-thing [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-
-
-behavior do-other [happy_path]
-  \"Does another\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-
-
-behavior do-more [edge_case]
-  \"Does more\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-}
-
-fn spec_one_behavior(name: &str, version: &str, behavior: &str) -> String {
-    format!(
-        "\
-spec {name} v{version}
-title \"{name}\"
-
-description
-  Test.
-
-motivation
-  Test.
-
-behavior {behavior} [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-    )
-}
 
 fn spec_with_dep(name: &str, dep_name: &str) -> String {
     format!(
@@ -177,34 +67,6 @@ behavior do-thing [happy_path]
 
 fn spec_no_nfr(name: &str) -> String {
     spec_one_behavior(name, "1.0.0", "do-thing")
-}
-
-fn nfr_performance() -> &'static str {
-    "\
-nfr performance v1.0.0
-title \"Perf\"
-
-description
-  Perf.
-
-motivation
-  Perf.
-
-
-constraint api-latency [metric]
-  \"API latency\"
-
-  metric \"p95 response time\"
-  threshold < 500ms
-
-  verification
-    environment staging
-    benchmark \"load test\"
-    pass \"p95 < 500ms\"
-
-  violation high
-  overridable yes
-"
 }
 
 fn broken_spec() -> &'static str {
@@ -355,7 +217,11 @@ fn lock_contains_behaviors() {
 
     let spec_dir = dir.path().join("specs");
     fs::create_dir(&spec_dir).unwrap();
-    fs::write(spec_dir.join("a.spec"), spec_three_behaviors()).unwrap();
+    fs::write(
+        spec_dir.join("a.spec"),
+        &spec_three_behaviors("a", "1.0.0", "do-thing", "do-other", "do-more"),
+    )
+    .unwrap();
 
     let test_dir = dir.path().join("tests");
     fs::create_dir(&test_dir).unwrap();
@@ -859,7 +725,11 @@ fn lock_multiple_specs() {
 
     let sub_dir = spec_dir.join("sub");
     fs::create_dir(&sub_dir).unwrap();
-    fs::write(sub_dir.join("b.spec"), spec_three_behaviors()).unwrap();
+    fs::write(
+        sub_dir.join("b.spec"),
+        &spec_three_behaviors("a", "1.0.0", "do-thing", "do-other", "do-more"),
+    )
+    .unwrap();
 
     let deep_dir = sub_dir.join("deep");
     fs::create_dir(&deep_dir).unwrap();

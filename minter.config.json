@@ -1,4 +1,4 @@
 {
   "specs": "specs/",
-  "tests": ["tests/", "benches/"]
+  "tests": ["tests/", "benches/", "web/tests/"]
 }

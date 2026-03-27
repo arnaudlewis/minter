@@ -5,5 +5,8 @@ pub mod deps;
 pub mod discover;
 pub mod graph;
 pub mod io;
+pub mod lock_types;
 pub mod parser;
 pub mod validation;
+#[cfg(feature = "web")]
+pub mod web;

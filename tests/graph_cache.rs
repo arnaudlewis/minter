@@ -2,39 +2,8 @@ mod common;
 
 use std::fs;
 
-use common::{minter, read_graph_json, temp_dir_with_specs, write_graph_json};
+use common::{minter, read_graph_json, temp_dir_with_specs, valid_spec, write_graph_json};
 use predicates::prelude::*;
-
-/// Helper: a valid spec with a given name, version, and optional dependency.
-fn valid_spec(name: &str, version: &str, dep: Option<(&str, &str)>) -> String {
-    let dep_line = match dep {
-        Some((dep_name, dep_ver)) => format!("\ndepends on {} >= {}\n", dep_name, dep_ver),
-        None => String::new(),
-    };
-    format!(
-        "\
-spec {name} v{version}
-title \"{name}\"
-
-description
-  A spec for testing.
-
-motivation
-  Testing graph cache.
-
-behavior do-thing [happy_path]
-  \"Do the thing\"
-
-  given
-    The system is ready
-
-  when act
-
-  then emits stdout
-    assert output contains \"done\"
-{dep_line}"
-    )
-}
 
 // ═══════════════════════════════════════════════════════════════
 // graph-cache.spec behaviors

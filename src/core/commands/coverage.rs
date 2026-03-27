@@ -141,7 +141,10 @@ pub fn run_coverage(
             let err = serde_json::json!({
                 "errors": [format!("spec path not found: {}", spec_path.display())]
             });
-            println!("{}", serde_json::to_string_pretty(&err).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&err).unwrap_or_else(|_| "{}".to_string())
+            );
         } else {
             eprintln!("error: spec path not found: {}", spec_path.display());
         }
@@ -155,7 +158,10 @@ pub fn run_coverage(
                 let err = serde_json::json!({
                     "errors": [format!("scan path not found: {}", scan.display())]
                 });
-                println!("{}", serde_json::to_string_pretty(&err).unwrap());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&err).unwrap_or_else(|_| "{}".to_string())
+                );
             } else {
                 eprintln!("error: scan path not found: {}", scan.display());
             }
@@ -169,7 +175,10 @@ pub fn run_coverage(
         Err(msg) => {
             if is_json {
                 let err = serde_json::json!({ "errors": [msg] });
-                println!("{}", serde_json::to_string_pretty(&err).unwrap());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&err).unwrap_or_else(|_| "{}".to_string())
+                );
             } else {
                 eprintln!("error: {}", msg);
             }
@@ -180,7 +189,10 @@ pub fn run_coverage(
     if specs.is_empty() {
         if is_json {
             let err = serde_json::json!({ "errors": ["no spec files found"] });
-            println!("{}", serde_json::to_string_pretty(&err).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&err).unwrap_or_else(|_| "{}".to_string())
+            );
         } else {
             eprintln!("error: no spec files found in {}", spec_path.display());
         }
@@ -217,7 +229,10 @@ pub fn run_coverage(
         if is_json {
             let errors: Vec<String> = tag_errors.iter().map(|e| e.to_string()).collect();
             let err = serde_json::json!({ "errors": errors });
-            println!("{}", serde_json::to_string_pretty(&err).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&err).unwrap_or_else(|_| "{}".to_string())
+            );
         } else {
             for e in &tag_errors {
                 eprintln!("error: {}", e);
@@ -999,5 +1014,5 @@ fn format_json_report(report: &CoverageReport) -> String {
         "type_counts": report.type_counts,
     });
 
-    serde_json::to_string_pretty(&output).unwrap()
+    serde_json::to_string_pretty(&output).unwrap_or_else(|_| "{}".to_string())
 }

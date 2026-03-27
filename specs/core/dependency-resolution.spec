@@ -297,6 +297,22 @@ behavior skip-deps-when-spec-invalid [error_case]
     assert code == 1
 
 
+behavior reject-excessive-depth [error_case]
+  "Print error when the dependency chain exceeds the maximum depth of 256"
+
+  given
+    A chain of 258 specs where each depends on the next
+    The recursion depth exceeds 256
+
+  when minter validate --deep specs/spec-0.spec
+
+  then emits stderr
+    assert output contains "dependency resolution exceeded maximum depth of 256"
+
+  then emits process_exit
+    assert code == 1
+
+
 behavior handle-no-dependencies [edge_case]
   "Exit 0 when the spec has no depends on declarations"
 

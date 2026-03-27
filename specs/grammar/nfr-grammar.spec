@@ -12,6 +12,9 @@ motivation
   NFR files and enables reliable parsing. This spec is the contract for
   what constitutes a well-formed .nfr file.
 
+nfr
+  reliability#error-completeness
+
 # Header section
 
 behavior parse-nfr-declaration [happy_path]
@@ -716,8 +719,11 @@ behavior reject-trailing-content [error_case]
   given
     An NFR file with valid structure followed by unexpected text after the last constraint
 
-  when minter validate is run
+  when parse
 
-  then
-    assert validation fails with an error indicating unexpected trailing content
-    assert the error includes the line number where the trailing content starts
+  then emits stderr
+    assert output contains line number
+    assert output mentions unexpected trailing content
+
+  then emits process_exit
+    assert code == 1

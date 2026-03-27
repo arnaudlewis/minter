@@ -12,6 +12,9 @@ motivation
   gives authors a valid starting point that already satisfies the DSL
   grammar, reducing time to first valid spec.
 
+nfr
+  operability#ci-friendly-output
+
 
 behavior scaffold-spec [happy_path]
   "Output a functional requirement skeleton with all required sections"

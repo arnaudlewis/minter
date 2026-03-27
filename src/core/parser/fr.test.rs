@@ -99,7 +99,6 @@ behavior do-thing [happy_path]
 // Header parsing (dsl-format.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dsl-format.spec: parse-spec-declaration
 #[test]
 fn parse_spec_declaration() {
     let spec = parse(MINIMAL).unwrap();
@@ -107,7 +106,6 @@ fn parse_spec_declaration() {
     assert_eq!(spec.version, "1.0.0");
 }
 
-/// dsl-format.spec: parse-title
 #[test]
 fn parse_title() {
     let input = spec_with_header("test-spec", "v2.3.1", "A Descriptive Title");
@@ -116,7 +114,6 @@ fn parse_title() {
     assert_eq!(spec.version, "2.3.1");
 }
 
-/// dsl-format.spec: parse-description-block
 #[test]
 fn parse_description_block() {
     let input = "\
@@ -146,7 +143,6 @@ behavior do-thing [happy_path]
     assert!(spec.description.contains("Line two"));
 }
 
-/// dsl-format.spec: parse-motivation-block
 #[test]
 fn parse_motivation_block() {
     let input = "\
@@ -180,7 +176,6 @@ behavior do-thing [happy_path]
 // Behavior blocks (dsl-format.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dsl-format.spec: parse-behavior-declaration
 #[test]
 fn parse_behavior_declaration() {
     let spec = parse(MINIMAL).unwrap();
@@ -189,14 +184,12 @@ fn parse_behavior_declaration() {
     assert_eq!(spec.behaviors[0].description, "Do it");
 }
 
-/// dsl-format.spec: parse-category-happy-path
 #[test]
 fn parse_category_happy_path() {
     let spec = parse(MINIMAL).unwrap();
     assert_eq!(spec.behaviors[0].category, BehaviorCategory::HappyPath);
 }
 
-/// dsl-format.spec: parse-category-error-case
 #[test]
 fn parse_category_error_case() {
     let input = spec_with_behavior(
@@ -227,7 +220,6 @@ behavior fail-thing [error_case]
     assert_eq!(spec.behaviors[1].category, BehaviorCategory::ErrorCase);
 }
 
-/// dsl-format.spec: parse-category-edge-case
 #[test]
 fn parse_category_edge_case() {
     let input = spec_with_behavior(
@@ -262,7 +254,6 @@ behavior weird-thing [edge_case]
 // Given section (dsl-format.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dsl-format.spec: parse-given-prose
 #[test]
 fn parse_given_prose() {
     let spec = parse(MINIMAL).unwrap();
@@ -273,7 +264,6 @@ fn parse_given_prose() {
     }
 }
 
-/// dsl-format.spec: parse-given-alias-declaration
 #[test]
 fn parse_given_alias_declaration() {
     let input = spec_with_behavior(
@@ -306,7 +296,6 @@ behavior with-alias [happy_path]
     }
 }
 
-/// dsl-format.spec: parse-given-multiple-preconditions
 #[test]
 fn parse_given_multiple_preconditions() {
     let input = spec_with_behavior(
@@ -339,7 +328,6 @@ behavior multi [happy_path]
 // When section (dsl-format.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dsl-format.spec: parse-when-action
 #[test]
 fn parse_when_action() {
     let input = spec_with_behavior(
@@ -359,7 +347,6 @@ behavior with-action [happy_path]
     assert_eq!(spec.behaviors[0].action.name, "create_item");
 }
 
-/// dsl-format.spec: parse-when-inputs
 #[test]
 fn parse_when_inputs() {
     let input = spec_with_behavior(
@@ -396,7 +383,6 @@ behavior with-inputs [happy_path]
     }
 }
 
-/// dsl-format.spec: parse-when-alias-reference
 #[test]
 fn parse_when_alias_reference() {
     let input = spec_with_behavior(
@@ -428,7 +414,6 @@ behavior with-ref [happy_path]
 // Then section (dsl-format.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dsl-format.spec: parse-then-returns
 #[test]
 fn parse_then_returns() {
     let input = spec_with_behavior(
@@ -454,7 +439,6 @@ behavior with-returns [happy_path]
     assert_eq!(pc.assertions.len(), 2);
 }
 
-/// dsl-format.spec: parse-then-emits
 #[test]
 fn parse_then_emits() {
     let spec = parse(MINIMAL).unwrap();
@@ -462,7 +446,6 @@ fn parse_then_emits() {
     assert_eq!(pc.kind, PostconditionKind::Emits("stdout".to_string()));
 }
 
-/// dsl-format.spec: parse-then-emits-process-exit
 #[test]
 fn parse_then_emits_process_exit() {
     let input = spec_with_behavior(
@@ -485,7 +468,6 @@ behavior with-exit [happy_path]
     );
 }
 
-/// dsl-format.spec: parse-then-side-effect
 #[test]
 fn parse_then_side_effect() {
     let input = spec_with_behavior(
@@ -509,7 +491,6 @@ behavior with-side-effect [happy_path]
     assert_eq!(spec.behaviors[0].postconditions[0].assertions.len(), 1);
 }
 
-/// dsl-format.spec: parse-multiple-then-blocks
 #[test]
 fn parse_multiple_then_blocks() {
     let input = spec_with_behavior(
@@ -536,7 +517,6 @@ behavior multi-then [happy_path]
 // Assertions (dsl-format.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dsl-format.spec: parse-assert-equals
 #[test]
 fn parse_assert_equals() {
     let input = spec_with_behavior(
@@ -562,7 +542,6 @@ behavior with-eq [happy_path]
     }
 }
 
-/// dsl-format.spec: parse-assert-is-present
 #[test]
 fn parse_assert_is_present() {
     let input = spec_with_behavior(
@@ -585,7 +564,6 @@ behavior with-present [happy_path]
     }
 }
 
-/// dsl-format.spec: parse-assert-contains
 #[test]
 fn parse_assert_contains() {
     let spec = parse(MINIMAL).unwrap();
@@ -598,7 +576,6 @@ fn parse_assert_contains() {
     }
 }
 
-/// dsl-format.spec: parse-assert-in-range
 #[test]
 fn parse_assert_in_range() {
     let input = spec_with_behavior(
@@ -625,7 +602,6 @@ behavior with-range [happy_path]
     }
 }
 
-/// dsl-format.spec: parse-assert-matches-pattern
 #[test]
 fn parse_assert_matches_pattern() {
     let input = spec_with_behavior(
@@ -651,7 +627,6 @@ behavior with-pattern [happy_path]
     }
 }
 
-/// dsl-format.spec: parse-assert-equals-ref
 #[test]
 fn parse_assert_equals_ref() {
     let input = spec_with_behavior(
@@ -682,7 +657,6 @@ behavior with-ref [happy_path]
     }
 }
 
-/// dsl-format.spec: parse-assert-greater-or-equal
 #[test]
 fn parse_assert_greater_or_equal() {
     let input = spec_with_behavior(
@@ -745,7 +719,6 @@ behavior with-multi-field [happy_path]
     }
 }
 
-/// Prose assertions (no known operator) should parse as Prose, not error
 #[test]
 fn parse_assert_prose_no_operator() {
     let input = spec_with_behavior(
@@ -779,7 +752,6 @@ behavior with-prose-assert [happy_path]
 // Dependencies (dsl-format.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dsl-format.spec: parse-depends-on
 #[test]
 fn parse_depends_on() {
     let input = spec_with_deps("depends on user-auth >= 1.0.0");
@@ -789,7 +761,6 @@ fn parse_depends_on() {
     assert_eq!(spec.dependencies[0].version_constraint, "1.0.0");
 }
 
-/// dsl-format.spec: parse-multiple-dependencies
 #[test]
 fn parse_multiple_dependencies() {
     let input = spec_with_deps("depends on user-auth >= 1.0.0\ndepends on billing >= 2.0.0");
@@ -945,7 +916,6 @@ behavior do-thing [happy_path]
 // Structure (dsl-format.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dsl-format.spec: ignore-blank-lines
 #[test]
 fn ignore_blank_lines() {
     let input = "\
@@ -983,7 +953,6 @@ behavior do-thing [happy_path]
 // Error cases (dsl-format.spec)
 // ═══════════════════════════════════════════════════════════════
 
-/// dsl-format.spec: reject-behavior-without-given
 #[test]
 fn reject_behavior_without_given() {
     let input = spec_with_behavior(
@@ -1005,7 +974,6 @@ behavior bad [happy_path]
     );
 }
 
-/// dsl-format.spec: reject-behavior-without-when
 #[test]
 fn reject_behavior_without_when() {
     let input = spec_with_behavior(
@@ -1028,7 +996,6 @@ behavior bad [happy_path]
     );
 }
 
-/// dsl-format.spec: reject-behavior-without-then
 #[test]
 fn reject_behavior_without_then() {
     let input = spec_with_behavior(
@@ -1051,7 +1018,6 @@ behavior bad [happy_path]
     );
 }
 
-/// dsl-format.spec: reject-wrong-section-order
 #[test]
 fn reject_wrong_section_order() {
     let input = spec_with_behavior(
@@ -1071,7 +1037,6 @@ behavior bad [happy_path]
     assert!(!errors.is_empty());
 }
 
-/// dsl-format.spec: reject-assert-without-field
 #[test]
 fn reject_assert_without_field() {
     let input = spec_with_behavior(
@@ -1091,7 +1056,6 @@ behavior bad [happy_path]
     assert!(!errors.is_empty());
 }
 
-/// dsl-format.spec: reject-unknown-assertion-operator
 #[test]
 fn reject_unknown_assertion_operator() {
     let input = spec_with_behavior(
@@ -1116,7 +1080,6 @@ behavior bad [happy_path]
     );
 }
 
-/// dsl-format.spec: reject-alias-without-entity
 #[test]
 fn reject_alias_without_entity() {
     let input = spec_with_behavior(
@@ -1136,7 +1099,6 @@ behavior bad [happy_path]
     assert!(!errors.is_empty());
 }
 
-/// dsl-format.spec: reject-malformed-alias-reference
 #[test]
 fn reject_malformed_alias_reference() {
     let input = spec_with_behavior(
@@ -1157,7 +1119,6 @@ behavior bad [happy_path]
     assert!(!errors.is_empty());
 }
 
-/// dsl-format.spec: reject-depends-on-without-version
 #[test]
 fn reject_depends_on_without_version() {
     let input = spec_with_deps("depends on user-auth");
@@ -1417,8 +1378,6 @@ depends on billing >= 2.0.0
 // Trailing content (spec-grammar.spec: reject-trailing-content)
 // ═══════════════════════════════════════════════════════════════
 
-/// spec-grammar.spec: reject-trailing-content
-// @minter:unit spec-grammar/reject-trailing-content
 #[test]
 fn trailing_text_after_depends_on() {
     let input = spec_with_deps(
@@ -1436,8 +1395,6 @@ this is unexpected trailing content",
     );
 }
 
-/// spec-grammar.spec: reject-trailing-content
-// @minter:unit spec-grammar/reject-trailing-content
 #[test]
 fn trailing_text_after_last_behavior() {
     let input = "\
@@ -1475,8 +1432,6 @@ this is unexpected garbage
     );
 }
 
-/// spec-grammar.spec: reject-trailing-content (negative — whitespace is fine)
-// @minter:unit spec-grammar/reject-trailing-content
 #[test]
 fn trailing_whitespace_after_spec_is_ok() {
     let input = "\
@@ -1507,8 +1462,6 @@ behavior do-thing [happy_path]
     assert_eq!(spec.name, "test-spec");
 }
 
-/// spec-grammar.spec: reject-trailing-content
-// @minter:unit spec-grammar/reject-trailing-content
 #[test]
 fn trailing_comments_after_spec() {
     // Non-comment garbage text after the last valid section

@@ -6,15 +6,10 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 use common::{
-    VALID_NFR, VALID_SPEC, minter, temp_dir_with_spec_and_nfrs, temp_dir_with_specs, temp_nfr,
-    temp_spec,
+    VALID_NFR, VALID_SPEC, minter, minter_bin, temp_dir_with_spec_and_nfrs, temp_dir_with_specs,
+    temp_nfr, temp_spec,
 };
 use predicates::prelude::*;
-
-/// Get the path to the minter binary.
-fn minter_bin() -> std::path::PathBuf {
-    assert_cmd::cargo::cargo_bin!("minter").to_path_buf()
-}
 
 /// Wait for a line matching a predicate from a background reader, with timeout.
 fn wait_for_line(
@@ -80,7 +75,8 @@ fn show_help() {
         .stdout(predicate::str::contains("guide"))
         .stdout(predicate::str::contains("coverage"))
         .stdout(predicate::str::contains("lock"))
-        .stdout(predicate::str::contains("ci"));
+        .stdout(predicate::str::contains("ci"))
+        .stdout(predicate::str::contains("web"));
 
     // No arguments also prints usage
     minter()
@@ -790,4 +786,70 @@ fn route_watch_nfr_file() {
 
     let _ = child.kill();
     let _ = child.wait();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Lock / CI / Web routing (cli.spec)
+// ═══════════════════════════════════════════════════════════════
+
+/// cli: route-lock
+// @minter:e2e route-lock
+#[test]
+fn route_lock() {
+    let dir = tempfile::TempDir::new().unwrap();
+
+    let spec_dir = dir.path().join("specs");
+    std::fs::create_dir(&spec_dir).unwrap();
+    std::fs::write(spec_dir.join("a.spec"), VALID_SPEC).unwrap();
+
+    let test_dir = dir.path().join("tests");
+    std::fs::create_dir(&test_dir).unwrap();
+    std::fs::write(test_dir.join("a_test.rs"), "// @minter:unit do-thing\n").unwrap();
+
+    minter()
+        .arg("lock")
+        .current_dir(dir.path())
+        .assert()
+        .success();
+}
+
+/// cli: route-ci
+// @minter:e2e route-ci
+#[test]
+fn route_ci() {
+    let dir = tempfile::TempDir::new().unwrap();
+
+    let spec_dir = dir.path().join("specs");
+    std::fs::create_dir(&spec_dir).unwrap();
+    std::fs::write(spec_dir.join("a.spec"), VALID_SPEC).unwrap();
+
+    let test_dir = dir.path().join("tests");
+    std::fs::create_dir(&test_dir).unwrap();
+    std::fs::write(test_dir.join("a_test.rs"), "// @minter:unit do-thing\n").unwrap();
+
+    // Generate a lock file first
+    minter()
+        .arg("lock")
+        .current_dir(dir.path())
+        .assert()
+        .success();
+
+    // Then run CI
+    minter()
+        .arg("ci")
+        .current_dir(dir.path())
+        .assert()
+        .success();
+}
+
+/// cli: route-web
+// @minter:e2e route-web
+#[test]
+fn route_web() {
+    // web starts a server, so we test via --help to verify routing
+    minter()
+        .args(&["web", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("web"));
 }

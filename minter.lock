@@ -97,7 +97,7 @@
             "color-deleted-file-red",
             "color-new-file-cyan"
           ],
-          "hash": "008ef16e3e6309fbe652a1b3877a81248acefd9c2049801d5593862713067fe1"
+          "hash": "31d60f0040b3eebfb1a38762772627d5f160412d698fde02ff2ea2cf274c27be"
         }
       }
     },
@@ -121,6 +121,9 @@
         "route-coverage-file",
         "route-coverage-with-scan",
         "route-coverage-with-format",
+        "route-lock",
+        "route-ci",
+        "route-web",
         "reject-unknown-command",
         "reject-unknown-flag",
         "reject-missing-required-argument",
@@ -142,9 +145,12 @@
         "specs/core/commands/graph-command.spec",
         "specs/core/commands/guide-command.spec",
         "specs/core/commands/coverage-command.spec",
-        "specs/grammar/nfr-grammar.spec"
+        "specs/grammar/nfr-grammar.spec",
+        "specs/core/commands/lock-command.spec",
+        "specs/core/commands/ci-command.spec",
+        "specs/core/commands/web-command.spec"
       ],
-      "hash": "5b3777653d79c18bb60ce4cb70182aec24ecdc2ce5b70060635aca1b031e27a1",
+      "hash": "9803e20eacd7571173e011cfe68a9baa393d11d3dd3858b50f6af4e83aeac5fa",
       "nfrs": [
         "operability#ci-friendly-output",
         "operability#zero-config"
@@ -158,6 +164,7 @@
             "reject-non-spec-extension",
             "reject-unknown-command",
             "reject-unknown-flag",
+            "route-ci",
             "route-coverage-directory",
             "route-coverage-file",
             "route-coverage-with-format",
@@ -168,6 +175,7 @@
             "route-guide",
             "route-inspect",
             "route-inspect-nfr",
+            "route-lock",
             "route-scaffold-nfr",
             "route-scaffold-spec",
             "route-validate-file",
@@ -178,10 +186,11 @@
             "route-watch-file",
             "route-watch-folder",
             "route-watch-nfr-file",
+            "route-web",
             "show-help",
             "show-version"
           ],
-          "hash": "33a49c616882ad34514606cfc19e83f81c0b511eca713e3227e0a6e749a7a42b"
+          "hash": "8f204ddaf12411963a3c68c59df75885a50bf4746ae0a05bed57d89e9cc29c44"
         }
       }
     },
@@ -245,7 +254,7 @@
             "report-all-failures",
             "report-check-summary"
           ],
-          "hash": "b482df85d5f0331f518332487906ad9bafb01b00802355be10025b0057ffb430"
+          "hash": "453d7de8f4d3545c8204acdadd8057a6b501b09a7006dc95c30fcdadab2a8ec9"
         }
       }
     },
@@ -350,7 +359,7 @@
             "verbose-expands-all",
             "warn-empty-tag"
           ],
-          "hash": "da2ecda4884ae7eabc2c93c4890995d2497e97d217f4bd75213b5e89075ec9da"
+          "hash": "b3218c1335e00c8f0e9a0a9d41a5bc4fc29b045222dc17d42c3a7d45f96edbbd"
         }
       }
     },
@@ -593,7 +602,7 @@
             "reject-no-specs-found",
             "reject-tag-errors"
           ],
-          "hash": "b490155f221e8b7a40dfd6ee5a066b1be74029737619b46365d83fb7063bc1ff"
+          "hash": "d91e87a88c6402979e5d2943fbfaa941e0a7bd645fdcb4371db90ace0ff7843a"
         }
       }
     },
@@ -611,8 +620,10 @@
       "dependencies": [
         "specs/grammar/nfr-grammar.spec"
       ],
-      "hash": "6453a0c64919812d0a56d9fa528d6f5d8e9b542182eef8c15316805e3cffe7ff",
-      "nfrs": [],
+      "hash": "3e731886eb418fe8a57d6c4938949b48ee5b9db560512222fcca6ead63776ebc",
+      "nfrs": [
+        "operability#ci-friendly-output"
+      ],
       "test_files": {
         "tests/scaffold_command.rs": {
           "covers": [
@@ -649,6 +660,7 @@
         "reject-nonexistent-directory",
         "reject-unreadable-file",
         "reject-empty-file",
+        "reject-oversized-file",
         "report-all-errors",
         "skip-semantic-when-parse-fails",
         "exit-1-when-any-file-invalid",
@@ -667,7 +679,7 @@
         "specs/grammar/nfr-grammar.spec",
         "specs/nfr/nfr-cross-reference.spec"
       ],
-      "hash": "b872dc4a113778ebac0a4963a86684ac277318e72205d282575db4166303c896",
+      "hash": "3856cd161e035667021c74404a9af589a56c1338cba763f53cf6b6cf48fe7ad9",
       "nfrs": [
         "operability#ci-friendly-output",
         "performance#cache-skip-unchanged",
@@ -696,6 +708,7 @@
             "reject-no-happy-path",
             "reject-nonexistent-directory",
             "reject-nonexistent-file",
+            "reject-oversized-file",
             "reject-unreadable-file",
             "reject-unresolved-alias",
             "report-all-errors",
@@ -712,7 +725,7 @@
             "validate-valid-nfr",
             "validate-valid-spec"
           ],
-          "hash": "fe2f3859d3931714d46912407f4c11547892c5f614b5d4ec0aa1c58df0337cf8"
+          "hash": "f6971d61c38dc88e50f539cbe675e1c5abcd3d06aaca98a6b29c7696026a879a"
         }
       }
     },
@@ -780,7 +793,82 @@
             "watch-start-directory",
             "watch-start-single-file"
           ],
-          "hash": "008ef16e3e6309fbe652a1b3877a81248acefd9c2049801d5593862713067fe1"
+          "hash": "31d60f0040b3eebfb1a38762772627d5f160412d698fde02ff2ea2cf274c27be"
+        }
+      }
+    },
+    "specs/core/commands/web-command.spec": {
+      "behaviors": [
+        "launch-starts-server",
+        "server-port-fallback",
+        "header-displays-metrics",
+        "lock-regeneration-feedback",
+        "lock-drift-tooltip",
+        "header-shows-invalid-tags-badge",
+        "spec-card-displays-summary",
+        "spec-card-status-green",
+        "spec-card-status-warning",
+        "spec-card-status-error",
+        "spec-card-shows-dep-errors",
+        "panel-opens-on-card-click",
+        "panel-shows-behaviors",
+        "panel-shows-nfr-refs",
+        "panel-shows-dependencies",
+        "panel-shows-errors",
+        "panel-search-behaviors",
+        "panel-behavior-detail",
+        "nfr-card-displays-summary",
+        "nfr-card-invalid",
+        "nfr-panel-opens-on-click",
+        "nfr-panel-shows-referencing-specs",
+        "filter-specs-by-search",
+        "live-update-on-file-change",
+        "reconnect-on-disconnect",
+        "broken-spec-stays-visible"
+      ],
+      "dependencies": [
+        "specs/core/config.spec",
+        "specs/core/commands/validate-command.spec",
+        "specs/core/commands/coverage-command.spec",
+        "specs/core/commands/lock-command.spec"
+      ],
+      "hash": "27528c721134cb5a1bedce7f87f82434387509610af29aafe5976d4c3c810b03",
+      "nfrs": [
+        "operability#zero-config",
+        "performance#watch-revalidation-latency",
+        "reliability#no-silent-data-loss"
+      ],
+      "test_files": {
+        "web/tests/web-command.coverage.ts": {
+          "covers": [
+            "broken-spec-stays-visible",
+            "filter-specs-by-search",
+            "header-displays-metrics",
+            "header-shows-invalid-tags-badge",
+            "launch-starts-server",
+            "live-update-on-file-change",
+            "lock-drift-tooltip",
+            "lock-regeneration-feedback",
+            "nfr-card-displays-summary",
+            "nfr-card-invalid",
+            "nfr-panel-opens-on-click",
+            "nfr-panel-shows-referencing-specs",
+            "panel-behavior-detail",
+            "panel-opens-on-card-click",
+            "panel-search-behaviors",
+            "panel-shows-behaviors",
+            "panel-shows-dependencies",
+            "panel-shows-errors",
+            "panel-shows-nfr-refs",
+            "reconnect-on-disconnect",
+            "server-port-fallback",
+            "spec-card-displays-summary",
+            "spec-card-shows-dep-errors",
+            "spec-card-status-error",
+            "spec-card-status-green",
+            "spec-card-status-warning"
+          ],
+          "hash": "9ffc4b2abc05ca4023bc6759a1c80ef9390ed3af2a5365dbe19a4ca8573679de"
         }
       }
     },
@@ -849,6 +937,7 @@
         "reject-invalid-dependency-spec",
         "reject-duplicate-spec-names",
         "skip-deps-when-spec-invalid",
+        "reject-excessive-depth",
         "handle-no-dependencies",
         "report-all-resolution-errors",
         "cache-directory-location",
@@ -867,7 +956,7 @@
       "dependencies": [
         "specs/core/commands/validate-command.spec"
       ],
-      "hash": "3a6e3e0e14a923756e6344b0f31f754edf3f001d78c3f6c635d6df5855fb4c7a",
+      "hash": "fd5dee2af3004053bf531a61e831a4617c69e026e4b3f15c5e9d0c8f81399d30",
       "nfrs": [
         "operability#graph-location-predictability",
         "performance#cache-skip-unchanged",
@@ -892,13 +981,13 @@
             "rebuild-on-schema-mismatch",
             "validate-without-deep-ignores-graph"
           ],
-          "hash": "f873f0b376ac7898c7d170c881f04fd545cc8997b4070ec2a227040d546c7c08"
+          "hash": "a83bbb18bcc78f563eb3f49fadc17eab28a6d0176d7ad54b63cd3ee430919f6f"
         },
         "tests/incremental_validation.rs": {
           "covers": [
             "cache-integrates-new-files"
           ],
-          "hash": "fc99b24d769fe7dabaee967c9486c51a72b120e7a868a45da2a43157382bf9fa"
+          "hash": "ff40ea4945c85424c3b5cabdc09806e2795323f30b0fe5f001df69bb71e162a2"
         },
         "tests/validate_dependencies.rs": {
           "covers": [
@@ -922,6 +1011,12 @@
             "version-constraint-satisfied"
           ],
           "hash": "67d12712e78a7f9315fe8900fda7705261bbe6dada9ae5c49347ca41485cd9ac"
+        },
+        "tests/validate_spec.rs": {
+          "covers": [
+            "reject-excessive-depth"
+          ],
+          "hash": "f6971d61c38dc88e50f539cbe675e1c5abcd3d06aaca98a6b29c7696026a879a"
         }
       }
     },
@@ -975,8 +1070,10 @@
         "reject-trailing-content"
       ],
       "dependencies": [],
-      "hash": "5fe6c9e1d8b2ae594e549bb9406c3caef8d2f9839ce3b75b591b0d56bcd6233f",
-      "nfrs": [],
+      "hash": "37fbefae4e91c84a8d603b894602b8f2914e0620c9720e6958fbbd04de1b6378",
+      "nfrs": [
+        "reliability#error-completeness"
+      ],
       "test_files": {
         "tests/nfr_format.rs": {
           "covers": [
@@ -1092,8 +1189,10 @@
         "reject-trailing-content"
       ],
       "dependencies": [],
-      "hash": "b1a0cf58cc7959850dd75a6b313b7c10d70da3c8264c38750b7c94f9529b278b",
-      "nfrs": [],
+      "hash": "6469ed461392eb04ff357f77d69ccb07062d69d61651b16698ff0edaa65afebd",
+      "nfrs": [
+        "reliability#error-completeness"
+      ],
       "test_files": {
         "tests/dsl_format.rs": {
           "covers": [
@@ -1160,7 +1259,7 @@
           "covers": [
             "reject-trailing-content"
           ],
-          "hash": "fe2f3859d3931714d46912407f4c11547892c5f614b5d4ec0aa1c58df0337cf8"
+          "hash": "f6971d61c38dc88e50f539cbe675e1c5abcd3d06aaca98a6b29c7696026a879a"
         }
       }
     },
@@ -1214,7 +1313,7 @@
             "next-steps-after-validate-fail",
             "next-steps-after-validate-pass"
           ],
-          "hash": "faea99692111a731b73ed8ed03001cb19acf84d10e7c1eff5c4e2781f4fa1a0e"
+          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
         }
       }
     },
@@ -1273,7 +1372,7 @@
             "validate-pass-result-fields",
             "validate-summary-fields"
           ],
-          "hash": "faea99692111a731b73ed8ed03001cb19acf84d10e7c1eff5c4e2781f4fa1a0e"
+          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
         }
       }
     },
@@ -1388,7 +1487,7 @@
             "validate-reject-unreadable-file",
             "validate-require-path-or-content"
           ],
-          "hash": "faea99692111a731b73ed8ed03001cb19acf84d10e7c1eff5c4e2781f4fa1a0e"
+          "hash": "aec69f30d1c07a5cfcc8b260707363f2d1e82d0a240a04b152e7f90e36627abf"
         }
       }
     },
@@ -1426,8 +1525,10 @@
         "specs/grammar/spec-grammar.spec",
         "specs/grammar/nfr-grammar.spec"
       ],
-      "hash": "ef302056c40d2757fd6c249e9ae576a2711ea0cac1f40959e08063c7af51016a",
-      "nfrs": [],
+      "hash": "7cdbb35b607b9ae45102ebcfb4407ea5d5630e970f474ab1dcd09b8da7816bc3",
+      "nfrs": [
+        "reliability#error-completeness"
+      ],
       "test_files": {
         "tests/nfr_cross_ref.rs": {
           "covers": [

@@ -2,121 +2,11 @@ mod common;
 
 use std::fs;
 
-use common::minter;
+use common::{
+    minter, nfr_performance, spec_one_behavior, spec_three_behaviors, spec_two_behaviors,
+};
 use predicates::prelude::*;
 use tempfile::TempDir;
-
-// ── Spec fixtures ───────────────────────────────────────
-
-fn spec_two_behaviors() -> &'static str {
-    "\
-spec a v1.0.0
-title \"A\"
-
-description
-  Test.
-
-motivation
-  Test.
-
-behavior do-thing [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-
-
-behavior do-other [happy_path]
-  \"Does another\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-}
-
-fn spec_three_behaviors() -> &'static str {
-    "\
-spec a v1.0.0
-title \"A\"
-
-description
-  Test.
-
-motivation
-  Test.
-
-behavior do-thing [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-
-
-behavior do-other [happy_path]
-  \"Does another\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-
-
-behavior do-missing [happy_path]
-  \"Does missing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-}
-
-fn spec_one_behavior(name: &str, version: &str, behavior: &str) -> String {
-    format!(
-        "\
-spec {name} v{version}
-title \"{name}\"
-
-description
-  Test.
-
-motivation
-  Test.
-
-behavior {behavior} [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-    )
-}
 
 fn spec_with_nfr_ref() -> &'static str {
     "\
@@ -142,34 +32,6 @@ behavior do-thing [happy_path]
 
   then returns result
     assert status == \"ok\"
-"
-}
-
-fn nfr_performance() -> &'static str {
-    "\
-nfr performance v1.0.0
-title \"Perf\"
-
-description
-  Perf.
-
-motivation
-  Perf.
-
-
-constraint api-latency [metric]
-  \"API latency\"
-
-  metric \"p95 response time\"
-  threshold < 500ms
-
-  verification
-    environment staging
-    benchmark \"load test\"
-    pass \"p95 < 500ms\"
-
-  violation high
-  overridable yes
 "
 }
 
@@ -206,7 +68,11 @@ fn report_partial_coverage() {
 
     let spec_dir = dir.path().join("specs");
     fs::create_dir(&spec_dir).unwrap();
-    fs::write(spec_dir.join("a.spec"), spec_three_behaviors()).unwrap();
+    fs::write(
+        spec_dir.join("a.spec"),
+        &spec_three_behaviors("a", "1.0.0", "do-thing", "do-other", "do-missing"),
+    )
+    .unwrap();
 
     fs::write(dir.path().join("a.test.ts"), "// @minter:unit do-thing\n").unwrap();
     fs::write(dir.path().join("b.test.ts"), "// @minter:e2e do-other\n").unwrap();
@@ -290,7 +156,11 @@ fn show_summary() {
 
     let spec_dir = dir.path().join("specs");
     fs::create_dir(&spec_dir).unwrap();
-    fs::write(spec_dir.join("a.spec"), spec_three_behaviors()).unwrap();
+    fs::write(
+        spec_dir.join("a.spec"),
+        &spec_three_behaviors("a", "1.0.0", "do-thing", "do-other", "do-missing"),
+    )
+    .unwrap();
 
     // Cover do-thing with unit, do-other with unit and e2e
     fs::write(
@@ -630,7 +500,11 @@ fn expand_partially_covered_spec() {
 
     let spec_dir = dir.path().join("specs");
     fs::create_dir(&spec_dir).unwrap();
-    fs::write(spec_dir.join("a.spec"), spec_three_behaviors()).unwrap();
+    fs::write(
+        spec_dir.join("a.spec"),
+        &spec_three_behaviors("a", "1.0.0", "do-thing", "do-other", "do-missing"),
+    )
+    .unwrap();
 
     fs::write(dir.path().join("a.test.ts"), "// @minter:unit do-thing\n").unwrap();
     fs::write(dir.path().join("b.test.ts"), "// @minter:e2e do-other\n").unwrap();
