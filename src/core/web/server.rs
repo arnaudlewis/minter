@@ -123,6 +123,7 @@ pub async fn run_server(working_dir: PathBuf, port: u16, no_open: bool) -> i32 {
         .route("/api/action/{name}", post(run_action))
         .route("/ws", get(ws_handler))
         .route("/assets/{*path}", get(serve_asset))
+        .route("/{file}", get(serve_root_file))
         .layer(cors)
         .with_state(app_state);
 
@@ -209,6 +210,26 @@ async fn serve_asset(Path(path): Path<String>) -> impl IntoResponse {
                 })
         }
         None => (StatusCode::NOT_FOUND, "asset not found").into_response(),
+    }
+}
+
+/// GET /:file — serve root-level static files (favicon, logos).
+async fn serve_root_file(Path(file): Path<String>) -> impl IntoResponse {
+    match Assets::get(&file) {
+        Some(content) => {
+            let mime = mime_from_path(&file);
+            Response::builder()
+                .header(header::CONTENT_TYPE, mime)
+                .body(axum::body::Body::from(content.data.to_vec()))
+                .unwrap_or_else(|_| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "failed to build response",
+                    )
+                        .into_response()
+                })
+        }
+        None => (StatusCode::NOT_FOUND, "file not found").into_response(),
     }
 }
 

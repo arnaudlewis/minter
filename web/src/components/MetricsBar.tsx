@@ -1,6 +1,7 @@
 import type { ProjectState } from "@/types"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react"
+import { MinterLogo } from "@/components/MinterLogo"
 import {
   Tooltip,
   TooltipContent,
@@ -166,7 +167,7 @@ export function MetricsBar({
       <header className="border-b border-border bg-card px-5 py-3.5">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <img src="/logo-animated.svg" alt="minter" className="size-6" />
+            <img src="/logo-header.svg" alt="minter" className="size-6" />
             <span className="font-semibold tracking-tight">minter</span>
           </div>
           <div className="flex-1" />
@@ -185,7 +186,7 @@ export function MetricsBar({
     <header className="border-b border-border bg-card px-5 py-3.5">
       <div className="flex items-center gap-4 text-sm">
         <div className="flex items-center gap-2">
-          <img src="/logo-animated.svg" alt="minter" className="size-6" />
+          <img src="/logo-header.svg" alt="minter" className="size-6" />
           <span className="font-semibold tracking-tight">minter</span>
         </div>
 
