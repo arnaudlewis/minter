@@ -339,7 +339,7 @@ export function SpecSlidePanel({ spec, isOpen, onClose, onSelectNfrCategory }: S
                     <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Behaviors ({filteredBehaviors.length})
                     </h3>
-                    <div className="space-y-1">
+                    <div className="space-y-3">
                       {filteredBehaviors.map((behavior) => (
                         <div
                           key={behavior.name}
