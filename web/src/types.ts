@@ -44,8 +44,31 @@ export interface InvalidTag {
   message: string
 }
 
+export interface NfrConstraintInfo {
+  name: string
+  description: string
+  constraint_type: string  // "metric" or "rule"
+  threshold: string | null
+  rule_text: string | null
+  violation: string
+  overridable: boolean
+}
+
+export interface NfrInfo {
+  category: string
+  version: string
+  title: string
+  description: string
+  path: string
+  constraint_count: number
+  constraints: NfrConstraintInfo[]
+  validation_status: "Valid" | { Invalid: string[] } | "Unknown"
+  referenced_by: string[]  // spec names
+}
+
 export interface ProjectState {
   specs: SpecInfo[]
+  nfrs: NfrInfo[]
   nfr_count: number
   test_count: number
   coverage_covered: number

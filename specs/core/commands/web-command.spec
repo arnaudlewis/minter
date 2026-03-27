@@ -289,6 +289,64 @@ behavior panel-behavior-detail [happy_path]
     assert the detail view shows the behavior category tag
 
 
+# NFR section
+
+behavior nfr-card-displays-summary [happy_path]
+  "Each NFR card shows category, version, and constraint count"
+
+  given
+    performance.nfr v1.1.0 has 7 constraints
+    reliability.nfr v1.0.0 has 4 constraints
+
+  when the dashboard renders
+
+  then
+    assert NFR section shows a card for performance with version and 7 constraints
+    assert NFR section shows a card for reliability with version and 4 constraints
+    assert each NFR card shows a validation status icon
+
+
+behavior nfr-card-invalid [error_case]
+  "An NFR file with parse errors shows error indicator on the card"
+
+  given
+    performance.nfr has a parse error
+
+  when the dashboard renders
+
+  then
+    assert performance card shows a red error indicator
+    assert performance card shows 0 constraints
+
+
+behavior nfr-panel-opens-on-click [happy_path]
+  "Clicking an NFR card opens a slide panel with constraint details"
+
+  given
+    performance.nfr has constraints api-latency and throughput
+
+  when user clicks on the performance NFR card
+
+  then
+    assert a slide panel opens showing performance details
+    assert the panel lists each constraint with name and type
+    assert metric constraints show threshold value
+    assert rule constraints show rule text
+    assert the panel shows which specs reference this NFR
+
+
+behavior nfr-panel-shows-referencing-specs [happy_path]
+  "NFR panel lists which specs reference this NFR category"
+
+  given
+    performance.nfr is referenced by auth-command and validate-command
+
+  when user opens the panel for performance
+
+  then
+    assert the panel shows auth-command and validate-command as referencing specs
+
+
 # Search
 
 behavior filter-specs-by-search [happy_path]

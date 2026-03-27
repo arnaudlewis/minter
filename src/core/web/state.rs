@@ -8,7 +8,7 @@ use crate::core::commands::coverage::{
 };
 use crate::core::graph::cache::content_hash;
 use crate::core::{config, deps, discover, io, parser, validation};
-use crate::model::{BehaviorCategory, NfrSpec};
+use crate::model::{BehaviorCategory, ConstraintBody, NfrSpec};
 
 // ── Public types ────────────────────────────────────────
 
@@ -74,6 +74,30 @@ pub struct InvalidTagInfo {
     pub file: String,
     pub line: usize,
     pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct NfrInfo {
+    pub category: String,
+    pub version: String,
+    pub title: String,
+    pub description: String,
+    pub path: PathBuf,
+    pub constraint_count: usize,
+    pub constraints: Vec<NfrConstraintInfo>,
+    pub validation_status: ValidationStatus,
+    pub referenced_by: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct NfrConstraintInfo {
+    pub name: String,
+    pub description: String,
+    pub constraint_type: String,
+    pub threshold: Option<String>,
+    pub rule_text: Option<String>,
+    pub violation: String,
+    pub overridable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -183,6 +207,7 @@ pub struct UiState {
     #[serde(skip)]
     working_dir: PathBuf,
     specs: Vec<SpecInfo>,
+    nfrs: Vec<NfrInfo>,
     nfr_count: usize,
     test_count: usize,
     coverage_covered: usize,
@@ -200,6 +225,7 @@ impl UiState {
         let mut state = UiState {
             working_dir: working_dir.to_path_buf(),
             specs: Vec::new(),
+            nfrs: Vec::new(),
             nfr_count: 0,
             test_count: 0,
             coverage_covered: 0,
@@ -298,19 +324,98 @@ impl UiState {
             }
         }
 
-        // Discover and count NFR constraints (not files)
+        // Discover and parse NFR files
         let nfr_files = discover::discover_nfr_files(specs_dir);
-        let mut nfr_constraint_count: usize = 0;
         let mut nfr_specs_map: HashMap<String, NfrSpec> = HashMap::new();
+        let mut nfr_infos: Vec<NfrInfo> = Vec::new();
         for nfr_path in &nfr_files {
-            if let Ok(source) = io::read_file_safe(nfr_path) {
-                if let Ok(nfr) = parser::parse_nfr(&source) {
-                    nfr_constraint_count += nfr.constraints.len();
-                    nfr_specs_map.insert(nfr.category.clone(), nfr);
+            match io::read_file_safe(nfr_path) {
+                Ok(source) => match parser::parse_nfr(&source) {
+                    Ok(nfr) => {
+                        let constraints: Vec<NfrConstraintInfo> = nfr
+                            .constraints
+                            .iter()
+                            .map(|c| {
+                                let (ct, threshold, rule_text) = match &c.body {
+                                    ConstraintBody::Metric {
+                                        threshold_operator,
+                                        threshold_value,
+                                        ..
+                                    } => (
+                                        "metric".to_string(),
+                                        Some(format!("{} {}", threshold_operator, threshold_value)),
+                                        None,
+                                    ),
+                                    ConstraintBody::Rule { rule_text, .. } => {
+                                        ("rule".to_string(), None, Some(rule_text.clone()))
+                                    }
+                                };
+                                NfrConstraintInfo {
+                                    name: c.name.clone(),
+                                    description: c.description.clone(),
+                                    constraint_type: ct,
+                                    threshold,
+                                    rule_text,
+                                    violation: c.violation.clone(),
+                                    overridable: c.overridable,
+                                }
+                            })
+                            .collect();
+                        let info = NfrInfo {
+                            category: nfr.category.clone(),
+                            version: nfr.version.clone(),
+                            title: nfr.title.clone(),
+                            description: nfr.description.clone(),
+                            path: nfr_path.clone(),
+                            constraint_count: constraints.len(),
+                            constraints,
+                            validation_status: ValidationStatus::Valid,
+                            referenced_by: Vec::new(), // populated after specs are parsed
+                        };
+                        nfr_specs_map.insert(nfr.category.clone(), nfr);
+                        nfr_infos.push(info);
+                    }
+                    Err(errors) => {
+                        let category = nfr_path
+                            .file_stem()
+                            .and_then(|s| s.to_str())
+                            .unwrap_or("unknown")
+                            .to_string();
+                        nfr_infos.push(NfrInfo {
+                            category,
+                            version: String::new(),
+                            title: String::new(),
+                            description: String::new(),
+                            path: nfr_path.clone(),
+                            constraint_count: 0,
+                            constraints: Vec::new(),
+                            validation_status: ValidationStatus::Invalid(
+                                errors.iter().map(|e| e.message.clone()).collect(),
+                            ),
+                            referenced_by: Vec::new(),
+                        });
+                    }
+                },
+                Err(e) => {
+                    let category = nfr_path
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("unknown")
+                        .to_string();
+                    nfr_infos.push(NfrInfo {
+                        category,
+                        version: String::new(),
+                        title: String::new(),
+                        description: String::new(),
+                        path: nfr_path.clone(),
+                        constraint_count: 0,
+                        constraints: Vec::new(),
+                        validation_status: ValidationStatus::Invalid(vec![e.to_string()]),
+                        referenced_by: Vec::new(),
+                    });
                 }
             }
         }
-        self.nfr_count = nfr_constraint_count;
 
         // Scan for test tags
         let existing_test_dirs: Vec<PathBuf> =
@@ -461,6 +566,23 @@ impl UiState {
         self.specs = spec_infos;
         self.coverage_total = total_behaviors;
         self.coverage_covered = covered_behaviors;
+
+        // Populate referenced_by for each NFR from parsed specs
+        for nfr_info in &mut nfr_infos {
+            let mut referencing_specs: BTreeSet<String> = BTreeSet::new();
+            for (_, _, maybe_spec, _) in &parsed_specs {
+                if let Some(spec) = maybe_spec {
+                    let all_cats = spec.all_nfr_categories();
+                    if all_cats.contains(&nfr_info.category) {
+                        referencing_specs.insert(spec.name.clone());
+                    }
+                }
+            }
+            nfr_info.referenced_by = referencing_specs.into_iter().collect();
+        }
+        nfr_infos.sort_by(|a, b| a.category.cmp(&b.category));
+        self.nfr_count = nfr_infos.iter().map(|n| n.constraint_count).sum();
+        self.nfrs = nfr_infos;
 
         // Check dependency structure
         self.load_dep_errors(&parsed_specs);
@@ -755,6 +877,10 @@ impl UiState {
         &self.specs
     }
 
+    pub fn nfrs_list(&self) -> &[NfrInfo] {
+        &self.nfrs
+    }
+
     pub fn integrity(&self) -> &IntegrityInfo {
         &self.integrity
     }
@@ -792,6 +918,7 @@ impl UiState {
     pub fn refresh(&mut self) {
         let wd = self.working_dir.clone();
         self.specs.clear();
+        self.nfrs.clear();
         self.nfr_count = 0;
         self.test_count = 0;
         self.coverage_covered = 0;
@@ -1579,5 +1706,239 @@ impl UiState {
                 .map(|s| s.to_string())
                 .collect(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    const VALID_SPEC_WITH_NFR: &str = "\
+spec test-spec v1.0.0
+title \"Test Spec\"
+
+description
+  A test spec.
+
+motivation
+  Testing.
+
+nfr
+  performance
+
+behavior do-thing [happy_path]
+  \"Do the thing\"
+
+  given
+    The system is ready
+
+  when act
+
+  then emits stdout
+    assert output contains \"done\"
+";
+
+    const VALID_NFR: &str = "\
+nfr performance v1.0.0
+title \"Performance Requirements\"
+
+description
+  Defines performance constraints.
+
+motivation
+  Performance matters.
+
+
+constraint api-response-time [metric]
+  \"API endpoints must respond within acceptable latency bounds\"
+
+  metric \"HTTP response time, p95\"
+  threshold < 1s
+
+  verification
+    environment staging, production
+    benchmark \"100 concurrent requests per endpoint\"
+    pass \"p95 < threshold\"
+
+  violation high
+  overridable yes
+";
+
+    const VALID_NFR_RULE: &str = "\
+nfr security v1.0.0
+title \"Security Requirements\"
+
+description
+  Security constraints.
+
+motivation
+  Security matters.
+
+
+constraint no-sql-injection [rule]
+  \"All database queries must use parameterized statements\"
+
+  rule
+    All database access must use parameterized queries.
+
+  verification
+    static \"SAST scan for string concatenation in SQL\"
+
+  violation critical
+  overridable no
+";
+
+    fn setup_dir_with_spec_and_nfrs(
+        spec_content: &str,
+        nfrs: &[(&str, &str)],
+    ) -> (TempDir, PathBuf) {
+        let dir = TempDir::new().expect("create temp dir");
+        let specs_dir = dir.path().join("specs");
+        fs::create_dir_all(&specs_dir).unwrap();
+        fs::write(specs_dir.join("test-spec.spec"), spec_content).unwrap();
+        for (name, content) in nfrs {
+            fs::write(specs_dir.join(format!("{}.nfr", name)), content).unwrap();
+        }
+        let dir_path = dir.path().to_path_buf();
+        (dir, dir_path)
+    }
+
+    #[test]
+    fn nfr_info_populated_for_valid_nfr() {
+        let (_dir, path) =
+            setup_dir_with_spec_and_nfrs(VALID_SPEC_WITH_NFR, &[("performance", VALID_NFR)]);
+        let state = UiState::load(&path);
+
+        let nfrs = state.nfrs_list();
+        assert_eq!(nfrs.len(), 1);
+
+        let nfr = &nfrs[0];
+        assert_eq!(nfr.category, "performance");
+        assert_eq!(nfr.version, "1.0.0");
+        assert_eq!(nfr.title, "Performance Requirements");
+        assert_eq!(nfr.description, "Defines performance constraints.");
+        assert_eq!(nfr.constraint_count, 1);
+        assert_eq!(nfr.validation_status, ValidationStatus::Valid);
+    }
+
+    #[test]
+    fn nfr_constraint_info_metric_fields() {
+        let (_dir, path) =
+            setup_dir_with_spec_and_nfrs(VALID_SPEC_WITH_NFR, &[("performance", VALID_NFR)]);
+        let state = UiState::load(&path);
+
+        let nfr = &state.nfrs_list()[0];
+        assert_eq!(nfr.constraints.len(), 1);
+
+        let c = &nfr.constraints[0];
+        assert_eq!(c.name, "api-response-time");
+        assert_eq!(c.constraint_type, "metric");
+        assert_eq!(c.threshold.as_deref(), Some("< 1s"));
+        assert!(c.rule_text.is_none());
+        assert_eq!(c.violation, "high");
+        assert!(c.overridable);
+    }
+
+    #[test]
+    fn nfr_constraint_info_rule_fields() {
+        let (_dir, path) =
+            setup_dir_with_spec_and_nfrs(VALID_SPEC_WITH_NFR, &[("security", VALID_NFR_RULE)]);
+        let state = UiState::load(&path);
+
+        let nfr = state
+            .nfrs_list()
+            .iter()
+            .find(|n| n.category == "security")
+            .expect("security NFR should exist");
+        let c = &nfr.constraints[0];
+        assert_eq!(c.name, "no-sql-injection");
+        assert_eq!(c.constraint_type, "rule");
+        assert!(c.threshold.is_none());
+        assert_eq!(
+            c.rule_text.as_deref(),
+            Some("All database access must use parameterized queries.")
+        );
+        assert_eq!(c.violation, "critical");
+        assert!(!c.overridable);
+    }
+
+    #[test]
+    fn nfr_referenced_by_contains_spec_name() {
+        let (_dir, path) =
+            setup_dir_with_spec_and_nfrs(VALID_SPEC_WITH_NFR, &[("performance", VALID_NFR)]);
+        let state = UiState::load(&path);
+
+        let nfr = &state.nfrs_list()[0];
+        assert!(nfr.referenced_by.contains(&"test-spec".to_string()));
+    }
+
+    #[test]
+    fn nfr_not_referenced_has_empty_referenced_by() {
+        let (_dir, path) =
+            setup_dir_with_spec_and_nfrs(VALID_SPEC_WITH_NFR, &[("security", VALID_NFR_RULE)]);
+        let state = UiState::load(&path);
+
+        let nfr = state
+            .nfrs_list()
+            .iter()
+            .find(|n| n.category == "security")
+            .expect("security NFR should exist");
+        assert!(nfr.referenced_by.is_empty());
+    }
+
+    #[test]
+    fn nfr_count_is_sum_of_constraints() {
+        let (_dir, path) = setup_dir_with_spec_and_nfrs(
+            VALID_SPEC_WITH_NFR,
+            &[("performance", VALID_NFR), ("security", VALID_NFR_RULE)],
+        );
+        let state = UiState::load(&path);
+
+        assert_eq!(state.nfr_count(), 2);
+    }
+
+    #[test]
+    fn nfr_parse_failure_produces_invalid_status() {
+        let dir = TempDir::new().expect("create temp dir");
+        let specs_dir = dir.path().join("specs");
+        fs::create_dir_all(&specs_dir).unwrap();
+        fs::write(specs_dir.join("test-spec.spec"), VALID_SPEC_WITH_NFR).unwrap();
+        fs::write(specs_dir.join("performance.nfr"), "this is not valid nfr").unwrap();
+
+        let state = UiState::load(dir.path());
+        let nfrs = state.nfrs_list();
+        assert_eq!(nfrs.len(), 1);
+        assert!(matches!(
+            nfrs[0].validation_status,
+            ValidationStatus::Invalid(_)
+        ));
+        assert_eq!(nfrs[0].constraint_count, 0);
+        assert!(nfrs[0].constraints.is_empty());
+    }
+
+    #[test]
+    fn nfrs_sorted_by_category() {
+        let (_dir, path) = setup_dir_with_spec_and_nfrs(
+            VALID_SPEC_WITH_NFR,
+            &[("security", VALID_NFR_RULE), ("performance", VALID_NFR)],
+        );
+        let state = UiState::load(&path);
+        let nfrs = state.nfrs_list();
+        assert_eq!(nfrs.len(), 2);
+        assert_eq!(nfrs[0].category, "performance");
+        assert_eq!(nfrs[1].category, "security");
+    }
+
+    #[test]
+    fn nfrs_cleared_on_refresh() {
+        let (_dir, path) =
+            setup_dir_with_spec_and_nfrs(VALID_SPEC_WITH_NFR, &[("performance", VALID_NFR)]);
+        let mut state = UiState::load(&path);
+        assert!(!state.nfrs_list().is_empty());
+        // After refresh, should reload (not be empty since files still exist)
+        state.refresh();
+        assert!(!state.nfrs_list().is_empty());
     }
 }

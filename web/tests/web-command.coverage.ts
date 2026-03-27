@@ -32,6 +32,14 @@
 // @minter:unit web-command/panel-behavior-detail
 // Tested in: web/src/components/__tests__/SpecSlidePanel.test.tsx
 
+// --- NFR section ---
+// @minter:unit web-command/nfr-card-displays-summary
+// @minter:unit web-command/nfr-card-invalid
+// @minter:unit web-command/nfr-panel-opens-on-click
+// @minter:unit web-command/nfr-panel-shows-referencing-specs
+// Tested in: web/src/components/__tests__/NfrCardGrid.test.tsx
+//            web/src/components/__tests__/NfrSlidePanel.test.tsx
+
 // --- Backend / integration ---
 // @minter:e2e web-command/launch-starts-server
 // @minter:e2e web-command/server-port-fallback

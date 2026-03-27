@@ -804,6 +804,10 @@
         "panel-shows-errors",
         "panel-search-behaviors",
         "panel-behavior-detail",
+        "nfr-card-displays-summary",
+        "nfr-card-invalid",
+        "nfr-panel-opens-on-click",
+        "nfr-panel-shows-referencing-specs",
         "filter-specs-by-search",
         "live-update-on-file-change",
         "reconnect-on-disconnect",
@@ -815,7 +819,7 @@
         "specs/core/commands/coverage-command.spec",
         "specs/core/commands/lock-command.spec"
       ],
-      "hash": "1df8d264718780d406aa1d6ea378848f3f6f2efefdfe482b6f211a75cf28c504",
+      "hash": "2377b3894fa87230494ccf4521cd2d08ad56ee05e6e4075adbdc411bb8f6a986",
       "nfrs": [
         "operability#zero-config",
         "performance#watch-revalidation-latency",
@@ -832,6 +836,10 @@
             "live-update-on-file-change",
             "lock-drift-tooltip",
             "lock-regeneration-feedback",
+            "nfr-card-displays-summary",
+            "nfr-card-invalid",
+            "nfr-panel-opens-on-click",
+            "nfr-panel-shows-referencing-specs",
             "panel-behavior-detail",
             "panel-opens-on-card-click",
             "panel-search-behaviors",
@@ -847,7 +855,7 @@
             "spec-card-status-green",
             "spec-card-status-warning"
           ],
-          "hash": "db4cc1a80d5a94644a739c2f890ac822a7c2549c655e99d88a91f2cbe166af5e"
+          "hash": "9ffc4b2abc05ca4023bc6759a1c80ef9390ed3af2a5365dbe19a4ca8573679de"
         }
       }
     },
