@@ -41,7 +41,19 @@ claude mcp add minter minter-mcp   # connect the AI spec assistant
 minter ui                           # launch the live dashboard
 ```
 
-Your agent knows the DSL, validation rules, and methodology — describe a feature in plain language and it writes the spec. Follow the [getting started guide](docs/getting-started.md) for the full walkthrough.
+Your agent knows the DSL, validation rules, and methodology — describe a feature in plain language and it writes the spec.
+
+For the best experience, pair the MCP with the [spec engineering agent prompt](docs/spec-agent.md):
+
+```bash
+# Claude Code
+mkdir -p .claude/agents && curl -o .claude/agents/spec.md \
+  https://raw.githubusercontent.com/arnaudlewis/minter/main/docs/spec-agent.md
+```
+
+For other clients, copy the content of [spec-agent.md](docs/spec-agent.md) into your agent's system prompt or custom instructions.
+
+Follow the [getting started guide](docs/getting-started.md) for the full walkthrough.
 
 ## Commands
 
