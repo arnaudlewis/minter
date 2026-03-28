@@ -36,40 +36,12 @@ cargo install minter
 
 ## Get Started
 
-### 1. Launch the dashboard
-
 ```bash
-minter ui
+claude mcp add minter minter-mcp   # connect the AI spec assistant
+minter ui                           # launch the live dashboard
 ```
 
-Opens your browser at `http://localhost:4321`. See all specs, coverage, and lock status live. The dashboard updates on every file save — keep it open while you write.
-
-### 2. Write specs with AI assistance
-
-Add `minter-mcp` to Claude Code:
-
-```bash
-claude mcp add minter minter-mcp
-```
-
-For Claude Desktop or Cursor, add to your MCP config:
-
-```json
-{
-  "mcpServers": {
-    "minter": { "command": "minter-mcp" }
-  }
-}
-```
-
-Your agent can now scaffold specs, validate syntax, assess quality, browse the project graph, and search behaviors — and already knows the methodology.
-
-### 3. Set up CI
-
-```bash
-minter lock    # snapshot spec + test integrity
-minter ci      # verify integrity — add this to your CI pipeline
-```
+Your agent knows the DSL, validation rules, and methodology — describe a feature in plain language and it writes the spec. Follow the [getting started guide](docs/getting-started.md) for the full walkthrough.
 
 ## Commands
 
@@ -87,7 +59,7 @@ minter ci      # verify integrity — add this to your CI pipeline
 | `minter format` | Print DSL grammar reference |
 | `minter guide` | Development reference guides |
 
-[Full documentation](docs/)
+[Full documentation](docs/README.md)
 
 ## Examples
 

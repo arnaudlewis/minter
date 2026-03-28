@@ -281,6 +281,45 @@ behavior do-thing [happy_path]
     )
 }
 
+/// A minimal spec with two behaviors and a custom name, v1.0.0.
+pub fn spec_two_behaviors_named(name: &str) -> String {
+    format!(
+        "\
+spec {name} v1.0.0
+title \"{name}\"
+
+description
+  Test.
+
+motivation
+  Test.
+
+behavior do-thing [happy_path]
+  \"Does a thing\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+
+
+behavior do-other [happy_path]
+  \"Does another\"
+
+  given
+    Ready
+
+  when act
+
+  then returns result
+    assert status == \"ok\"
+"
+    )
+}
+
 /// A minimal spec with two behaviors, fixed as spec "a" v1.0.0.
 pub fn spec_two_behaviors() -> &'static str {
     "\
