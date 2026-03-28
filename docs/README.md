@@ -17,6 +17,7 @@
 - [CLI Reference](cli-reference.md) — All commands with flags, output, and exit codes.
 - [Configuration](configuration.md) — Convention-over-configuration and optional settings.
 - [MCP Server](mcp.md) — AI authoring assistant over the Model Context Protocol.
+- [Spec Agent](spec-agent.md) — Ready-to-use AI agent prompt for spec engineering with minter.
 
 ## Quality
 

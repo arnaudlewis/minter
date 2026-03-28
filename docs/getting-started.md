@@ -34,6 +34,16 @@ For Claude Desktop or Cursor, add to your MCP config:
 
 Your agent now knows the DSL grammar, all validation rules, and the spec-driven methodology. It can scaffold specs, validate syntax, assess quality, browse your project graph, and search behaviors.
 
+For the best results, pair the MCP with the [spec engineering agent prompt](spec-agent.md):
+
+```bash
+# Claude Code
+mkdir -p .claude/agents && curl -o .claude/agents/spec.md \
+  https://raw.githubusercontent.com/arnaudlewis/minter/main/docs/spec-agent.md
+```
+
+For other clients, copy the content of [spec-agent.md](spec-agent.md) into your agent's system prompt or custom instructions.
+
 See [mcp.md](mcp.md) for the full tool reference.
 
 ## 3. Write your first spec
