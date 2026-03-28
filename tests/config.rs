@@ -2,75 +2,9 @@ mod common;
 
 use std::fs;
 
-use common::minter;
+use common::{minter, spec_two_behaviors_named, valid_spec};
 use predicates::prelude::*;
 use tempfile::TempDir;
-
-// ── Spec fixtures ───────────────────────────────────────
-
-fn valid_spec(name: &str) -> String {
-    format!(
-        "\
-spec {name} v1.0.0
-title \"{name}\"
-
-description
-  A test spec.
-
-motivation
-  Testing.
-
-behavior do-thing [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-    )
-}
-
-fn valid_spec_two_behaviors(name: &str) -> String {
-    format!(
-        "\
-spec {name} v1.0.0
-title \"{name}\"
-
-description
-  A test spec.
-
-motivation
-  Testing.
-
-behavior do-thing [happy_path]
-  \"Does a thing\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-
-
-behavior do-other [happy_path]
-  \"Does another\"
-
-  given
-    Ready
-
-  when act
-
-  then returns result
-    assert status == \"ok\"
-"
-    )
-}
 
 /// Set up a project directory with a specs/ dir containing .spec files
 /// and a tests/ dir containing files with @minter tags.
@@ -117,7 +51,7 @@ fn project_with_config(config_json: &str, dirs_and_files: &[(&str, &[(&str, &str
 // @minter:e2e load-default-conventions
 #[test]
 fn load_default_conventions_validate() {
-    let spec = valid_spec("my-feature");
+    let spec = valid_spec("my-feature", "1.0.0", None);
     let dir = project_with_defaults(&[("my-feature", &spec)], &[]);
 
     // Invoke validate WITHOUT explicit path — should discover specs/ by convention
@@ -132,7 +66,7 @@ fn load_default_conventions_validate() {
 // @minter:e2e load-default-conventions
 #[test]
 fn load_default_conventions_coverage() {
-    let spec = valid_spec_two_behaviors("my-feature");
+    let spec = spec_two_behaviors_named("my-feature");
     let dir = project_with_defaults(
         &[("my-feature", &spec)],
         &[(
@@ -154,7 +88,7 @@ fn load_default_conventions_coverage() {
 // @minter:e2e load-config-file
 #[test]
 fn load_config_file_validate() {
-    let spec = valid_spec("custom-spec");
+    let spec = valid_spec("custom-spec", "1.0.0", None);
     let config = r#"{ "specs": "specifications/", "tests": ["tests/e2e/", "tests/unit/"] }"#;
 
     let dir = project_with_config(
@@ -178,7 +112,7 @@ fn load_config_file_validate() {
 // @minter:e2e load-config-file
 #[test]
 fn load_config_file_coverage() {
-    let spec = valid_spec("custom-spec");
+    let spec = valid_spec("custom-spec", "1.0.0", None);
     let config = r#"{ "specs": "specifications/", "tests": ["tests/e2e/", "tests/unit/"] }"#;
 
     let dir = project_with_config(
@@ -203,7 +137,7 @@ fn load_config_file_coverage() {
 // @minter:e2e config-specs-string
 #[test]
 fn config_specs_string() {
-    let spec = valid_spec("feat");
+    let spec = valid_spec("feat", "1.0.0", None);
     let config = r#"{ "specs": "my-specs/" }"#;
 
     let dir = project_with_config(config, &[("my-specs", &[("feat.spec", spec.as_str())])]);
@@ -220,7 +154,7 @@ fn config_specs_string() {
 // @minter:e2e config-tests-array
 #[test]
 fn config_tests_array() {
-    let spec = valid_spec_two_behaviors("feat");
+    let spec = spec_two_behaviors_named("feat");
     let config = r#"{ "specs": "specs/", "tests": ["tests/unit/", "tests/e2e/", "benches/"] }"#;
 
     let dir = project_with_config(
@@ -246,7 +180,7 @@ fn config_tests_array() {
 // @minter:e2e config-tests-single-string
 #[test]
 fn config_tests_single_string() {
-    let spec = valid_spec("feat");
+    let spec = valid_spec("feat", "1.0.0", None);
     let config = r#"{ "specs": "specs/", "tests": "tests/" }"#;
 
     let dir = project_with_config(
@@ -270,7 +204,7 @@ fn config_tests_single_string() {
 // @minter:e2e config-partial-override
 #[test]
 fn config_partial_override_specs_default() {
-    let spec = valid_spec("feat");
+    let spec = valid_spec("feat", "1.0.0", None);
     let config = r#"{ "tests": ["src/"] }"#;
 
     let dir = project_with_config(
@@ -294,7 +228,7 @@ fn config_partial_override_specs_default() {
 // @minter:e2e config-partial-override
 #[test]
 fn config_partial_override_tests_default() {
-    let spec = valid_spec("feat");
+    let spec = valid_spec("feat", "1.0.0", None);
     let config = r#"{ "specs": "specifications/" }"#;
 
     let dir = project_with_config(
@@ -323,8 +257,8 @@ fn config_partial_override_tests_default() {
 // @minter:e2e cli-args-override-config
 #[test]
 fn cli_args_override_config_validate() {
-    let spec_in_config_dir = valid_spec("config-spec");
-    let spec_in_other_dir = valid_spec("other-spec");
+    let spec_in_config_dir = valid_spec("config-spec", "1.0.0", None);
+    let spec_in_other_dir = valid_spec("other-spec", "1.0.0", None);
     let config = r#"{ "specs": "specifications/" }"#;
 
     let dir = project_with_config(
@@ -366,7 +300,7 @@ fn cli_args_override_config_validate() {
 // @minter:e2e cli-args-override-config
 #[test]
 fn cli_args_override_config_coverage() {
-    let spec = valid_spec("feat");
+    let spec = valid_spec("feat", "1.0.0", None);
     let config = r#"{ "specs": "specifications/", "tests": ["custom-tests/"] }"#;
 
     let dir = project_with_config(
@@ -644,7 +578,7 @@ fn reject_unknown_fields_coverage() {
 // @minter:e2e empty-config-uses-defaults
 #[test]
 fn empty_config_uses_defaults_validate() {
-    let spec = valid_spec("feat");
+    let spec = valid_spec("feat", "1.0.0", None);
     let dir = project_with_config("{}", &[("specs", &[("feat.spec", spec.as_str())])]);
 
     // Empty config {} — should fall back to specs/ and tests/ defaults
@@ -659,7 +593,7 @@ fn empty_config_uses_defaults_validate() {
 // @minter:e2e empty-config-uses-defaults
 #[test]
 fn empty_config_uses_defaults_coverage() {
-    let spec = valid_spec("feat");
+    let spec = valid_spec("feat", "1.0.0", None);
     let dir = project_with_config(
         "{}",
         &[
