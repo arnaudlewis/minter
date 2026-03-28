@@ -27,7 +27,7 @@ jobs:
       new_tag: ${{ steps.bump.outputs.new_tag }}
       commits: ${{ steps.bump.outputs.commits }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -124,7 +124,7 @@ jobs:
     if: needs.prepare.outputs.bump != 'none'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -144,7 +144,7 @@ jobs:
     if: inputs.execute && needs.prepare.outputs.bump != 'none'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -200,7 +200,7 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.tag.result == 'success' && needs.prepare.outputs.new_tag || github.sha }}
 
@@ -253,7 +253,7 @@ jobs:
           "ARCHIVE=$ARCHIVE" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.target }}
           path: ${{ env.ARCHIVE }}
@@ -264,7 +264,7 @@ jobs:
     if: inputs.execute && needs.prepare.outputs.bump != 'none'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.prepare.outputs.new_tag }}
           fetch-depth: 0
@@ -276,7 +276,7 @@ jobs:
           args: --latest --strip header
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: artifacts
 
@@ -317,7 +317,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: artifacts
 
@@ -336,7 +336,7 @@ jobs:
           echo "sha_linux_arm64=$(sha256sum minter-${{ needs.prepare.outputs.new_tag }}-aarch64-unknown-linux-gnu.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Checkout homebrew-tap
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ env.TAP_REPO }}
           token: ${{ secrets.RELEASE_TOKEN }}
