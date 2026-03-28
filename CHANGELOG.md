@@ -1,6 +1,29 @@
 # Changelog
 
 All notable changes to minter will be documented in this file.
+## [2.0.0] - 2026-03-28
+
+### Added
+
+- **parser:** Accept any @minter tag type
+- **cli:** Add config, lock, and ci commands
+- **parser:** Reject trailing content and fix orphaned tags
+- **cli:** Add web dashboard with real-time spec monitoring
+- **mcp:** Refactor MCP as spec authoring assistant, remove web feature flag
+
+### CI/CD
+
+- Upgrade GitHub Actions to Node.js 24 compatible versions
+
+### Documentation
+
+- Add squash merge rule to CLAUDE.md
+- Restructure documentation as wiki
+
+### Maintenance
+
+- Add frontend test script, deduplicate helpers, improve docs navigation
+
 ## [1.1.1] - 2026-03-24
 
 ### Fixed
@@ -10,6 +33,7 @@ All notable changes to minter will be documented in this file.
 ### Maintenance
 
 - Prepare for open source release
+- Release v1.1.1
 
 ## [1.1.0] - 2026-03-09
 
