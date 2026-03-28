@@ -29,6 +29,8 @@ jobs:
           echo ""
           echo "=== Test Summary ==="
           grep "^test result:" /tmp/test-output.txt | grep -v " 0 passed;"
+      - name: Spec integrity
+        run: cargo run -- ci
 
   bench:
     name: Benchmarks

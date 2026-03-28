@@ -1,0 +1,73 @@
+{
+  "benchmark_files": {
+    "tests/performance.bench.ts": {
+      "hash": "017b568d6e4eb7a63aba84ddce1b594e536455d550e88f4b4b729585db08280f"
+    }
+  },
+  "nfrs": {
+    "specs/nfr/performance.nfr": {
+      "hash": "5358f4556946eb0ca72ed0f7f3c9ca6e5f334dde40035914de96f7ecd8808b14"
+    },
+    "specs/nfr/security.nfr": {
+      "hash": "3015d426ec487bb4d9691a7f24cd892b85ac0043215867490b9cb1cc97f69e97"
+    }
+  },
+  "specs": {
+    "specs/task-management.spec": {
+      "behaviors": [
+        "create-task",
+        "list-tasks",
+        "complete-task",
+        "create-task-unauthenticated",
+        "complete-nonexistent-task"
+      ],
+      "dependencies": [
+        "specs/user-auth.spec"
+      ],
+      "hash": "2edd705274c7f76183225c25ca5c0dd9600fc3704042d84c5467f9d652ceb0d9",
+      "nfrs": [
+        "performance#api-response-time",
+        "performance#no-unbounded-queries",
+        "performance#throughput"
+      ],
+      "test_files": {
+        "tests/tasks.test.ts": {
+          "covers": [
+            "complete-nonexistent-task",
+            "complete-task",
+            "create-task",
+            "create-task-unauthenticated",
+            "list-tasks"
+          ],
+          "hash": "d73b5b54b70fc31321f1731e55020e32500dc353320d6485a107200d6568a0fd"
+        }
+      }
+    },
+    "specs/user-auth.spec": {
+      "behaviors": [
+        "register-user",
+        "login-user",
+        "register-duplicate-email",
+        "login-wrong-password"
+      ],
+      "dependencies": [],
+      "hash": "f3066669a581e35d971f4795a515d763af391b20c89aec91d8ecb279e5b57586",
+      "nfrs": [
+        "security#brute-force-protection",
+        "security#password-hashing"
+      ],
+      "test_files": {
+        "tests/auth.test.ts": {
+          "covers": [
+            "login-user",
+            "login-wrong-password",
+            "register-duplicate-email",
+            "register-user"
+          ],
+          "hash": "43d2812cac4d5d0bc8f6ca22ba4894018512d559ec11dfe1c74860501d2e3677"
+        }
+      }
+    }
+  },
+  "version": 1
+}

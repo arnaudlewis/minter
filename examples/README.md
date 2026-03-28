@@ -5,6 +5,8 @@ A small spec project showing how behavioral specs, dependencies, and NFR constra
 ## What's here
 
 ```
+minter.config.json           # Project configuration — specs and test directories
+minter.lock                  # Integrity snapshot — SHA-256 hashes, traceability matrix
 specs/
 ├── user-auth.spec           # Authentication — register, login, error cases, security NFR anchors
 ├── task-management.spec     # Task CRUD — depends on user-auth, whole-file performance NFR
@@ -69,6 +71,31 @@ Summary: 9/9 behaviors covered (100%)
 ```
 
 The `@minter` tags in test files link each test to the spec behaviors it covers. Benchmark tags directly target NFR constraints. Derived NFR coverage comes from the spec graph — when a behavior referencing an NFR constraint has tests, that constraint gets indirect coverage.
+
+## Lock and CI
+
+The `minter.lock` file captures the full project state: SHA-256 hashes of every spec, NFR, and test file, plus a traceability matrix mapping each behavior to the test files that cover it.
+
+Verify integrity:
+
+```bash
+cd examples && minter ci
+```
+
+```
+✓ spec integrity (2 specs)
+✓ nfr integrity (2 nfrs)
+✓ dependency structure
+✓ test integrity (3 files)
+✓ behavior coverage (9/9)
+✓ no orphan tags
+```
+
+Regenerate after any change:
+
+```bash
+minter lock
+```
 
 ## What to notice
 
