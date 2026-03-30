@@ -3293,9 +3293,12 @@ fn validate_changes_detected_on_spec_modification() {
 
     // Next steps should mention changes
     let next_steps = data2["next_steps"].as_array().unwrap();
-    let has_changes_step = next_steps
-        .iter()
-        .any(|s| s["action"].as_str().unwrap_or("").contains("Changes detected"));
+    let has_changes_step = next_steps.iter().any(|s| {
+        s["action"]
+            .as_str()
+            .unwrap_or("")
+            .contains("Changes detected")
+    });
     assert!(
         has_changes_step,
         "next_steps should mention changes, got: {:?}",
