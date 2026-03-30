@@ -279,6 +279,7 @@ pub const VALID_GUIDE_TOPICS: &[&str] = &[
     "lock",
     "ci",
     "web",
+    "refinement",
 ];
 
 /// Guide topics available in the CLI via `minter guide <topic>`.
@@ -295,6 +296,7 @@ pub enum GuideTopic {
     Lock,
     Ci,
     Web,
+    Refinement,
 }
 
 impl GuideTopic {
@@ -311,6 +313,7 @@ impl GuideTopic {
             GuideTopic::Lock => "lock",
             GuideTopic::Ci => "ci",
             GuideTopic::Web => "web",
+            GuideTopic::Refinement => "refinement",
         }
     }
 }
@@ -456,7 +459,7 @@ mod tests {
     // ── VALID_GUIDE_TOPICS ────────────────────────────────
 
     #[test]
-    fn guide_topics_contains_all_eleven() {
+    fn guide_topics_contains_all_twelve() {
         assert!(VALID_GUIDE_TOPICS.contains(&"workflow"));
         assert!(VALID_GUIDE_TOPICS.contains(&"authoring"));
         assert!(VALID_GUIDE_TOPICS.contains(&"smells"));
@@ -468,6 +471,7 @@ mod tests {
         assert!(VALID_GUIDE_TOPICS.contains(&"lock"));
         assert!(VALID_GUIDE_TOPICS.contains(&"ci"));
         assert!(VALID_GUIDE_TOPICS.contains(&"web"));
-        assert_eq!(VALID_GUIDE_TOPICS.len(), 11);
+        assert!(VALID_GUIDE_TOPICS.contains(&"refinement"));
+        assert_eq!(VALID_GUIDE_TOPICS.len(), 12);
     }
 }

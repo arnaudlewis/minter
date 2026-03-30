@@ -1,13 +1,143 @@
+use std::collections::HashMap;
 use std::path::Path;
 
 use rmcp::model::*;
 
 use crate::core::commands::validate_core;
-use crate::core::graph::discover_and_parse_nfrs;
+use crate::core::graph::{self, discover_and_parse_nfrs};
 use crate::core::{discover, parser::fr::ParseError, validation::semantic::SemanticError};
 use crate::mcp::{next_steps, response};
 
 use super::{MAX_FILE_SIZE, format_dep_constraint, mcp_error, read_file_checked, tool_error};
+
+// ── Change detection ──────────────────────────────────
+
+/// Compare baseline vs current behaviors to detect changes.
+fn compute_spec_changes(cached: &graph::CachedEntry) -> Option<response::SpecChanges> {
+    let baseline = cached.baseline.as_ref()?;
+    let current = &cached.behaviors;
+
+    if baseline == current {
+        return None;
+    }
+
+    let mut added = Vec::new();
+    let mut removed = Vec::new();
+    let mut modified = Vec::new();
+    let mut unchanged = 0usize;
+
+    // Find removed and modified
+    for (name, baseline_snap) in baseline {
+        match current.get(name) {
+            None => {
+                removed.push(response::BehaviorChange {
+                    name: name.clone(),
+                    category: baseline_snap.category.clone(),
+                });
+            }
+            Some(current_snap) => {
+                if baseline_snap.hash != current_snap.hash {
+                    let mut sections = Vec::new();
+                    if baseline_snap.category != current_snap.category {
+                        sections.push("category".to_string());
+                    }
+                    if sections.is_empty() {
+                        sections.push("content".to_string());
+                    }
+                    modified.push(response::ModifiedBehavior {
+                        name: name.clone(),
+                        sections,
+                    });
+                } else {
+                    unchanged += 1;
+                }
+            }
+        }
+    }
+
+    // Find added
+    for (name, current_snap) in current {
+        if !baseline.contains_key(name) {
+            added.push(response::BehaviorChange {
+                name: name.clone(),
+                category: current_snap.category.clone(),
+            });
+        }
+    }
+
+    if added.is_empty() && removed.is_empty() && modified.is_empty() {
+        return None;
+    }
+
+    Some(response::SpecChanges {
+        version_change: None,
+        added,
+        removed,
+        modified,
+        unchanged,
+    })
+}
+
+/// Update the graph cache for a single validated spec and return changes if any.
+fn update_graph_for_spec(
+    v: &validate_core::SpecValidation,
+    source: &str,
+    path_str: &str,
+) -> Option<HashMap<String, response::SpecChanges>> {
+    let spec = v.spec.as_ref()?;
+    if !v.semantic_errors.is_empty() {
+        return None;
+    }
+
+    let mut graph_state = graph::GraphState::load_or_build();
+    let content_hash = graph::content_hash(source);
+
+    // Skip graph update if content hasn't changed
+    if !graph_state.cache.is_changed(&spec.name, &content_hash) {
+        return None;
+    }
+
+    let behaviors = graph::compute_behaviors(spec);
+
+    // Preserve existing baseline when updating cache
+    let existing_baseline = graph_state
+        .cache
+        .specs
+        .get(&spec.name)
+        .and_then(|e| e.baseline.clone());
+
+    let entry = graph::CachedEntry {
+        content_hash,
+        version: spec.version.clone(),
+        behavior_count: spec.behaviors.len(),
+        valid: v.is_valid,
+        dependencies: spec.dep_names(),
+        path: path_str.to_string(),
+        nfr_categories: spec.all_nfr_categories(),
+        behaviors,
+        baseline: existing_baseline,
+    };
+    graph_state.cache.upsert(spec.name.clone(), entry);
+
+    // Compute changes between baseline and current
+    let mut all_changes = HashMap::new();
+    if let Some(cached) = graph_state.cache.specs.get(&spec.name) {
+        if let Some(changes) = compute_spec_changes(cached) {
+            all_changes.insert(spec.name.clone(), changes);
+        }
+    }
+
+    // Acknowledge baseline after reporting
+    graph_state.cache.acknowledge_baseline(&spec.name);
+    graph_state.dirty = true;
+    graph_state.save_if_dirty();
+
+    if all_changes.is_empty() {
+        None
+    } else {
+        Some(all_changes)
+    }
+}
 
 // ── Result builders ────────────────────────────────────
 
@@ -86,10 +216,12 @@ impl ResultBuilder {
 /// Build a ValidateResponse from a list of results and serialize to a CallToolResult.
 fn results_to_response(
     results: Vec<response::ValidateResult>,
+    changes: Option<HashMap<String, response::SpecChanges>>,
 ) -> Result<CallToolResult, ErrorData> {
     let passed = results.iter().filter(|r| r.status == "pass").count();
     let failed = results.iter().filter(|r| r.status == "fail").count();
     let any_fail = failed > 0;
+    let has_changes = changes.as_ref().is_some_and(|c| !c.is_empty());
     let resp = response::ValidateResponse {
         results,
         summary: response::ValidateSummary {
@@ -97,8 +229,11 @@ fn results_to_response(
             passed,
             failed,
         },
+        changes: if has_changes { changes } else { None },
         next_steps: if any_fail {
             next_steps::after_validate_fail()
+        } else if has_changes {
+            next_steps::after_validate_pass_with_changes()
         } else {
             next_steps::after_validate_pass()
         },
@@ -108,8 +243,12 @@ fn results_to_response(
 }
 
 /// Wrap a single result into a full `ValidateResponse` JSON string as a `CallToolResult`.
-fn single_result_response(result: response::ValidateResult) -> Result<CallToolResult, ErrorData> {
+fn single_result_response(
+    result: response::ValidateResult,
+    changes: Option<HashMap<String, response::SpecChanges>>,
+) -> Result<CallToolResult, ErrorData> {
     let is_pass = result.status == "pass";
+    let has_changes = changes.as_ref().is_some_and(|c| !c.is_empty());
     let resp = response::ValidateResponse {
         results: vec![result],
         summary: response::ValidateSummary {
@@ -117,8 +256,13 @@ fn single_result_response(result: response::ValidateResult) -> Result<CallToolRe
             passed: if is_pass { 1 } else { 0 },
             failed: if is_pass { 0 } else { 1 },
         },
+        changes: if has_changes { changes } else { None },
         next_steps: if is_pass {
-            next_steps::after_validate_pass()
+            if has_changes {
+                next_steps::after_validate_pass_with_changes()
+            } else {
+                next_steps::after_validate_pass()
+            }
         } else {
             next_steps::after_validate_fail()
         },
@@ -246,11 +390,11 @@ pub(super) fn validate_inline(
     match ct {
         "spec" => {
             let v = validate_core::validate_spec(content_str, None, None, None);
-            single_result_response(spec_validation_to_result(v, None, false))
+            single_result_response(spec_validation_to_result(v, None, false), None)
         }
         "nfr" => {
             let v = validate_core::validate_nfr(content_str);
-            single_result_response(nfr_validation_to_result(v, None))
+            single_result_response(nfr_validation_to_result(v, None), None)
         }
         other => Ok(tool_error(format!(
             "Unknown content_type '{}'. Valid types: spec, nfr",
@@ -287,11 +431,12 @@ pub(super) fn validate_file(
     let v = validate_core::validate_spec(&source, None, siblings.as_ref(), nfr_specs_map.as_ref());
 
     if !deep {
-        return single_result_response(spec_validation_to_result(
-            v,
-            Some(path_str.to_string()),
-            false,
-        ));
+        // Shallow mode: compute changes for this single spec if it passed
+        let changes = update_graph_for_spec(&v, &source, path_str);
+        return single_result_response(
+            spec_validation_to_result(v, Some(path_str.to_string()), false),
+            changes,
+        );
     }
 
     // Deep mode: build multi-result response (main spec + resolved deps)
@@ -299,7 +444,7 @@ pub(super) fn validate_file(
 
     // Spec didn't parse or has semantic errors — no deep resolution happened
     if v.spec.is_none() || !v.semantic_errors.is_empty() {
-        return single_result_response(spec_validation_to_result(v, file, true));
+        return single_result_response(spec_validation_to_result(v, file, true), None);
     }
 
     let spec = v.spec.as_ref().unwrap();
@@ -364,7 +509,10 @@ pub(super) fn validate_file(
         );
     }
 
-    results_to_response(results)
+    // Compute changes for the main spec
+    let changes = update_graph_for_spec(&v, &source, path_str);
+
+    results_to_response(results, changes)
 }
 
 pub(super) fn validate_nfr_file(path: &Path, path_str: &str) -> Result<CallToolResult, ErrorData> {
@@ -374,7 +522,10 @@ pub(super) fn validate_nfr_file(path: &Path, path_str: &str) -> Result<CallToolR
     };
 
     let v = validate_core::validate_nfr(&source);
-    single_result_response(nfr_validation_to_result(v, Some(path_str.to_string())))
+    single_result_response(
+        nfr_validation_to_result(v, Some(path_str.to_string())),
+        None,
+    )
 }
 
 pub(super) fn validate_directory(dir: &Path, path_str: &str) -> Result<CallToolResult, ErrorData> {
@@ -394,6 +545,9 @@ pub(super) fn validate_directory(dir: &Path, path_str: &str) -> Result<CallToolR
     let nfr_specs_map = nfr_discovery.specs;
 
     let mut results = Vec::new();
+    let mut graph_state = graph::GraphState::load_or_build();
+    let mut all_changes: HashMap<String, response::SpecChanges> = HashMap::new();
+
     for file_path in &files {
         let ext = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
         let file_str = file_path.display().to_string();
@@ -439,11 +593,63 @@ pub(super) fn validate_directory(dir: &Path, path_str: &str) -> Result<CallToolR
             let siblings = discover::discover_specs(dir, Some(file_path));
             let v =
                 validate_core::validate_spec(&source, None, Some(&siblings), Some(&nfr_specs_map));
+
+            // Compute changes for passing specs
+            if let Some(spec) = &v.spec {
+                if v.semantic_errors.is_empty() {
+                    let content_hash = graph::content_hash(&source);
+
+                    // Skip graph update if content hasn't changed
+                    if graph_state.cache.is_changed(&spec.name, &content_hash) {
+                        let behaviors = graph::compute_behaviors(spec);
+
+                        // Preserve existing baseline when updating cache
+                        let existing_baseline = graph_state
+                            .cache
+                            .specs
+                            .get(&spec.name)
+                            .and_then(|e| e.baseline.clone());
+
+                        let entry = graph::CachedEntry {
+                            content_hash,
+                            version: spec.version.clone(),
+                            behavior_count: spec.behaviors.len(),
+                            valid: v.is_valid,
+                            dependencies: spec.dep_names(),
+                            path: file_str.clone(),
+                            nfr_categories: spec.all_nfr_categories(),
+                            behaviors,
+                            baseline: existing_baseline,
+                        };
+                        graph_state.cache.upsert(spec.name.clone(), entry);
+
+                        // Compute changes between baseline and current
+                        if let Some(cached) = graph_state.cache.specs.get(&spec.name) {
+                            if let Some(changes) = compute_spec_changes(cached) {
+                                all_changes.insert(spec.name.clone(), changes);
+                            }
+                        }
+
+                        // Acknowledge baseline after reporting
+                        graph_state.cache.acknowledge_baseline(&spec.name);
+                        graph_state.dirty = true;
+                    }
+                }
+            }
+
             results.push(spec_validation_to_result(v, Some(file_str), true));
         }
     }
 
-    results_to_response(results)
+    graph_state.save_if_dirty();
+
+    let changes = if all_changes.is_empty() {
+        None
+    } else {
+        Some(all_changes)
+    };
+
+    results_to_response(results, changes)
 }
 
 // ── Converters: validate_core result → MCP response ──
@@ -537,4 +743,211 @@ fn nfr_validation_to_result(
         .constraint_count(nfr.constraints.len())
         .errors(errors)
         .build()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::graph::{BehaviorSnapshot, CachedEntry};
+
+    fn make_cached_entry() -> CachedEntry {
+        CachedEntry {
+            content_hash: "abc".to_string(),
+            version: "1.0.0".to_string(),
+            behavior_count: 0,
+            valid: true,
+            dependencies: vec![],
+            path: "test.spec".to_string(),
+            nfr_categories: vec![],
+            behaviors: HashMap::new(),
+            baseline: None,
+        }
+    }
+
+    fn snap(category: &str, hash: &str) -> BehaviorSnapshot {
+        BehaviorSnapshot {
+            category: category.to_string(),
+            hash: hash.to_string(),
+        }
+    }
+
+    #[test]
+    /// validate-changes: no_baseline_returns_none
+    fn no_baseline_returns_none() {
+        let entry = make_cached_entry();
+        assert!(entry.baseline.is_none());
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    /// validate-changes: identical_baseline_and_behaviors_returns_none
+    fn identical_baseline_and_behaviors_returns_none() {
+        let mut entry = make_cached_entry();
+        let mut behaviors = HashMap::new();
+        behaviors.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        entry.behaviors = behaviors.clone();
+        entry.baseline = Some(behaviors);
+
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    /// validate-changes: detects_removed_behavior
+    fn detects_removed_behavior() {
+        let mut entry = make_cached_entry();
+
+        let mut baseline = HashMap::new();
+        baseline.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        baseline.insert("login-failure".to_string(), snap("error_case", "hash2"));
+        entry.baseline = Some(baseline);
+
+        let mut current = HashMap::new();
+        current.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        entry.behaviors = current;
+
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_some());
+        let changes = result.unwrap();
+        assert_eq!(changes.removed.len(), 1);
+        assert_eq!(changes.removed[0].name, "login-failure");
+        assert_eq!(changes.removed[0].category, "error_case");
+        assert!(changes.added.is_empty());
+        assert!(changes.modified.is_empty());
+        assert_eq!(changes.unchanged, 1);
+    }
+
+    #[test]
+    /// validate-changes: detects_added_behavior
+    fn detects_added_behavior() {
+        let mut entry = make_cached_entry();
+
+        let mut baseline = HashMap::new();
+        baseline.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        entry.baseline = Some(baseline);
+
+        let mut current = HashMap::new();
+        current.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        current.insert("login-failure".to_string(), snap("error_case", "hash2"));
+        entry.behaviors = current;
+
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_some());
+        let changes = result.unwrap();
+        assert_eq!(changes.added.len(), 1);
+        assert_eq!(changes.added[0].name, "login-failure");
+        assert_eq!(changes.added[0].category, "error_case");
+        assert!(changes.removed.is_empty());
+        assert!(changes.modified.is_empty());
+        assert_eq!(changes.unchanged, 1);
+    }
+
+    #[test]
+    /// validate-changes: detects_modified_behavior_hash_changed
+    fn detects_modified_behavior_hash_changed() {
+        let mut entry = make_cached_entry();
+
+        let mut baseline = HashMap::new();
+        baseline.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        entry.baseline = Some(baseline);
+
+        let mut current = HashMap::new();
+        current.insert("login-success".to_string(), snap("happy_path", "hash2"));
+        entry.behaviors = current;
+
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_some());
+        let changes = result.unwrap();
+        assert_eq!(changes.modified.len(), 1);
+        assert_eq!(changes.modified[0].name, "login-success");
+        assert!(
+            changes.modified[0]
+                .sections
+                .contains(&"content".to_string())
+        );
+        assert!(changes.added.is_empty());
+        assert!(changes.removed.is_empty());
+        assert_eq!(changes.unchanged, 0);
+    }
+
+    #[test]
+    /// validate-changes: detects_modified_behavior_category_changed
+    fn detects_modified_behavior_category_changed() {
+        let mut entry = make_cached_entry();
+
+        let mut baseline = HashMap::new();
+        baseline.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        entry.baseline = Some(baseline);
+
+        let mut current = HashMap::new();
+        current.insert("login-success".to_string(), snap("edge_case", "hash2"));
+        entry.behaviors = current;
+
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_some());
+        let changes = result.unwrap();
+        assert_eq!(changes.modified.len(), 1);
+        assert_eq!(changes.modified[0].name, "login-success");
+        assert!(
+            changes.modified[0]
+                .sections
+                .contains(&"category".to_string())
+        );
+    }
+
+    #[test]
+    /// validate-changes: mixed_changes_add_remove_modify
+    fn mixed_changes_add_remove_modify() {
+        let mut entry = make_cached_entry();
+
+        let mut baseline = HashMap::new();
+        baseline.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        baseline.insert("login-failure".to_string(), snap("error_case", "hash2"));
+        baseline.insert("empty-email".to_string(), snap("edge_case", "hash3"));
+        entry.baseline = Some(baseline);
+
+        let mut current = HashMap::new();
+        // login-success: unchanged
+        current.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        // login-failure: removed (not in current)
+        // empty-email: modified (different hash)
+        current.insert(
+            "empty-email".to_string(),
+            snap("edge_case", "hash3-modified"),
+        );
+        // new-behavior: added
+        current.insert("new-behavior".to_string(), snap("happy_path", "hash4"));
+        entry.behaviors = current;
+
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_some());
+        let changes = result.unwrap();
+        assert_eq!(changes.added.len(), 1);
+        assert_eq!(changes.removed.len(), 1);
+        assert_eq!(changes.modified.len(), 1);
+        assert_eq!(changes.unchanged, 1);
+
+        assert_eq!(changes.added[0].name, "new-behavior");
+        assert_eq!(changes.removed[0].name, "login-failure");
+        assert_eq!(changes.modified[0].name, "empty-email");
+    }
+
+    #[test]
+    /// validate-changes: version_change_is_none_without_version_tracking
+    fn version_change_is_none_without_version_tracking() {
+        let mut entry = make_cached_entry();
+
+        let mut baseline = HashMap::new();
+        baseline.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        entry.baseline = Some(baseline);
+
+        let mut current = HashMap::new();
+        current.insert("login-success".to_string(), snap("happy_path", "hash2"));
+        entry.behaviors = current;
+
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_some());
+        assert!(result.unwrap().version_change.is_none());
+    }
 }

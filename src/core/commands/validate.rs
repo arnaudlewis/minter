@@ -354,6 +354,19 @@ fn update_graph_cache(
 
     let hash = graph::content_hash(&parsed.source);
     if state.cache.is_changed(&parsed.spec.name, &hash) {
+        let new_behaviors = graph::compute_behaviors(&parsed.spec);
+        let old_baseline = state
+            .cache
+            .specs
+            .get(&parsed.spec.name)
+            .and_then(|e| e.baseline.clone())
+            .or_else(|| {
+                state
+                    .cache
+                    .specs
+                    .get(&parsed.spec.name)
+                    .map(|e| e.behaviors.clone())
+            });
         state.cache.upsert(
             parsed.spec.name.clone(),
             CachedEntry {
@@ -364,6 +377,8 @@ fn update_graph_cache(
                 dependencies: parsed.spec.dep_names(),
                 path: parsed.path.display().to_string(),
                 nfr_categories: parsed.spec.all_nfr_categories(),
+                behaviors: new_behaviors,
+                baseline: old_baseline,
             },
         );
         state.dirty = true;
@@ -375,6 +390,13 @@ fn update_graph_cache(
         {
             let dep_hash = graph::content_hash(&dep_source);
             if state.cache.is_changed(dep_name, &dep_hash) {
+                let dep_behaviors = graph::compute_behaviors(&rd.spec);
+                let dep_baseline = state
+                    .cache
+                    .specs
+                    .get(dep_name)
+                    .and_then(|e| e.baseline.clone())
+                    .or_else(|| state.cache.specs.get(dep_name).map(|e| e.behaviors.clone()));
                 state.cache.upsert(
                     dep_name.clone(),
                     CachedEntry {
@@ -385,6 +407,8 @@ fn update_graph_cache(
                         dependencies: rd.spec.dep_names(),
                         path: dep_path.display().to_string(),
                         nfr_categories: rd.spec.all_nfr_categories(),
+                        behaviors: dep_behaviors,
+                        baseline: dep_baseline,
                     },
                 );
                 state.dirty = true;
@@ -488,6 +512,8 @@ mod tests {
             dependencies: deps.into_iter().map(String::from).collect(),
             path: "test.spec".to_string(),
             nfr_categories: nfr_cats.into_iter().map(String::from).collect(),
+            behaviors: std::collections::HashMap::new(),
+            baseline: None,
         }
     }
 

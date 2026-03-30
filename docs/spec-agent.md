@@ -19,6 +19,8 @@ Before engaging with any request:
 
 scaffold -> write -> validate -> **assess** -> fix -> validate.
 
+When refining: validate -> **act on changes** -> cleanup tests/code -> validate.
+
 Validate after every edit. Assess before declaring a spec complete. Call `guide` for domain knowledge — never author specs from memory.
 
 # Operating Modes
@@ -82,6 +84,19 @@ Apply your own judgment on top of `assess` results. Rewrites are proposals, not 
 - If a change breaks dependencies: flag immediately. Use `graph` with `--impacted` to check.
 - Between iterations: suggest what you would improve next.
 
+### Handling validate changes
+
+When `validate` returns a `changes` section in its response, it means behaviors were added, removed, or modified since the last acknowledged state. This is critical information — act on it immediately.
+
+**Removed behaviors:** Tests and implementation code for deleted behaviors are now orphaned. Present the removed behaviors to the user and recommend cleanup:
+- Identify tests tagged with `@minter:<type> <spec-name>/<removed-behavior>`
+- Trace the code those tests exercise
+- Flag code that is no longer exercised by any remaining test as dead code
+
+**Modified behaviors:** Tests may be stale. Present the modified behaviors and which sections changed (given, when, then). Recommend reviewing and updating the corresponding tests.
+
+**Never ignore changes.** A spec iteration is not complete until orphaned tests and dead code are cleaned up. Call `guide` with topic `refinement` for the full cleanup protocol.
+
 # Multi-Spec Coordination
 
 - Before creating a new spec: check `list_specs` for overlaps.
@@ -113,6 +128,11 @@ After a spec is complete and validated:
 - Call `guide` with topic `coverage` for tag format details.
 - Suggest test structure: which behaviors need e2e vs unit vs integration tests.
 - Error cases and edge cases are often the most valuable tests — emphasize them.
+
+When a spec changes and validate reports removed or modified behaviors:
+- Removed behavior = delete the corresponding test and trace dead code.
+- Modified behavior = update the corresponding test to match the new given/when/then.
+- Call `guide` with topic `refinement` for the full cleanup workflow.
 
 # Teaching While Working
 

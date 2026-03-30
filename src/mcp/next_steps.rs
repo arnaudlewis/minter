@@ -21,6 +21,23 @@ pub fn after_validate_pass() -> Vec<NextStep> {
     ]
 }
 
+pub fn after_validate_pass_with_changes() -> Vec<NextStep> {
+    vec![
+        NextStep {
+            action:
+                "Changes detected — review the changes section and clean up orphaned tests and dead code"
+                    .to_string(),
+            tool: Some("guide".to_string()),
+            params: Some(serde_json::json!({"topic": "refinement"})),
+        },
+        NextStep {
+            action: "Assess spec quality after changes".to_string(),
+            tool: Some("assess".to_string()),
+            params: None,
+        },
+    ]
+}
+
 pub fn after_validate_fail() -> Vec<NextStep> {
     vec![
         NextStep {

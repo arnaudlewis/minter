@@ -277,6 +277,9 @@ Principles
 3. 1 behavior = 1 test — no more, no less.
 4. NFRs are constraints, not guidelines — they are enforced, not suggested.
 5. The spec is complete before any code is written.
+6. Specs evolve — when behaviors change, tests and code must follow.
+   validate reports changes automatically. Never leave orphaned tests
+   or dead code behind.
 
 
 Workflow Phases
@@ -301,7 +304,9 @@ Phase 4 — Implement (TDD)
   Unit tests are mandatory alongside implementation.
 
 Phase 5 — All Green
-  All e2e and unit tests pass. Run `validate` one final time.
+  All tests pass. If validate reported changes (removed or modified
+  behaviors), trace the affected tests and their implementation code.
+  Remove dead code. Run tests again. Final validate to confirm.
 
 
 Available Tools
@@ -345,7 +350,9 @@ Phase 4 — Implement (TDD)
   Make one test green at a time. Unit tests are mandatory.
 
 Phase 5 — All Green
-  All tests pass. Final validate."
+  All tests pass. If validate reported changes (removed or modified
+  behaviors), trace the affected tests and their implementation code.
+  Remove dead code. Run tests again. Final validate to confirm."
 }
 
 /// Condensed spec authoring guidance for the guide tool.
@@ -854,6 +861,49 @@ Common Mistakes
     )
 }
 
+/// Spec refinement and cleanup workflow reference for the guide tool.
+pub fn guide_refinement() -> &'static str {
+    "\
+Spec Refinement & Cleanup
+==========================
+
+When iterating on specs, validate automatically detects what changed
+since the last acknowledged state. The changes section in the validate
+response tells you exactly which behaviors were added, removed, or
+modified.
+
+When validate reports removed behaviors:
+  1. Find tests by @minter tag for the removed behavior
+  2. Read each test — identify which code it exercises
+  3. Delete the tests
+  4. Check if the exercised code is still used by other tests
+  5. If unreferenced — delete it, it is dead code
+  6. Build and run all tests to confirm
+
+When validate reports modified behaviors:
+  1. Find tests by @minter tag for the modified behavior
+  2. Check which sections changed (given, when, then)
+  3. Update test setup/assertions to match the new spec
+  4. Check for helper or setup code that became unused
+  5. Build and run all tests to confirm
+
+Pitfalls
+  - Shared code: a function used by multiple behaviors — only delete
+    if no remaining test exercises it
+  - Test helpers: verify they are not imported by other test files
+  - Compiled languages: use the compiler to find unused code
+  - Dynamic languages: grep for imports and function calls
+
+Version Semantics
+  Removed behaviors = major version bump (breaking change)
+  Modified conditions = review tests, may not need version bump
+  Added behaviors = minor version bump
+
+The validate response only reports changes when a baseline exists.
+The first validation of a spec creates the baseline. Subsequent
+validations compare against it and report differences."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1108,5 +1158,25 @@ mod tests {
         assert!(text.contains("React"));
         assert!(text.contains("Live updates"));
         assert!(text.contains("Spec cards"));
+    }
+
+    /// content: guide-refinement-contains-sections
+    #[test]
+    fn guide_refinement_contains_sections() {
+        let text = guide_refinement();
+        assert!(text.contains("Refinement"));
+        assert!(text.contains("removed"));
+        assert!(text.contains("modified"));
+        assert!(text.contains("@minter"));
+        assert!(text.contains("dead code"));
+        assert!(text.contains("baseline"));
+    }
+
+    /// content: initialize-minter-mentions-cleanup
+    #[test]
+    fn initialize_minter_mentions_cleanup() {
+        let text = initialize_minter();
+        assert!(text.contains("Specs evolve"));
+        assert!(text.contains("orphaned"));
     }
 }
