@@ -1,5 +1,6 @@
 import type {
   DesignSystem,
+  TypeScaleConfig,
   ContentSection,
 } from "@/types"
 import {
@@ -17,6 +18,11 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  BookOpen,
+  Microscope,
+  Lock,
+  Hammer,
+  Terminal,
 } from "lucide-react"
 
 // Map nav item names to icons
@@ -28,6 +34,31 @@ const navIcons: Record<string, React.ReactNode> = {
   Graph: <GitBranch size={16} />,
   Coverage: <Shield size={16} />,
   Settings: <Settings size={16} />,
+  Guide: <BookOpen size={16} />,
+  Inspect: <Microscope size={16} />,
+  Lock: <Lock size={16} />,
+  Scaffold: <Hammer size={16} />,
+  Ci: <Terminal size={16} />,
+}
+
+/**
+ * Normalize the type scale so sizes are always ascending (smallest first).
+ * The server may return sizes in descending order (largest first).
+ * We sort sizes ascending and reorder line_heights and font_weights to match.
+ */
+function normalizeTypeScale(ts: TypeScaleConfig): TypeScaleConfig {
+  const indexed = ts.sizes.map((size, i) => ({
+    size,
+    lh: ts.line_heights[i] ?? 1.4,
+    fw: ts.font_weights[i] ?? 400,
+  }))
+  indexed.sort((a, b) => a.size - b.size)
+  return {
+    ...ts,
+    sizes: indexed.map((e) => e.size),
+    line_heights: indexed.map((e) => e.lh),
+    font_weights: indexed.map((e) => e.fw),
+  }
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -44,7 +75,7 @@ function Sidebar({
 }: {
   design: DesignSystem
 }) {
-  const { palette, layout, spacing, type_scale } = design
+  const { palette, layout, type_scale } = design
   const sidebar = layout.sidebar
   if (!sidebar) return null
 
@@ -71,32 +102,36 @@ function Sidebar({
       {/* Project name */}
       <div
         style={{
-          padding: `${spacing.steps[4]}px ${spacing.steps[3]}px`,
+          padding: `14px 16px`,
           borderBottom: `1px solid ${hexToRgba(sidebarText, 0.08)}`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: spacing.steps[1] + "px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div
             style={{
-              width: 28,
-              height: 28,
+              width: 24,
+              height: 24,
               borderRadius: 6,
               background: palette.primary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontWeight: type_scale.font_weights[2],
-              fontSize: type_scale.sizes[1] + "px",
+              fontWeight: 600,
+              fontSize: "12px",
               color: "#fff",
+              flexShrink: 0,
             }}
           >
-            M
+            {(design.spec_metadata?.project_name ?? "P").charAt(0).toUpperCase()}
           </div>
           <span
             style={{
-              fontWeight: type_scale.font_weights[2],
-              fontSize: type_scale.sizes[3] + "px",
+              fontWeight: 600,
+              fontSize: "14px",
               letterSpacing: "-0.02em",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
             {design.spec_metadata?.project_name ?? "Project"}
@@ -108,19 +143,19 @@ function Sidebar({
       <nav
         style={{
           flex: 1,
-          padding: `${spacing.steps[2]}px ${spacing.steps[2]}px`,
+          padding: `8px 8px`,
           overflowY: "auto",
         }}
       >
         <div
           style={{
-            fontSize: type_scale.sizes[0] + "px",
-            fontWeight: type_scale.font_weights[1],
+            fontSize: "11px",
+            fontWeight: 500,
             color: sidebarTextMuted,
             textTransform: "uppercase",
             letterSpacing: "0.06em",
-            padding: `${spacing.steps[1]}px ${spacing.steps[2]}px`,
-            marginBottom: spacing.steps[0] + "px",
+            padding: `6px 12px`,
+            marginBottom: "2px",
           }}
         >
           Navigation
@@ -133,23 +168,21 @@ function Sidebar({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: spacing.steps[2] + "px",
-                padding: `${spacing.steps[1] + 2}px ${spacing.steps[2]}px`,
+                gap: "8px",
+                padding: `6px 12px`,
                 borderRadius: 6,
                 marginBottom: 2,
                 backgroundColor: isActive
                   ? hexToRgba(palette.primary, 0.15)
                   : "transparent",
                 color: isActive ? palette.shades[1] : sidebarTextMuted,
-                fontWeight: isActive
-                  ? type_scale.font_weights[1]
-                  : type_scale.font_weights[0],
-                fontSize: type_scale.sizes[2] + "px",
+                fontWeight: isActive ? 500 : 400,
+                fontSize: "14px",
                 cursor: "pointer",
                 transition: "background-color 0.15s, color 0.15s",
               }}
             >
-              <span style={{ opacity: isActive ? 1 : 0.6 }}>
+              <span style={{ opacity: isActive ? 1 : 0.6, display: "flex", alignItems: "center" }}>
                 {navIcons[item] ?? <FileText size={16} />}
               </span>
               {item}
@@ -173,20 +206,20 @@ function Sidebar({
           style={{
             height: 1,
             background: hexToRgba(sidebarText, 0.08),
-            margin: `${spacing.steps[3]}px ${spacing.steps[2]}px`,
+            margin: `12px 12px`,
           }}
         />
 
         {/* Domain summary */}
         <div
           style={{
-            fontSize: type_scale.sizes[0] + "px",
-            fontWeight: type_scale.font_weights[1],
+            fontSize: "11px",
+            fontWeight: 500,
             color: sidebarTextMuted,
             textTransform: "uppercase",
             letterSpacing: "0.06em",
-            padding: `${spacing.steps[1]}px ${spacing.steps[2]}px`,
-            marginBottom: spacing.steps[0] + "px",
+            padding: `6px 12px`,
+            marginBottom: "2px",
           }}
         >
           Domains
@@ -198,19 +231,19 @@ function Sidebar({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              padding: `${spacing.steps[1]}px ${spacing.steps[2]}px`,
-              fontSize: type_scale.sizes[1] + "px",
+              padding: `4px 12px`,
+              fontSize: "13px",
               color: sidebarTextMuted,
             }}
           >
             <span>{domain.name}</span>
             <span
               style={{
-                fontSize: type_scale.sizes[0] + "px",
+                fontSize: "11px",
                 backgroundColor: hexToRgba(sidebarText, 0.08),
                 borderRadius: 10,
                 padding: "1px 7px",
-                fontWeight: type_scale.font_weights[1],
+                fontWeight: 500,
               }}
             >
               {domain.spec_count}
@@ -222,13 +255,13 @@ function Sidebar({
       {/* Bottom section */}
       <div
         style={{
-          padding: `${spacing.steps[3]}px`,
+          padding: "12px 16px",
           borderTop: `1px solid ${hexToRgba(sidebarText, 0.08)}`,
-          fontSize: type_scale.sizes[0] + "px",
+          fontSize: "11px",
           color: sidebarTextMuted,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: spacing.steps[1] + "px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <div
             style={{
               width: 6,
@@ -251,7 +284,7 @@ function Header({
 }: {
   design: DesignSystem
 }) {
-  const { palette, layout, spacing, type_scale, component_styles } = design
+  const { palette, layout, type_scale, component_styles } = design
   const header = layout.header
 
   return (
@@ -261,20 +294,20 @@ function Header({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: `${spacing.steps[2]}px ${spacing.steps[4]}px`,
+        padding: `0 20px`,
         backgroundColor: "#ffffff",
         borderBottom: `1px solid ${hexToRgba(palette.neutral, 0.12)}`,
         fontFamily: type_scale.font_family,
-        height: 56,
-        minHeight: 56,
+        height: 48,
+        minHeight: 48,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: spacing.steps[2] + "px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <span
           style={{
-            fontSize: type_scale.sizes[3] + "px",
-            fontWeight: type_scale.font_weights[2],
-            color: palette.shades[9],
+            fontSize: "14px",
+            fontWeight: 600,
+            color: palette.shades[9] ?? palette.neutral,
             letterSpacing: "-0.02em",
           }}
         >
@@ -283,14 +316,14 @@ function Header({
         <span
           style={{
             color: hexToRgba(palette.neutral, 0.4),
-            fontSize: type_scale.sizes[3] + "px",
+            fontSize: "14px",
           }}
         >
           /
         </span>
         <span
           style={{
-            fontSize: type_scale.sizes[2] + "px",
+            fontSize: "14px",
             color: palette.neutral,
           }}
         >
@@ -298,20 +331,20 @@ function Header({
         </span>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: spacing.steps[2] + "px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         {header?.has_search && (
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: spacing.steps[1] + "px",
-              padding: `${spacing.steps[1]}px ${spacing.steps[2]}px`,
+              gap: "6px",
+              padding: `6px 10px`,
               borderRadius: component_styles.button_border_radius + "px",
               border: `1px solid ${hexToRgba(palette.neutral, 0.15)}`,
               backgroundColor: hexToRgba(palette.neutral, 0.03),
               color: hexToRgba(palette.neutral, 0.5),
-              fontSize: type_scale.sizes[2] + "px",
-              minWidth: 220,
+              fontSize: "13px",
+              minWidth: 200,
             }}
           >
             <Search size={14} />
@@ -319,7 +352,7 @@ function Header({
             <span
               style={{
                 marginLeft: "auto",
-                fontSize: type_scale.sizes[0] + "px",
+                fontSize: "11px",
                 backgroundColor: hexToRgba(palette.neutral, 0.08),
                 borderRadius: 4,
                 padding: "1px 6px",
@@ -332,16 +365,16 @@ function Header({
         )}
         <div
           style={{
-            width: 32,
-            height: 32,
+            width: 28,
+            height: 28,
             borderRadius: "50%",
             background: `linear-gradient(135deg, ${palette.primary}, ${palette.accent})`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             color: "#fff",
-            fontWeight: type_scale.font_weights[2],
-            fontSize: type_scale.sizes[1] + "px",
+            fontWeight: 600,
+            fontSize: "11px",
           }}
         >
           AL
@@ -366,7 +399,7 @@ function MetricCards({
 }: {
   design: DesignSystem
 }) {
-  const { palette, spacing, type_scale, component_styles, spec_metadata } = design
+  const { palette, type_scale, component_styles, spec_metadata } = design
 
   const totalBehaviors = spec_metadata?.total_behavior_count ?? 0
   const coveragePct = totalBehaviors > 0
@@ -410,7 +443,7 @@ function MetricCards({
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(4, 1fr)",
-        gap: spacing.steps[3] + "px",
+        gap: "12px",
       }}
     >
       {metrics.map((metric) => (
@@ -420,7 +453,7 @@ function MetricCards({
             backgroundColor: "#ffffff",
             border: `1px solid ${hexToRgba(palette.neutral, 0.10)}`,
             borderRadius: component_styles.card_border_radius + "px",
-            padding: `${spacing.steps[4]}px`,
+            padding: "12px 14px",
             fontFamily: type_scale.font_family,
             transition: "box-shadow 0.2s, border-color 0.2s",
             boxShadow: `0 1px 2px ${hexToRgba(palette.neutral, 0.04)}`,
@@ -431,13 +464,13 @@ function MetricCards({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: spacing.steps[2] + "px",
+              marginBottom: "8px",
             }}
           >
             <span
               style={{
-                fontSize: type_scale.sizes[1] + "px",
-                fontWeight: type_scale.font_weights[1],
+                fontSize: "11px",
+                fontWeight: 500,
                 color: palette.neutral,
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
@@ -447,8 +480,8 @@ function MetricCards({
             </span>
             <div
               style={{
-                width: 32,
-                height: 32,
+                width: 28,
+                height: 28,
                 borderRadius: component_styles.button_border_radius + "px",
                 backgroundColor: hexToRgba(palette.primary, 0.06),
                 display: "flex",
@@ -461,10 +494,10 @@ function MetricCards({
           </div>
           <div
             style={{
-              fontSize: type_scale.sizes[5] + "px",
-              fontWeight: type_scale.font_weights[2],
-              color: palette.shades[9],
-              lineHeight: type_scale.line_heights[5],
+              fontSize: "24px",
+              fontWeight: 600,
+              color: palette.shades[9] ?? palette.neutral,
+              lineHeight: 1.2,
               letterSpacing: "-0.02em",
               fontVariantNumeric: "tabular-nums",
             }}
@@ -476,8 +509,8 @@ function MetricCards({
               display: "flex",
               alignItems: "center",
               gap: "4px",
-              marginTop: spacing.steps[1] + "px",
-              fontSize: type_scale.sizes[0] + "px",
+              marginTop: "4px",
+              fontSize: "11px",
               color:
                 metric.trend === "up"
                   ? palette.semantic.success
@@ -508,7 +541,7 @@ function DataTable({
 }: {
   design: DesignSystem
 }) {
-  const { palette, spacing, type_scale, component_styles } = design
+  const { palette, type_scale, component_styles } = design
   const spec_metadata = design.spec_metadata
 
   // Assign statuses for visual variety
@@ -558,109 +591,127 @@ function DataTable({
         boxShadow: `0 1px 2px ${hexToRgba(palette.neutral, 0.04)}`,
       }}
     >
-      {/* Table header */}
-      <div
+      {/* Table */}
+      <table
         style={{
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr 1fr 1fr",
-          padding: `${spacing.steps[2]}px ${spacing.steps[4]}px`,
-          borderBottom: `1px solid ${hexToRgba(palette.neutral, 0.08)}`,
-          backgroundColor: hexToRgba(palette.neutral, 0.02),
+          width: "100%",
+          borderCollapse: "collapse",
+          tableLayout: "fixed",
         }}
       >
-        {["Name", "Version", "Behaviors", "Status"].map((col) => (
-          <span
-            key={col}
+        <colgroup>
+          <col style={{ width: "40%" }} />
+          <col style={{ width: "15%" }} />
+          <col style={{ width: "15%" }} />
+          <col style={{ width: "30%" }} />
+        </colgroup>
+        <thead>
+          <tr
             style={{
-              fontSize: type_scale.sizes[0] + "px",
-              fontWeight: type_scale.font_weights[1],
-              color: palette.neutral,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
+              borderBottom: `1px solid ${hexToRgba(palette.neutral, 0.08)}`,
+              backgroundColor: hexToRgba(palette.neutral, 0.02),
             }}
           >
-            {col}
-          </span>
-        ))}
-      </div>
-
-      {/* Table rows */}
-      {(spec_metadata?.spec_metrics ?? []).map((spec, i) => {
-        const status = statusMap[spec.name] ?? "pass"
-        const color = statusColors[status]
-        const isEven = i % 2 === 0
-
-        return (
-          <div
-            key={spec.name}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "2fr 1fr 1fr 1fr",
-              padding: `${spacing.steps[2]}px ${spacing.steps[4]}px`,
-              borderBottom: `1px solid ${hexToRgba(palette.neutral, 0.05)}`,
-              backgroundColor: isEven
-                ? "transparent"
-                : hexToRgba(palette.neutral, 0.015),
-              alignItems: "center",
-              transition: "background-color 0.15s",
-              cursor: "pointer",
-            }}
-          >
-            <span
-              style={{
-                fontSize: type_scale.sizes[2] + "px",
-                fontWeight: type_scale.font_weights[1],
-                color: palette.shades[8],
-                fontFamily: "monospace",
-              }}
-            >
-              {spec.name}
-            </span>
-            <span
-              style={{
-                fontSize: type_scale.sizes[1] + "px",
-                color: palette.neutral,
-                fontFamily: "monospace",
-              }}
-            >
-              v{spec.version}
-            </span>
-            <span
-              style={{
-                fontSize: type_scale.sizes[2] + "px",
-                color: palette.shades[7],
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {spec.behavior_count}
-            </span>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                fontSize: type_scale.sizes[0] + "px",
-                fontWeight: type_scale.font_weights[1],
-                color: color.text,
-                backgroundColor: color.bg,
-                borderRadius: 12,
-                padding: "2px 10px",
-                width: "fit-content",
-              }}
-            >
-              <span
+            {["Name", "Version", "Behaviors", "Status"].map((col) => (
+              <th
+                key={col}
                 style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  backgroundColor: color.text,
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  color: palette.neutral,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  padding: "8px 16px",
+                  textAlign: "left",
                 }}
-              />
-              {color.label}
-            </span>
-          </div>
-        )
-      })}
+              >
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {(spec_metadata?.spec_metrics ?? []).map((spec, i) => {
+            const status = statusMap[spec.name] ?? "pass"
+            const color = statusColors[status]
+            const isEven = i % 2 === 0
+
+            return (
+              <tr
+                key={spec.name}
+                style={{
+                  borderBottom: `1px solid ${hexToRgba(palette.neutral, 0.05)}`,
+                  backgroundColor: isEven
+                    ? "transparent"
+                    : hexToRgba(palette.neutral, 0.015),
+                  cursor: "pointer",
+                  transition: "background-color 0.15s",
+                }}
+              >
+                <td
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: palette.shades[8] ?? palette.neutral,
+                    fontFamily: "monospace",
+                    padding: "8px 16px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {spec.name}
+                </td>
+                <td
+                  style={{
+                    fontSize: "12px",
+                    color: palette.neutral,
+                    fontFamily: "monospace",
+                    padding: "8px 16px",
+                  }}
+                >
+                  v{spec.version}
+                </td>
+                <td
+                  style={{
+                    fontSize: "13px",
+                    color: palette.shades[7] ?? palette.neutral,
+                    fontVariantNumeric: "tabular-nums",
+                    padding: "8px 16px",
+                  }}
+                >
+                  {spec.behavior_count}
+                </td>
+                <td style={{ padding: "8px 16px" }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      color: color.text,
+                      backgroundColor: color.bg,
+                      borderRadius: 12,
+                      padding: "2px 10px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: "50%",
+                        backgroundColor: color.text,
+                      }}
+                    />
+                    {color.label}
+                  </span>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -672,7 +723,7 @@ function StatusPanel({
 }: {
   design: DesignSystem
 }) {
-  const { palette, spacing, type_scale, component_styles } = design
+  const { palette, type_scale, component_styles } = design
 
   const total = design.spec_metadata?.total_spec_count ?? 0
   const valid = Math.round(total * 0.82)
@@ -692,7 +743,7 @@ function StatusPanel({
         backgroundColor: "#ffffff",
         border: `1px solid ${hexToRgba(palette.neutral, 0.10)}`,
         borderRadius: component_styles.card_border_radius + "px",
-        padding: spacing.steps[4] + "px",
+        padding: "16px",
         fontFamily: type_scale.font_family,
         boxShadow: `0 1px 2px ${hexToRgba(palette.neutral, 0.04)}`,
       }}
@@ -704,7 +755,7 @@ function StatusPanel({
           height: 8,
           borderRadius: 4,
           overflow: "hidden",
-          marginBottom: spacing.steps[4] + "px",
+          marginBottom: "16px",
         }}
       >
         {statuses.map((s) => (
@@ -720,7 +771,7 @@ function StatusPanel({
       </div>
 
       {/* Status items */}
-      <div style={{ display: "flex", flexDirection: "column", gap: spacing.steps[3] + "px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {statuses.map((s) => (
           <div
             key={s.label}
@@ -730,7 +781,7 @@ function StatusPanel({
               justifyContent: "space-between",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: spacing.steps[2] + "px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div
                 style={{
                   width: 10,
@@ -741,8 +792,8 @@ function StatusPanel({
               />
               <span
                 style={{
-                  fontSize: type_scale.sizes[2] + "px",
-                  color: palette.shades[7],
+                  fontSize: "13px",
+                  color: palette.shades[7] ?? palette.neutral,
                 }}
               >
                 {s.label}
@@ -750,9 +801,9 @@ function StatusPanel({
             </div>
             <span
               style={{
-                fontSize: type_scale.sizes[3] + "px",
-                fontWeight: type_scale.font_weights[2],
-                color: palette.shades[9],
+                fontSize: "16px",
+                fontWeight: 600,
+                color: palette.shades[9] ?? palette.neutral,
                 fontVariantNumeric: "tabular-nums",
               }}
             >
@@ -767,7 +818,7 @@ function StatusPanel({
         style={{
           height: 1,
           backgroundColor: hexToRgba(palette.neutral, 0.08),
-          margin: `${spacing.steps[3]}px 0`,
+          margin: `12px 0`,
         }}
       />
 
@@ -777,14 +828,14 @@ function StatusPanel({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          fontSize: type_scale.sizes[2] + "px",
+          fontSize: "13px",
         }}
       >
         <span style={{ color: palette.neutral }}>Total specifications</span>
         <span
           style={{
-            fontWeight: type_scale.font_weights[2],
-            color: palette.shades[9],
+            fontWeight: 600,
+            color: palette.shades[9] ?? palette.neutral,
           }}
         >
           {total}
@@ -803,16 +854,16 @@ function ContentSectionRenderer({
   section: ContentSection
   design: DesignSystem
 }) {
-  const { type_scale, palette, spacing } = design
+  const { type_scale, palette } = design
 
   const sectionTitle = (
     <h2
       style={{
-        fontSize: type_scale.sizes[3] + "px",
-        fontWeight: type_scale.font_weights[2],
-        color: palette.shades[9],
+        fontSize: "14px",
+        fontWeight: 600,
+        color: palette.shades[9] ?? palette.neutral,
         letterSpacing: "-0.01em",
-        marginBottom: spacing.steps[3] + "px",
+        marginBottom: "12px",
         fontFamily: type_scale.font_family,
       }}
     >
@@ -853,8 +904,9 @@ interface DashboardPrototypeProps {
   design: DesignSystem
 }
 
-export function DashboardPrototype({ design }: DashboardPrototypeProps) {
-  const { spacing, type_scale } = design
+export function DashboardPrototype({ design: rawDesign }: DashboardPrototypeProps) {
+  const design: DesignSystem = { ...rawDesign, type_scale: normalizeTypeScale(rawDesign.type_scale) }
+  const { type_scale } = design
 
   // Determine widths for sections
   const getGridColumn = (width: string): string => {
@@ -882,22 +934,23 @@ export function DashboardPrototype({ design }: DashboardPrototypeProps) {
     >
       <Sidebar design={design} />
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
         <Header design={design} />
 
         <main
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: spacing.steps[5] + "px",
+            overflowX: "hidden",
+            padding: "20px 24px",
           }}
         >
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: spacing.steps[5] + "px",
-              maxWidth: 1200,
+              gap: "20px",
+              maxWidth: 1100,
             }}
           >
             {design.layout.content.sections.map((section, i) => (
