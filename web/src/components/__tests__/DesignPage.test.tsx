@@ -40,30 +40,21 @@ describe("DesignPage", () => {
 
   /// design-page-empty: Shows empty state when no design system exists
   describe("design-page-empty", () => {
-    it("shows empty state when fetch returns 404 and no mock fallback", async () => {
-      // This test verifies the empty state component renders correctly standalone
-      // In practice, the hook falls back to mock data on 404
-      const { EmptyDesignState } = await import("../design/EmptyDesignState")
-      render(<EmptyDesignState />)
-      expect(screen.getByTestId("design-empty-state")).toBeInTheDocument()
+    it("shows empty state when fetch returns 404", async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve(new Response("not found", { status: 404 }))
+      )
+      render(<DesignPage />)
+      await waitFor(() => {
+        expect(screen.getByTestId("design-empty-state")).toBeInTheDocument()
+      })
       expect(screen.getByText(/no design system generated/i)).toBeInTheDocument()
-      expect(screen.getByText(/generate_layout/i)).toBeInTheDocument()
     })
   })
 
   /// design-page-renders: Shows dashboard prototype when design system is available
   describe("design-page-renders", () => {
-    it("renders dashboard prototype after loading mock data", async () => {
-      // Simulate fetch failure so hook falls back to mockDesignSystem
-      globalThis.fetch = vi.fn(() => Promise.reject(new Error("no backend")))
-      render(<DesignPage />)
-      await waitFor(() => {
-        expect(screen.getByTestId("design-page")).toBeInTheDocument()
-      })
-      expect(screen.getByTestId("design-dashboard")).toBeInTheDocument()
-    })
-
-    it("renders with data from successful API response", async () => {
+    it("renders dashboard prototype after successful API response", async () => {
       globalThis.fetch = vi.fn(() =>
         Promise.resolve(new Response(JSON.stringify(mockDesignSystem), {
           status: 200,
@@ -75,6 +66,14 @@ describe("DesignPage", () => {
         expect(screen.getByTestId("design-page")).toBeInTheDocument()
       })
       expect(screen.getByTestId("design-dashboard")).toBeInTheDocument()
+    })
+
+    it("shows error state when server connection fails", async () => {
+      globalThis.fetch = vi.fn(() => Promise.reject(new Error("no backend")))
+      render(<DesignPage />)
+      await waitFor(() => {
+        expect(screen.getByTestId("design-error")).toBeInTheDocument()
+      })
     })
   })
 })

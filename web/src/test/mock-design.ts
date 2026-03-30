@@ -61,7 +61,7 @@ export const mockDesignSystem: DesignSystem = {
   },
   type_scale: {
     ratio: 1.25,
-    levels: 6,
+    level_count: 6,
     body_size: 14,
     sizes: [11, 12, 14, 16, 20, 24],
     line_heights: [1.4, 1.4, 1.5, 1.5, 1.3, 1.2],
@@ -71,6 +71,7 @@ export const mockDesignSystem: DesignSystem = {
   spacing: {
     base: 4,
     ratio: 2,
+    step_count: 8,
     steps: [4, 8, 12, 16, 24, 32, 48, 64],
   },
   component_styles: {

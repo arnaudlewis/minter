@@ -99,7 +99,7 @@ function Sidebar({
               letterSpacing: "-0.02em",
             }}
           >
-            {design.spec_metadata.project_name}
+            {design.spec_metadata?.project_name ?? "Project"}
           </span>
         </div>
       </div>
@@ -191,7 +191,7 @@ function Sidebar({
         >
           Domains
         </div>
-        {design.spec_metadata.domains.map((domain) => (
+        {(design.spec_metadata?.domains ?? []).map((domain) => (
           <div
             key={domain.name}
             style={{
@@ -368,28 +368,29 @@ function MetricCards({
 }) {
   const { palette, spacing, type_scale, component_styles, spec_metadata } = design
 
-  const coveragePct = spec_metadata.total_behavior_count > 0
-    ? Math.round((spec_metadata.total_behavior_count * 0.85) / spec_metadata.total_behavior_count * 100)
+  const totalBehaviors = spec_metadata?.total_behavior_count ?? 0
+  const coveragePct = totalBehaviors > 0
+    ? Math.round((totalBehaviors * 0.85) / totalBehaviors * 100)
     : 0
 
   const metrics: MetricCardData[] = [
     {
       label: "Specifications",
-      value: spec_metadata.total_spec_count,
+      value: spec_metadata?.total_spec_count ?? 0,
       icon: <FileText size={18} style={{ color: palette.primary }} />,
       trend: "up",
       trendValue: "+3 this week",
     },
     {
       label: "Behaviors",
-      value: spec_metadata.total_behavior_count,
+      value: spec_metadata?.total_behavior_count ?? 0,
       icon: <Hash size={18} style={{ color: palette.accent }} />,
       trend: "up",
       trendValue: "+18 this week",
     },
     {
       label: "Entities",
-      value: spec_metadata.total_entity_count,
+      value: spec_metadata?.total_entity_count ?? 0,
       icon: <BarChart3 size={18} style={{ color: palette.semantic.info }} />,
       trend: "neutral",
       trendValue: "No change",
@@ -507,7 +508,8 @@ function DataTable({
 }: {
   design: DesignSystem
 }) {
-  const { palette, spacing, type_scale, component_styles, spec_metadata } = design
+  const { palette, spacing, type_scale, component_styles } = design
+  const spec_metadata = design.spec_metadata
 
   // Assign statuses for visual variety
   const statusMap: Record<string, "pass" | "warning" | "fail"> = {
@@ -583,7 +585,7 @@ function DataTable({
       </div>
 
       {/* Table rows */}
-      {spec_metadata.spec_metrics.map((spec, i) => {
+      {(spec_metadata?.spec_metrics ?? []).map((spec, i) => {
         const status = statusMap[spec.name] ?? "pass"
         const color = statusColors[status]
         const isEven = i % 2 === 0
@@ -670,9 +672,9 @@ function StatusPanel({
 }: {
   design: DesignSystem
 }) {
-  const { palette, spacing, type_scale, component_styles, spec_metadata } = design
+  const { palette, spacing, type_scale, component_styles } = design
 
-  const total = spec_metadata.total_spec_count
+  const total = design.spec_metadata?.total_spec_count ?? 0
   const valid = Math.round(total * 0.82)
   const warnings = Math.round(total * 0.11)
   const errors = total - valid - warnings

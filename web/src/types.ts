@@ -90,7 +90,7 @@ export interface DesignSystem {
   spacing: SpacingConfig
   component_styles: ComponentStyleConfig
   layout: LayoutConfig
-  spec_metadata: SpecMetadata
+  spec_metadata: SpecMetadata | null
   decisions: DesignDecision[]
 }
 
@@ -123,7 +123,7 @@ export interface DarkModeColors {
 
 export interface TypeScaleConfig {
   ratio: number
-  levels: number
+  level_count: number
   body_size: number
   sizes: number[]
   line_heights: number[]
@@ -134,6 +134,7 @@ export interface TypeScaleConfig {
 export interface SpacingConfig {
   base: number
   ratio: number
+  step_count: number
   steps: number[]
 }
 

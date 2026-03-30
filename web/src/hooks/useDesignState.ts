@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
 import type { DesignSystem, WsMessage } from "@/types"
-import { mockDesignSystem } from "@/test/mock-design"
 
 export function useDesignState() {
   const [designSystem, setDesignSystem] = useState<DesignSystem | null>(null)
@@ -14,15 +13,17 @@ export function useDesignState() {
         const data = (await res.json()) as DesignSystem
         setDesignSystem(data)
         setError(null)
-      } else {
-        // No design yet or error — fall back to mock for development
-        setDesignSystem(mockDesignSystem)
+      } else if (res.status === 404) {
+        // No design state generated yet
+        setDesignSystem(null)
         setError(null)
+      } else {
+        setDesignSystem(null)
+        setError(`Failed to load design system (${res.status})`)
       }
     } catch {
-      // Backend not available — fall back to mock data for development
-      setDesignSystem(mockDesignSystem)
-      setError(null)
+      setDesignSystem(null)
+      setError("Could not connect to the server")
     } finally {
       setLoading(false)
     }

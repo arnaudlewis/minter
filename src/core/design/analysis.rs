@@ -235,20 +235,38 @@ fn classify_archetype(
     let (best_name, best_score) = scores[0];
 
     let (name, reasoning) = if best_score >= 0.7 {
-        (best_name, format!(
-            "Strong {} signal: {:.0}% keyword/structural match across {} entities from {} specs",
-            best_name, best_score * 100.0, entities.len(), spec_count
-        ))
+        (
+            best_name,
+            format!(
+                "Strong {} signal: {:.0}% keyword/structural match across {} entities from {} specs",
+                best_name,
+                best_score * 100.0,
+                entities.len(),
+                spec_count
+            ),
+        )
     } else if best_score >= 0.5 {
-        (best_name, format!(
-            "Moderate {} signal: {:.0}% keyword match across {} entities from {} specs",
-            best_name, best_score * 100.0, entities.len(), spec_count
-        ))
+        (
+            best_name,
+            format!(
+                "Moderate {} signal: {:.0}% keyword match across {} entities from {} specs",
+                best_name,
+                best_score * 100.0,
+                entities.len(),
+                spec_count
+            ),
+        )
     } else {
-        ("generic", format!(
-            "No strong archetype signal detected (best: {} at {:.0}%); defaulting to generic for {} specs with {} entities",
-            best_name, best_score * 100.0, spec_count, entities.len()
-        ))
+        (
+            "generic",
+            format!(
+                "No strong archetype signal detected (best: {} at {:.0}%); defaulting to generic for {} specs with {} entities",
+                best_name,
+                best_score * 100.0,
+                spec_count,
+                entities.len()
+            ),
+        )
     };
 
     ArchetypeResult {

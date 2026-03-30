@@ -29,7 +29,7 @@ describe("DashboardPrototype", () => {
     it("renders domain names in sidebar", () => {
       render(<DashboardPrototype design={mockDesignSystem} />)
       const sidebar = screen.getByTestId("design-sidebar")
-      for (const domain of mockDesignSystem.spec_metadata.domains) {
+      for (const domain of mockDesignSystem.spec_metadata!.domains) {
         expect(within(sidebar).getByText(domain.name)).toBeInTheDocument()
       }
     })
@@ -63,7 +63,7 @@ describe("DashboardPrototype", () => {
       render(<DashboardPrototype design={mockDesignSystem} />)
       const cards = screen.getByTestId("design-metric-cards")
       expect(
-        within(cards).getByText(String(mockDesignSystem.spec_metadata.total_spec_count))
+        within(cards).getByText(String(mockDesignSystem.spec_metadata!.total_spec_count))
       ).toBeInTheDocument()
     })
 
@@ -71,7 +71,7 @@ describe("DashboardPrototype", () => {
       render(<DashboardPrototype design={mockDesignSystem} />)
       const cards = screen.getByTestId("design-metric-cards")
       expect(
-        within(cards).getByText(String(mockDesignSystem.spec_metadata.total_behavior_count))
+        within(cards).getByText(String(mockDesignSystem.spec_metadata!.total_behavior_count))
       ).toBeInTheDocument()
     })
 
@@ -79,7 +79,7 @@ describe("DashboardPrototype", () => {
       render(<DashboardPrototype design={mockDesignSystem} />)
       const cards = screen.getByTestId("design-metric-cards")
       expect(
-        within(cards).getByText(String(mockDesignSystem.spec_metadata.total_entity_count))
+        within(cards).getByText(String(mockDesignSystem.spec_metadata!.total_entity_count))
       ).toBeInTheDocument()
     })
 
@@ -95,7 +95,7 @@ describe("DashboardPrototype", () => {
     it("renders spec names in the data table", () => {
       render(<DashboardPrototype design={mockDesignSystem} />)
       const table = screen.getByTestId("design-data-table")
-      for (const spec of mockDesignSystem.spec_metadata.spec_metrics) {
+      for (const spec of mockDesignSystem.spec_metadata!.spec_metrics) {
         expect(within(table).getByText(spec.name)).toBeInTheDocument()
       }
     })

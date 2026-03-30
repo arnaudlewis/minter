@@ -156,6 +156,7 @@ pub struct SpecMetadataInfo {
 pub struct DomainInfo {
     pub name: String,
     pub spec_count: usize,
+    pub spec_names: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -473,6 +474,7 @@ fn map_spec_metadata(meta: &SpecMetadata) -> Option<SpecMetadataInfo> {
             .map(|d| DomainInfo {
                 name: d.name.clone(),
                 spec_count: d.spec_count,
+                spec_names: d.spec_names.clone(),
             })
             .collect(),
         spec_metrics: meta

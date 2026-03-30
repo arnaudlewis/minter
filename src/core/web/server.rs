@@ -10,8 +10,11 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use notify_debouncer_mini::{new_debouncer, notify::RecursiveMode};
 use rust_embed::Embed;
-use tokio::sync::broadcast;
+use tokio::sync::{RwLock, broadcast};
 use tower_http::cors::{Any, CorsLayer};
+
+use crate::core::design::analysis;
+use crate::core::design::generation::{self, DesignSystem};
 
 use super::state::{Action, UiState};
 
@@ -23,6 +26,8 @@ struct Assets;
 pub struct AppState {
     pub ui_state: Mutex<UiState>,
     pub tx: broadcast::Sender<String>,
+    pub design_state: RwLock<Option<DesignSystem>>,
+    pub working_dir: PathBuf,
 }
 
 /// JSON body for action requests that need a spec path.
@@ -39,9 +44,14 @@ pub async fn run_server(working_dir: PathBuf, port: u16, no_open: bool) -> i32 {
     let ui_state = UiState::load(&working_dir);
     let (tx, _rx) = broadcast::channel::<String>(64);
 
+    // Generate initial design state from specs
+    let initial_design = generate_design_from_specs(&working_dir);
+
     let app_state = Arc::new(AppState {
         ui_state: Mutex::new(ui_state),
         tx: tx.clone(),
+        design_state: RwLock::new(initial_design),
+        working_dir: working_dir.clone(),
     });
 
     // 2. Setup file watcher
@@ -90,6 +100,11 @@ pub async fn run_server(working_dir: PathBuf, port: u16, no_open: bool) -> i32 {
                         continue;
                     }
 
+                    // Check if spec files changed (for design regeneration)
+                    let spec_changed = events
+                        .iter()
+                        .any(|e| e.path.to_string_lossy().ends_with(".spec"));
+
                     // Refresh state and broadcast
                     let state_clone = Arc::clone(&watcher_state);
                     let tx_clone = watcher_tx.clone();
@@ -104,6 +119,25 @@ pub async fn run_server(working_dir: PathBuf, port: u16, no_open: bool) -> i32 {
                             serde_json::to_string(&*state).unwrap_or_else(|_| "{}".to_string())
                         };
                         let _ = tx_clone.send(json);
+
+                        // Regenerate design state if spec files changed
+                        if spec_changed {
+                            let new_design = generate_design_from_specs(&state_clone.working_dir);
+
+                            // Broadcast before storing to avoid cloning
+                            if let Some(ref ds) = new_design {
+                                if let Ok(design_json) = serde_json::to_value(ds) {
+                                    let msg = serde_json::json!({
+                                        "type": "design-update",
+                                        "data": design_json,
+                                    });
+                                    let _ = tx_clone.send(msg.to_string());
+                                }
+                            }
+
+                            let mut design = state_clone.design_state.write().await;
+                            *design = new_design;
+                        }
                     });
                 }
                 Ok(Err(errors)) => {
@@ -125,6 +159,7 @@ pub async fn run_server(working_dir: PathBuf, port: u16, no_open: bool) -> i32 {
     let app = Router::new()
         .route("/", get(serve_index))
         .route("/api/state", get(get_state))
+        .route("/api/design", get(get_design))
         .route("/api/action/{name}", post(run_action))
         .route("/ws", get(ws_handler))
         .route("/assets/{*path}", get(serve_asset))
@@ -299,6 +334,23 @@ async fn run_action(
         })
 }
 
+/// GET /api/design — return the current DesignSystem as JSON.
+async fn get_design(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    let design = state.design_state.read().await;
+    match design.as_ref() {
+        Some(ds) => {
+            let json = serde_json::to_string(ds).unwrap_or_else(|_| "{}".to_string());
+            Response::builder()
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(axum::body::Body::from(json))
+                .unwrap_or_else(|_| {
+                    (StatusCode::INTERNAL_SERVER_ERROR, "serialization error").into_response()
+                })
+        }
+        None => (StatusCode::NOT_FOUND, "no design system generated yet").into_response(),
+    }
+}
+
 /// GET /ws — WebSocket upgrade for live state updates.
 async fn ws_handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_ws(socket, state))
@@ -342,6 +394,21 @@ async fn handle_ws(mut socket: WebSocket, state: Arc<AppState>) {
             }
         }
     }
+}
+
+/// Try to generate a DesignSystem from specs in the working directory.
+///
+/// Returns `None` if analysis or generation fails (no specs, parse errors, etc.).
+fn generate_design_from_specs(working_dir: &std::path::Path) -> Option<DesignSystem> {
+    let specs_dir = working_dir.join("specs");
+    let dir = if specs_dir.is_dir() {
+        specs_dir
+    } else {
+        working_dir.to_path_buf()
+    };
+
+    let analysis_result = analysis::analyze_specs(&dir).ok()?;
+    generation::generate_design_system(&analysis_result, None).ok()
 }
 
 /// Guess MIME type from file extension.
