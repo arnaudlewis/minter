@@ -79,3 +79,96 @@ export interface ProjectState {
   dep_errors: string[]
   errors: string[]
 }
+
+// --- Design system types ---
+
+export interface DesignSystem {
+  archetype: ArchetypeResult
+  palette: PaletteDefinition
+  dark_mode: DarkModeColors
+  type_scale: TypeScaleConfig
+  spacing: SpacingConfig
+  component_styles: ComponentStyleConfig
+  layout: LayoutConfig
+  spec_metadata: SpecMetadata
+  decisions: DesignDecision[]
+}
+
+export interface ArchetypeResult {
+  name: string
+  confidence: number
+  reasoning: string
+}
+
+export interface PaletteDefinition {
+  name: string
+  description: string
+  vibe: string[]
+  reference: string
+  primary: string
+  secondary: string
+  accent: string
+  neutral: string
+  semantic: { success: string; warning: string; error: string; info: string }
+  shades: string[]
+}
+
+export interface DarkModeColors {
+  background: string
+  foreground: string
+  primary: string
+  shades: string[]
+  semantic: { success: string; warning: string; error: string; info: string }
+}
+
+export interface TypeScaleConfig {
+  ratio: number
+  levels: number
+  body_size: number
+  sizes: number[]
+  line_heights: number[]
+  font_weights: number[]
+  font_family: string
+}
+
+export interface SpacingConfig {
+  base: number
+  ratio: number
+  steps: number[]
+}
+
+export interface ComponentStyleConfig {
+  button_border_radius: number
+  card_border_radius: number
+}
+
+export interface LayoutConfig {
+  sidebar?: { position: string; width: string; nav_items: string[] }
+  header?: { title: string; has_search: boolean }
+  content: { sections: ContentSection[] }
+}
+
+export interface ContentSection {
+  kind: string
+  title: string
+  width: string
+}
+
+export interface SpecMetadata {
+  project_name: string
+  domains: { name: string; spec_count: number; spec_names: string[] }[]
+  spec_metrics: { name: string; version: string; behavior_count: number }[]
+  total_spec_count: number
+  total_behavior_count: number
+  total_entity_count: number
+}
+
+export interface DesignDecision {
+  property: string
+  value: string
+  previous_value?: string
+}
+
+export type WsMessage =
+  | { type: "state-update"; data: ProjectState }
+  | { type: "design-update"; data: DesignSystem }

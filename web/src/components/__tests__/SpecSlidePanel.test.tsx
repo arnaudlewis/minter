@@ -98,9 +98,9 @@ describe("SpecSlidePanel", () => {
       const spec = mockSpec({
         name: "auth-command",
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit", "e2e"], category: "happy_path", nfr_refs: [] },
-          { name: "logout", covered: true, test_types: ["e2e"], category: "happy_path", nfr_refs: [] },
-          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
+          { name: "login", covered: true, test_types: ["unit", "e2e"], category: "happy_path", nfr_refs: [], description: "" },
+          { name: "logout", covered: true, test_types: ["e2e"], category: "happy_path", nfr_refs: [], description: "" },
+          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [], description: "" },
         ],
       })
       render(
@@ -126,7 +126,7 @@ describe("SpecSlidePanel", () => {
     it("shows test type badges for covered behaviors", () => {
       const spec = mockSpec({
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit", "e2e"], category: "happy_path", nfr_refs: [] },
+          { name: "login", covered: true, test_types: ["unit", "e2e"], category: "happy_path", nfr_refs: [], description: "" },
         ],
       })
       render(
@@ -145,6 +145,7 @@ describe("SpecSlidePanel", () => {
             test_types: ["unit", "e2e", "integration", "benchmark"],
             category: "happy_path",
             nfr_refs: [],
+            description: "",
           },
         ],
       })
@@ -165,7 +166,7 @@ describe("SpecSlidePanel", () => {
     it("shows uncovered marker for uncovered behaviors", () => {
       const spec = mockSpec({
         behaviors: [
-          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
+          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [], description: "" },
         ],
       })
       render(
@@ -177,8 +178,8 @@ describe("SpecSlidePanel", () => {
     it("shows category tag for each behavior", () => {
       const spec = mockSpec({
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [] },
-          { name: "error-handler", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
+          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [], description: "" },
+          { name: "error-handler", covered: false, test_types: [], category: "error_case", nfr_refs: [], description: "" },
         ],
       })
       render(
@@ -195,7 +196,7 @@ describe("SpecSlidePanel", () => {
       const spec = mockSpec({
         nfr_refs: ["performance#api-latency", "reliability#no-data-loss"],
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [] },
+          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [], description: "" },
         ],
       })
       render(
@@ -208,8 +209,8 @@ describe("SpecSlidePanel", () => {
     it("shows behavior-level NFR refs next to each behavior", () => {
       const spec = mockSpec({
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: ["performance#api-latency"] },
-          { name: "logout", covered: true, test_types: ["e2e"], category: "happy_path", nfr_refs: [] },
+          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: ["performance#api-latency"], description: "" },
+          { name: "logout", covered: true, test_types: ["e2e"], category: "happy_path", nfr_refs: [], description: "" },
         ],
         nfr_refs: [],
       })
@@ -287,9 +288,9 @@ describe("SpecSlidePanel", () => {
       const spec = mockSpec({
         behavior_count: 3,
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [] },
-          { name: "logout", covered: true, test_types: ["e2e"], category: "happy_path", nfr_refs: [] },
-          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
+          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [], description: "" },
+          { name: "logout", covered: true, test_types: ["e2e"], category: "happy_path", nfr_refs: [], description: "" },
+          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [], description: "" },
         ],
       })
       render(
@@ -308,9 +309,9 @@ describe("SpecSlidePanel", () => {
       const spec = mockSpec({
         behavior_count: 3,
         behaviors: [
-          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [] },
-          { name: "logout", covered: true, test_types: ["e2e"], category: "happy_path", nfr_refs: [] },
-          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
+          { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [], description: "" },
+          { name: "logout", covered: true, test_types: ["e2e"], category: "happy_path", nfr_refs: [], description: "" },
+          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [], description: "" },
         ],
       })
       render(

@@ -1,13 +1,14 @@
 import type { ProjectState } from "@/types"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react"
-import { MinterLogo } from "@/components/MinterLogo"
+import { AlertCircle, CheckCircle2, Loader2, RefreshCw, Paintbrush } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+
+export type AppTab = "specs" | "design"
 
 function CoverageBar({
   covered,
@@ -99,13 +100,15 @@ function LockStatus({
   const showRegenerate = lockStatus === "Drifted" || lockStatus === "NoLock"
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delay={200}>
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">Integrity:</span>
         {lockStatus === "Drifted" && drift ? (
-          <Tooltip delayDuration={200}>
-            <TooltipTrigger asChild>
-              <span className={`cursor-help border-b border-dashed border-amber-400/50 text-sm font-medium ${statusColor}`}>{label}</span>
+          <Tooltip>
+            <TooltipTrigger
+              render={<span className={`cursor-help border-b border-dashed border-amber-400/50 text-sm font-medium ${statusColor}`} />}
+            >
+              {label}
             </TooltipTrigger>
             <TooltipContent side="bottom" align="end" className="max-w-sm border border-border bg-card p-3 shadow-lg">
               <DriftTooltipContent drift={drift} />
@@ -150,6 +153,8 @@ interface MetricsBarProps {
   onRegenerateLock: () => void
   invalidTagCount?: number
   onShowInvalidTags?: () => void
+  activeTab?: AppTab
+  onTabChange?: (tab: AppTab) => void
 }
 
 export function MetricsBar({
@@ -161,6 +166,8 @@ export function MetricsBar({
   onRegenerateLock,
   invalidTagCount = 0,
   onShowInvalidTags,
+  activeTab = "specs",
+  onTabChange,
 }: MetricsBarProps) {
   if (loading || !state) {
     return (
@@ -189,6 +196,35 @@ export function MetricsBar({
           <img src="/logo.svg" alt="minter" className="size-6" />
           <span className="font-semibold tracking-tight">minter</span>
         </div>
+
+        {/* Tab switcher */}
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => onTabChange?.("specs")}
+            className={`rounded-md px-2.5 py-1 text-sm font-medium transition-colors ${
+              activeTab === "specs"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Specs
+          </button>
+          <button
+            type="button"
+            onClick={() => onTabChange?.("design")}
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-medium transition-colors ${
+              activeTab === "design"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Paintbrush className="size-3.5" />
+            Design
+          </button>
+        </div>
+
+        <div className="h-4 w-px bg-border" />
 
         <div className="flex items-center gap-1.5">
           <span

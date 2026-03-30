@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import type { SpecInfo, BehaviorInfo } from "@/types"
+import type { SpecInfo } from "@/types"
 import {
   CheckCircle2,
   AlertTriangle,
@@ -41,44 +41,6 @@ function StatusIcon({ spec }: { spec: SpecInfo }) {
     return <CheckCircle2 className="size-5 text-emerald-400" />
   }
   return <AlertTriangle className="size-5 text-amber-400" />
-}
-
-function BehaviorDetail({ behavior }: { behavior: BehaviorInfo }) {
-  return (
-    <div
-      data-testid="behavior-detail"
-      className="ml-6 mt-1 space-y-1.5 rounded-md bg-muted/30 px-3 py-2"
-    >
-      <div className="flex items-center gap-2 text-xs">
-        <span className="text-muted-foreground">Category:</span>
-        <CategoryBadge category={behavior.category} />
-      </div>
-      <div className="flex items-center gap-2 text-xs">
-        <span className="text-muted-foreground">Status:</span>
-        <span className={behavior.covered ? "text-emerald-400" : "text-amber-400"}>
-          {behavior.covered ? "covered" : "uncovered"}
-        </span>
-      </div>
-      {behavior.covered && behavior.test_types.length > 0 && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Tests:</span>
-          <div className="flex items-center gap-1">
-            {behavior.test_types.map((type) => (
-              <TestTypeBadge key={type} type={type} />
-            ))}
-          </div>
-        </div>
-      )}
-      {behavior.nfr_refs.length > 0 && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">NFRs:</span>
-          <span className="text-muted-foreground">
-            {behavior.nfr_refs.join(", ")}
-          </span>
-        </div>
-      )}
-    </div>
-  )
 }
 
 function SpecInfoDialog({ spec }: { spec: SpecInfo }) {
@@ -135,12 +97,10 @@ interface SpecSlidePanelProps {
 export function SpecSlidePanel({ spec, isOpen, onClose, onSelectNfrCategory }: SpecSlidePanelProps) {
   const depErrors = spec?.dep_errors ?? []
   const [search, setSearch] = useState("")
-  const [expandedBehavior, setExpandedBehavior] = useState<string | null>(null)
 
   // Reset state when spec changes
   useEffect(() => {
     setSearch("")
-    setExpandedBehavior(null)
   }, [spec?.name])
 
   // Handle Escape key
@@ -168,10 +128,6 @@ export function SpecSlidePanel({ spec, isOpen, onClose, onSelectNfrCategory }: S
   const filteredBehaviors = spec?.behaviors.filter((b) =>
     b.name.toLowerCase().includes(search.toLowerCase())
   ) ?? []
-
-  const toggleBehavior = (name: string) => {
-    setExpandedBehavior((prev) => (prev === name ? null : name))
-  }
 
   return (
     <>

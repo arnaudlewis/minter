@@ -1,17 +1,20 @@
 import { useState, useCallback } from "react"
 import { useProjectState } from "@/hooks/useProjectState"
 import { MetricsBar } from "@/components/MetricsBar"
+import type { AppTab } from "@/components/MetricsBar"
 import { SpecCardGrid } from "@/components/SpecCardGrid"
 import { SpecSlidePanel } from "@/components/SpecSlidePanel"
 import { NfrCardGrid } from "@/components/NfrCardGrid"
 import { NfrSlidePanel } from "@/components/NfrSlidePanel"
 import { InvalidTagsPanel } from "@/components/InvalidTagsPanel"
+import { DesignPage } from "@/components/design/DesignPage"
 import type { SpecInfo, NfrInfo } from "@/types"
 
 function App() {
   const { state, loading, connected, lockLoading, lockSuccess, regenerateLock } =
     useProjectState()
 
+  const [activeTab, setActiveTab] = useState<AppTab>("specs")
   const [selectedSpec, setSelectedSpec] = useState<SpecInfo | null>(null)
   const [selectedNfr, setSelectedNfr] = useState<NfrInfo | null>(null)
   const [showInvalidTags, setShowInvalidTags] = useState(false)
@@ -21,7 +24,7 @@ function App() {
   }, [])
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="dark flex min-h-screen flex-col bg-background text-foreground">
       <MetricsBar
         state={state}
         connected={connected}
@@ -31,44 +34,56 @@ function App() {
         onRegenerateLock={regenerateLock}
         invalidTagCount={state?.invalid_tags.length ?? 0}
         onShowInvalidTags={() => setShowInvalidTags(true)}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
-      <main className="mx-auto max-w-6xl px-6 py-4">
-        <SpecCardGrid
-          specs={state?.specs ?? []}
-          nfrs={state?.nfrs ?? []}
-          onSelectSpec={handleSelectSpec}
-          onSelectNfr={setSelectedNfr}
-        />
-        <div className="mt-6">
-          <NfrCardGrid
-            nfrs={state?.nfrs ?? []}
-            onSelectNfr={setSelectedNfr}
+      {activeTab === "specs" && (
+        <>
+          <main className="mx-auto max-w-6xl px-6 py-4">
+            <SpecCardGrid
+              specs={state?.specs ?? []}
+              nfrs={state?.nfrs ?? []}
+              onSelectSpec={handleSelectSpec}
+              onSelectNfr={setSelectedNfr}
+            />
+            <div className="mt-6">
+              <NfrCardGrid
+                nfrs={state?.nfrs ?? []}
+                onSelectNfr={setSelectedNfr}
+              />
+            </div>
+          </main>
+
+          <SpecSlidePanel
+            spec={selectedSpec}
+            isOpen={selectedSpec !== null}
+            onClose={() => setSelectedSpec(null)}
+            onSelectNfrCategory={(category) => {
+              const nfr = (state?.nfrs ?? []).find(n => n.category === category)
+              if (nfr) setSelectedNfr(nfr)
+            }}
           />
+
+          <NfrSlidePanel
+            nfr={selectedNfr}
+            isOpen={selectedNfr !== null}
+            onClose={() => setSelectedNfr(null)}
+          />
+
+          <InvalidTagsPanel
+            tags={state?.invalid_tags ?? []}
+            isOpen={showInvalidTags}
+            onClose={() => setShowInvalidTags(false)}
+          />
+        </>
+      )}
+
+      {activeTab === "design" && (
+        <div className="flex-1">
+          <DesignPage />
         </div>
-      </main>
-
-      <SpecSlidePanel
-        spec={selectedSpec}
-        isOpen={selectedSpec !== null}
-        onClose={() => setSelectedSpec(null)}
-        onSelectNfrCategory={(category) => {
-          const nfr = (state?.nfrs ?? []).find(n => n.category === category)
-          if (nfr) setSelectedNfr(nfr)
-        }}
-      />
-
-      <NfrSlidePanel
-        nfr={selectedNfr}
-        isOpen={selectedNfr !== null}
-        onClose={() => setSelectedNfr(null)}
-      />
-
-      <InvalidTagsPanel
-        tags={state?.invalid_tags ?? []}
-        isOpen={showInvalidTags}
-        onClose={() => setShowInvalidTags(false)}
-      />
+      )}
     </div>
   )
 }

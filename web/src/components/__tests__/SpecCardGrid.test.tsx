@@ -29,6 +29,7 @@ describe("SpecCardGrid", () => {
           test_types: i < 10 ? ["unit"] : [],
           category: "happy_path",
           nfr_refs: [],
+          description: "",
         })),
       })
       render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
@@ -45,6 +46,7 @@ describe("SpecCardGrid", () => {
           test_types: i < 10 ? ["unit"] : [],
           category: "happy_path",
           nfr_refs: [],
+          description: "",
         })),
       })
       render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
@@ -113,9 +115,10 @@ describe("SpecCardGrid", () => {
           test_types: ["unit"],
           category: "happy_path",
           nfr_refs: [],
+          description: "",
         })),
       })
-      const { container } = render(
+      render(
         <SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />
       )
       const card = screen.getByText("auth-command").closest("[data-testid='spec-card']")!
@@ -140,9 +143,10 @@ describe("SpecCardGrid", () => {
           test_types: i < 10 ? ["unit"] : [],
           category: "happy_path",
           nfr_refs: [],
+          description: "",
         })),
       })
-      const { container } = render(
+      render(
         <SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />
       )
       const card = screen.getByText("auth-command").closest("[data-testid='spec-card']")!
@@ -161,7 +165,7 @@ describe("SpecCardGrid", () => {
         behaviors: [
           { name: "login", covered: true, test_types: ["unit"], category: "happy_path", nfr_refs: [], description: "" },
           { name: "logout", covered: false, test_types: [], category: "happy_path", nfr_refs: [], description: "" },
-          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [] },
+          { name: "refresh-token", covered: false, test_types: [], category: "error_case", nfr_refs: [], description: "" },
         ],
       })
       render(<SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />)
@@ -178,7 +182,7 @@ describe("SpecCardGrid", () => {
         behaviors: [],
         behavior_count: 0,
       })
-      const { container } = render(
+      render(
         <SpecCardGrid specs={[spec]} nfrs={[]} onSelectSpec={vi.fn()} />
       )
       const card = screen.getByText("scaffold-command").closest("[data-testid='spec-card']")!
