@@ -1,5 +1,5 @@
 import { useDesignState } from "@/hooks/useDesignState"
-import { DashboardPrototype } from "@/components/design/DashboardPrototype"
+import { ComponentShowcase } from "@/components/design/ComponentShowcase"
 import { EmptyDesignState } from "@/components/design/EmptyDesignState"
 import { Loader2 } from "lucide-react"
 
@@ -36,8 +36,8 @@ export function DesignPage() {
   }
 
   return (
-    <div data-testid="design-page" className="h-full">
-      <DashboardPrototype design={designSystem} />
+    <div data-testid="design-page" className="h-full overflow-y-auto">
+      <ComponentShowcase design={designSystem} />
     </div>
   )
 }

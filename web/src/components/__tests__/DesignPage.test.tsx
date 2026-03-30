@@ -54,7 +54,7 @@ describe("DesignPage", () => {
 
   /// design-page-renders: Shows dashboard prototype when design system is available
   describe("design-page-renders", () => {
-    it("renders dashboard prototype after successful API response", async () => {
+    it("renders component showcase after successful API response", async () => {
       globalThis.fetch = vi.fn(() =>
         Promise.resolve(new Response(JSON.stringify(mockDesignSystem), {
           status: 200,
@@ -65,7 +65,7 @@ describe("DesignPage", () => {
       await waitFor(() => {
         expect(screen.getByTestId("design-page")).toBeInTheDocument()
       })
-      expect(screen.getByTestId("design-dashboard")).toBeInTheDocument()
+      expect(screen.getByTestId("component-showcase")).toBeInTheDocument()
     })
 
     it("shows error state when server connection fails", async () => {
