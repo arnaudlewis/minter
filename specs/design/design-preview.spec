@@ -1,4 +1,4 @@
-spec design-preview v1.0.0
+spec design-preview v1.1.0
 title "Design Preview"
 
 description
@@ -205,6 +205,36 @@ behavior render-generic-prototype [happy_path]
   then
     assert the page occupies full screen below the header
     assert content sections are rendered based on layout configuration
+
+
+# View layout
+
+behavior design-view-split-layout [happy_path]
+  "Design view renders as a split layout when the chat panel is available"
+
+  given
+    Server state has has_claude == true
+    A design state exists
+
+  when the Design view renders
+
+  then
+    assert the preview occupies the right portion of the viewport
+    assert the left portion is reserved for the chat panel
+    assert the preview still renders the full prototype
+
+
+behavior design-view-full-width [happy_path]
+  "Design view renders the preview at full width when no chat is available"
+
+  given
+    Server state has has_claude == false
+
+  when the Design view renders
+
+  then
+    assert the preview occupies the full viewport width below the header
+    assert a message suggests installing Claude Code for chat-based design iteration
 
 
 # Token application

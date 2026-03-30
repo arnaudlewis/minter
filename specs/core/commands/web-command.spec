@@ -1,4 +1,4 @@
-spec web-command v1.0.0
+spec web-command v1.1.0
 title "Web Dashboard Command"
 
 description
@@ -51,6 +51,36 @@ behavior server-port-fallback [error_case]
 
   then
     assert the server starts on port 4322
+
+
+# Server state
+
+behavior state-includes-claude-availability [happy_path]
+  "Server state reports whether the Claude CLI is available on this machine"
+
+  given
+    The server has started
+    The claude CLI is present in PATH
+
+  when the dashboard requests server state
+
+  then returns json_response
+    assert response contains has_claude
+    assert has_claude == true
+
+
+behavior state-reports-claude-unavailable [happy_path]
+  "Server state reports has_claude as false when the CLI is not installed"
+
+  given
+    The server has started
+    The claude CLI is not present in PATH
+
+  when the dashboard requests server state
+
+  then returns json_response
+    assert response contains has_claude
+    assert has_claude == false
 
 
 # Header
