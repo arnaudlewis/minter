@@ -1,4 +1,4 @@
-spec config v1.0.0
+spec config v1.1.0
 title "Project Configuration"
 
 description
@@ -6,7 +6,9 @@ description
   By default it looks for specs in specs/ and tests in tests/. A
   minter.config.json file at the project root overrides these defaults.
   Commands that need paths — validate, coverage, graph, lock, ci — read
-  from this config instead of requiring CLI arguments. When no config
+  from this config instead of requiring CLI arguments. The design system
+  generator reads the design.output key to determine where exported
+  artifacts are written (defaults to specs/design/). When no config
   file exists, conventions apply silently. The config file is optional;
   minter never creates it automatically.
 
@@ -205,12 +207,88 @@ behavior reject-unknown-fields [error_case]
   "Print error when config contains unrecognized fields"
 
   given
-    minter.config.json contains: { "specs": "specs/", "output": "dist/" }
+    minter.config.json contains: { "specs": "specs/", "cache": "tmp/" }
 
   when any command that reads config is invoked
 
   then emits stderr
+    assert output contains "cache"
+    assert output contains "unknown"
+
+  then emits process_exit
+    assert code == 1
+
+
+# Design output path
+
+behavior config-design-output-string [happy_path]
+  "Accept design.output as a directory string for design artifact export"
+
+  given
+    minter.config.json contains: { "design": { "output": "design-system/" } }
+
+  when config is loaded
+
+  then
+    assert design output directory resolves to design-system/
+
+
+behavior config-design-output-default [happy_path]
+  "Default design output to specs/design/ when design.output is not specified"
+
+  given
+    minter.config.json contains: { "specs": "specs/" }
+    No design.output field is present
+
+  when config is loaded
+
+  then
+    assert design output directory falls back to default specs/design/
+
+
+behavior reject-invalid-design-output-type [error_case]
+  "Print error when design.output is not a string"
+
+  given
+    minter.config.json contains: { "design": { "output": 42 } }
+
+  when any command that reads config is invoked
+
+  then emits stderr
+    assert output contains "design"
     assert output contains "output"
+    assert output contains "string"
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior reject-invalid-design-object-type [error_case]
+  "Print error when design field is not an object"
+
+  given
+    minter.config.json contains: { "design": "not-an-object" }
+
+  when any command that reads config is invoked
+
+  then emits stderr
+    assert output contains "design"
+    assert output contains "object"
+
+  then emits process_exit
+    assert code == 1
+
+
+behavior reject-unknown-design-subfields [error_case]
+  "Print error when design object contains unrecognized fields"
+
+  given
+    minter.config.json contains: { "design": { "output": "out/", "theme": "dark" } }
+
+  when any command that reads config is invoked
+
+  then emits stderr
+    assert output contains "theme"
     assert output contains "unknown"
 
   then emits process_exit
