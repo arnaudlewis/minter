@@ -1,12 +1,15 @@
-spec mcp-design-tools v1.0.0
+spec mcp-design-tools v2.0.0
 title "MCP Design Tools"
 
 description
   Three MCP tools and a guide topic that form the agent interaction
   surface for the design system generator. generate_layout analyzes
   project specs and produces an initial design with archetype
-  classification, rich palette descriptions, structured layout
-  configuration, and contextual refinement suggestions. refine_layout
+  classification, rich palette descriptions, generated tokens, and
+  contextual refinement suggestions. The archetype is detected and
+  included for agent guidance — helping the agent explain palette
+  and token choices — but does not determine page layout. The
+  preview always renders a component showcase. refine_layout
   interprets natural language design changes across 15+ patterns —
   direct property setting, palette switching, relative color
   adjustments, typography, spacing, and border radius — returning
@@ -69,8 +72,8 @@ behavior generate-layout-description-includes-response-shape [happy_path]
 
   then returns tool_list
     assert generate_layout description mentions archetype classification
-    assert generate_layout description mentions layout configuration
     assert generate_layout description mentions color palette
+    assert generate_layout description mentions component showcase
     assert generate_layout description mentions refinement suggestions
 
 
@@ -159,20 +162,20 @@ behavior generate-response-includes-rich-palette [happy_path]
     assert palette has semantic colors for success, warning, and error
 
 
-behavior generate-response-includes-layout-config [happy_path]
-  "The generate_layout response includes structured layout configuration"
+behavior generate-response-includes-showcase-components [happy_path]
+  "The generate_layout response includes the list of showcase components"
 
   given
-    A directory with specs that classify as dashboard
+    A directory with specs
 
   when tools/call generate_layout
     path = "specs/"
 
   then returns tool_result
     assert response contains design section
-    assert design contains layout
-    assert layout has description
-    assert layout describes the archetype-specific page structure
+    assert design contains component list
+    assert component list includes navigation, cards, table, buttons, forms
+    assert component list describes what will render in the showcase
 
 
 behavior generate-response-includes-typography-and-spacing [happy_path]

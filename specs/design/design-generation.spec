@@ -1,123 +1,31 @@
-spec design-generation v1.0.0
+spec design-generation v2.0.0
 title "Design Generation"
 
 description
   Takes an analysis result from spec-analysis and taste defaults from
   design-taste, and produces a complete DesignSystem data structure. The
   DesignSystem includes a resolved color palette with shades and semantic
-  colors, a type scale, a spacing grid, component styles, and a
-  structured layout configuration. Each archetype produces a different
-  layout — dashboard gets a sidebar and metric cards, e-commerce gets a
-  product grid, content gets a reading-width container, form-heavy gets
-  a wizard with progress indicator. The layout configuration contains
-  structured data (sidebar position, header title, content sections with
-  kinds and widths), not just section name strings. Spec metadata from
-  the analysis is carried through to populate the preview with real
-  content — nav items from spec names, metrics from real counts.
+  colors, a type scale, a spacing grid, and component styles. The
+  archetype influences default token choices — dashboard projects
+  default to a data-dense palette, e-commerce to warmer tones — but
+  does not determine page layout. The preview always renders a
+  component showcase page. Spec metadata from the analysis is carried
+  through so the showcase can display real content: spec names in
+  navigation, behavior counts in metric cards, spec entries in data
+  tables.
 
 motivation
   The generation step bridges analysis (what the project IS) and
-  presentation (what the design LOOKS LIKE). Without structured layout
-  configuration, the frontend has to guess how to arrange components.
-  Without spec metadata, the preview shows placeholder text instead of
-  real project data. The DesignSystem is a pure data structure — it
-  never writes files or renders HTML. That separation keeps generation
-  testable and lets preview and export consume the same tokens.
+  presentation (what the design LOOKS LIKE). The DesignSystem is a
+  pure data structure — it never writes files or renders HTML. That
+  separation keeps generation testable and lets preview and export
+  consume the same tokens. The archetype drives token defaults rather
+  than layout structure, which simplifies generation and eliminates
+  the maintenance burden of archetype-specific templates.
 
 nfr
   operability#deterministic-output
   reliability#no-silent-data-loss
-
-
-# Layout generation per archetype
-
-behavior generate-dashboard-sidebar-and-header [happy_path]
-  "Dashboard archetype produces a left sidebar with nav items and a header with project name"
-
-  given
-    The analysis result has archetype "dashboard"
-    Spec metadata includes project name "Minter" and spec names
-
-  when generate design system from the analysis result
-
-  then returns design_system
-    assert layout has a sidebar
-    assert sidebar position == "left"
-    assert sidebar nav items are derived from spec names
-    assert layout has a header
-    assert header title matches the project name
-
-
-behavior generate-dashboard-content-sections [happy_path]
-  "Dashboard archetype includes metric cards and data table in the content area"
-
-  given
-    The analysis result has archetype "dashboard"
-
-  when generate design system from the analysis result
-
-  then returns design_system
-    assert layout content sections include "metric-cards"
-    assert layout content sections include "data-table"
-
-
-behavior generate-ecommerce-layout [happy_path]
-  "E-commerce archetype produces a top navigation, hero section, and product grid"
-
-  given
-    The analysis result has archetype "e-commerce"
-
-  when generate design system from the analysis result
-
-  then returns design_system
-    assert layout has a header with navigation
-    assert layout does not have a sidebar
-    assert layout content sections include "product-grid"
-
-
-behavior generate-content-layout [happy_path]
-  "Content archetype produces a reading-width container with article typography"
-
-  given
-    The analysis result has archetype "content"
-
-  when generate design system from the analysis result
-
-  then returns design_system
-    assert layout does not have a sidebar
-    assert layout has a header
-    assert layout content sections include "article-body"
-    assert container max width is present
-
-
-behavior generate-form-heavy-layout [happy_path]
-  "Form-heavy archetype produces a wizard with progress indicator and form sections"
-
-  given
-    The analysis result has archetype "form-heavy"
-
-  when generate design system from the analysis result
-
-  then returns design_system
-    assert layout does not have a sidebar
-    assert layout has a header
-    assert layout content sections include "wizard-form"
-    assert layout content sections include "progress-indicator"
-
-
-behavior generate-generic-layout [happy_path]
-  "Generic archetype infers layout from spec structure rather than using a fixed template"
-
-  given
-    The analysis result has archetype "generic"
-    The project has 10 specs across 3 domains
-
-  when generate design system from the analysis result
-
-  then returns design_system
-    assert layout is present
-    assert layout content sections is not empty
-    assert layout content sections are derived from spec structure
 
 
 # Palette application
@@ -140,7 +48,7 @@ behavior apply-default-palette [happy_path]
 
 
 behavior apply-archetype-palette-hint [happy_path]
-  "Different archetypes may suggest different default palettes"
+  "Different archetypes suggest different default palettes"
 
   given
     The analysis result has archetype "dashboard"
@@ -150,6 +58,19 @@ behavior apply-archetype-palette-hint [happy_path]
   then returns design_system
     assert palette is resolved from the taste layer
     assert palette description is present
+
+
+behavior apply-ecommerce-palette-hint [happy_path]
+  "E-commerce archetype suggests a warmer default palette"
+
+  given
+    The analysis result has archetype "e-commerce"
+
+  when generate design system from the analysis result
+
+  then returns design_system
+    assert palette is resolved from the taste layer
+    assert palette is not the same as the dashboard default
 
 
 # Type scale and spacing
@@ -199,7 +120,7 @@ behavior generate-component-styles [happy_path]
 # Spec metadata pass-through
 
 behavior include-spec-metadata [happy_path]
-  "The design system carries spec metadata for preview content population"
+  "The design system carries spec metadata for showcase content population"
 
   given
     The analysis result includes spec metadata with:
@@ -216,35 +137,55 @@ behavior include-spec-metadata [happy_path]
     assert spec metadata domains is not empty
 
 
-behavior sidebar-nav-from-spec-names [happy_path]
-  "Sidebar navigation items are derived from spec names in the metadata"
+behavior nav-items-from-spec-names [happy_path]
+  "Navigation items for the showcase are derived from spec names in the metadata"
 
   given
-    The analysis result has archetype "dashboard"
     Spec metadata includes spec names: validate-command, watch-command,
     format-command, graph-command, coverage-command
 
   when generate design system from the analysis result
 
   then returns design_system
-    assert sidebar nav items is not empty
-    assert sidebar nav items count > 0
+    assert spec metadata spec names is not empty
+    assert spec metadata spec names count > 0
 
 
-# Content sections
+# Archetype for guidance
 
-behavior content-sections-have-structure [happy_path]
-  "Each content section has a kind, title, and width"
+behavior include-archetype-for-guidance [happy_path]
+  "The design system includes the detected archetype for agent guidance"
 
   given
-    The analysis result has archetype "dashboard"
+    The analysis result has archetype "dashboard" with confidence 0.82
 
   when generate design system from the analysis result
 
   then returns design_system
-    assert each content section has a kind
-    assert each content section has a title
-    assert each content section has a width
+    assert archetype is present
+    assert archetype == "dashboard"
+
+
+# Component showcase list
+
+behavior include-showcase-components [happy_path]
+  "The design system includes the list of components for the showcase"
+
+  given
+    The analysis result has an archetype
+
+  when generate design system from the analysis result
+
+  then returns design_system
+    assert component list includes "navigation"
+    assert component list includes "metric-cards"
+    assert component list includes "data-table"
+    assert component list includes "buttons"
+    assert component list includes "form-elements"
+    assert component list includes "alerts-badges"
+    assert component list includes "typography"
+    assert component list includes "color-palette"
+    assert component list includes "spacing"
 
 
 # Error cases
@@ -270,16 +211,15 @@ behavior handle-missing-spec-metadata [edge_case]
   when generate design system from the analysis result
 
   then returns design_system
-    assert layout is present
     assert palette is present
+    assert component list is present
     assert spec metadata is absent or empty
-    assert sidebar nav items use fallback labels
 
 
 # Edge cases
 
-behavior empty-domains-layout [edge_case]
-  "Generate layout with default content sections when domains list is empty"
+behavior empty-domains-fallback [edge_case]
+  "Generate valid tokens when domains list is empty"
 
   given
     The analysis result has archetype "generic"
@@ -288,12 +228,12 @@ behavior empty-domains-layout [edge_case]
   when generate design system from the analysis result
 
   then returns design_system
-    assert layout content sections is not empty
-    assert layout content sections contain at least one default section
+    assert palette is present
+    assert component list is not empty
 
 
-behavior single-domain-layout [edge_case]
-  "A project with a single domain still produces a valid layout"
+behavior single-domain-project [edge_case]
+  "A project with a single domain still produces a valid design system"
 
   given
     The analysis result has archetype "generic"
@@ -302,8 +242,8 @@ behavior single-domain-layout [edge_case]
   when generate design system from the analysis result
 
   then returns design_system
-    assert layout is present
-    assert layout content sections is not empty
+    assert palette is present
+    assert spec metadata is present
 
 
 depends on spec-analysis >= 1.0.0
