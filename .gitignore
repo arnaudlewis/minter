@@ -10,3 +10,4 @@ web/node_modules/
 web/dist/
 .claude/worktrees/
 node_modules/
+.playwright-mcp/
