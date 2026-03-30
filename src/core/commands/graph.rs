@@ -53,18 +53,7 @@ pub fn run_graph(dir: &Path, impacted: Option<&str>) -> i32 {
         let hash = graph::content_hash(&source);
         if graph_state.cache.is_changed(&spec.name, &hash) {
             let new_behaviors = graph::compute_behaviors(&spec);
-            let old_baseline = graph_state
-                .cache
-                .specs
-                .get(&spec.name)
-                .and_then(|e| e.baseline.clone())
-                .or_else(|| {
-                    graph_state
-                        .cache
-                        .specs
-                        .get(&spec.name)
-                        .map(|e| e.behaviors.clone())
-                });
+            let old_baseline = graph_state.cache.resolve_baseline(&spec.name);
             graph_state.cache.upsert(
                 spec.name.clone(),
                 CachedEntry {

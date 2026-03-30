@@ -355,18 +355,7 @@ fn update_graph_cache(
     let hash = graph::content_hash(&parsed.source);
     if state.cache.is_changed(&parsed.spec.name, &hash) {
         let new_behaviors = graph::compute_behaviors(&parsed.spec);
-        let old_baseline = state
-            .cache
-            .specs
-            .get(&parsed.spec.name)
-            .and_then(|e| e.baseline.clone())
-            .or_else(|| {
-                state
-                    .cache
-                    .specs
-                    .get(&parsed.spec.name)
-                    .map(|e| e.behaviors.clone())
-            });
+        let old_baseline = state.cache.resolve_baseline(&parsed.spec.name);
         state.cache.upsert(
             parsed.spec.name.clone(),
             CachedEntry {
@@ -391,12 +380,7 @@ fn update_graph_cache(
             let dep_hash = graph::content_hash(&dep_source);
             if state.cache.is_changed(dep_name, &dep_hash) {
                 let dep_behaviors = graph::compute_behaviors(&rd.spec);
-                let dep_baseline = state
-                    .cache
-                    .specs
-                    .get(dep_name)
-                    .and_then(|e| e.baseline.clone())
-                    .or_else(|| state.cache.specs.get(dep_name).map(|e| e.behaviors.clone()));
+                let dep_baseline = state.cache.resolve_baseline(dep_name);
                 state.cache.upsert(
                     dep_name.clone(),
                     CachedEntry {

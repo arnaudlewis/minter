@@ -78,6 +78,43 @@ fn compute_spec_changes(cached: &graph::CachedEntry) -> Option<response::SpecCha
     })
 }
 
+/// Update a single spec in the cache, detect changes, and acknowledge baseline.
+/// Returns `(cache_was_updated, detected_changes)`.
+fn upsert_spec_and_detect_changes(
+    cache: &mut graph::GraphCache,
+    spec: &crate::model::Spec,
+    source: &str,
+    path_str: &str,
+    is_valid: bool,
+) -> (bool, Option<response::SpecChanges>) {
+    let content_hash = graph::content_hash(source);
+    if !cache.is_changed(&spec.name, &content_hash) {
+        return (false, None);
+    }
+
+    let behaviors = graph::compute_behaviors(spec);
+    let existing_baseline = cache.specs.get(&spec.name).and_then(|e| e.baseline.clone());
+
+    cache.upsert(
+        spec.name.clone(),
+        graph::CachedEntry {
+            content_hash,
+            version: spec.version.clone(),
+            behavior_count: spec.behaviors.len(),
+            valid: is_valid,
+            dependencies: spec.dep_names(),
+            path: path_str.to_string(),
+            nfr_categories: spec.all_nfr_categories(),
+            behaviors,
+            baseline: existing_baseline,
+        },
+    );
+
+    let changes = cache.specs.get(&spec.name).and_then(compute_spec_changes);
+    cache.acknowledge_baseline(&spec.name);
+    (true, changes)
+}
+
 /// Update the graph cache for a single validated spec and return changes if any.
 fn update_graph_for_spec(
     v: &validate_core::SpecValidation,
@@ -90,53 +127,14 @@ fn update_graph_for_spec(
     }
 
     let mut graph_state = graph::GraphState::load_or_build();
-    let content_hash = graph::content_hash(source);
-
-    // Skip graph update if content hasn't changed
-    if !graph_state.cache.is_changed(&spec.name, &content_hash) {
-        return None;
+    let (updated, changes) =
+        upsert_spec_and_detect_changes(&mut graph_state.cache, spec, source, path_str, v.is_valid);
+    if updated {
+        graph_state.dirty = true;
+        graph_state.save_if_dirty();
     }
 
-    let behaviors = graph::compute_behaviors(spec);
-
-    // Preserve existing baseline when updating cache
-    let existing_baseline = graph_state
-        .cache
-        .specs
-        .get(&spec.name)
-        .and_then(|e| e.baseline.clone());
-
-    let entry = graph::CachedEntry {
-        content_hash,
-        version: spec.version.clone(),
-        behavior_count: spec.behaviors.len(),
-        valid: v.is_valid,
-        dependencies: spec.dep_names(),
-        path: path_str.to_string(),
-        nfr_categories: spec.all_nfr_categories(),
-        behaviors,
-        baseline: existing_baseline,
-    };
-    graph_state.cache.upsert(spec.name.clone(), entry);
-
-    // Compute changes between baseline and current
-    let mut all_changes = HashMap::new();
-    if let Some(cached) = graph_state.cache.specs.get(&spec.name) {
-        if let Some(changes) = compute_spec_changes(cached) {
-            all_changes.insert(spec.name.clone(), changes);
-        }
-    }
-
-    // Acknowledge baseline after reporting
-    graph_state.cache.acknowledge_baseline(&spec.name);
-    graph_state.dirty = true;
-    graph_state.save_if_dirty();
-
-    if all_changes.is_empty() {
-        None
-    } else {
-        Some(all_changes)
-    }
+    changes.map(|c| HashMap::from([(spec.name.clone(), c)]))
 }
 
 // ── Result builders ────────────────────────────────────
@@ -594,45 +592,20 @@ pub(super) fn validate_directory(dir: &Path, path_str: &str) -> Result<CallToolR
             let v =
                 validate_core::validate_spec(&source, None, Some(&siblings), Some(&nfr_specs_map));
 
-            // Compute changes for passing specs
             if let Some(spec) = &v.spec {
                 if v.semantic_errors.is_empty() {
-                    let content_hash = graph::content_hash(&source);
-
-                    // Skip graph update if content hasn't changed
-                    if graph_state.cache.is_changed(&spec.name, &content_hash) {
-                        let behaviors = graph::compute_behaviors(spec);
-
-                        // Preserve existing baseline when updating cache
-                        let existing_baseline = graph_state
-                            .cache
-                            .specs
-                            .get(&spec.name)
-                            .and_then(|e| e.baseline.clone());
-
-                        let entry = graph::CachedEntry {
-                            content_hash,
-                            version: spec.version.clone(),
-                            behavior_count: spec.behaviors.len(),
-                            valid: v.is_valid,
-                            dependencies: spec.dep_names(),
-                            path: file_str.clone(),
-                            nfr_categories: spec.all_nfr_categories(),
-                            behaviors,
-                            baseline: existing_baseline,
-                        };
-                        graph_state.cache.upsert(spec.name.clone(), entry);
-
-                        // Compute changes between baseline and current
-                        if let Some(cached) = graph_state.cache.specs.get(&spec.name) {
-                            if let Some(changes) = compute_spec_changes(cached) {
-                                all_changes.insert(spec.name.clone(), changes);
-                            }
-                        }
-
-                        // Acknowledge baseline after reporting
-                        graph_state.cache.acknowledge_baseline(&spec.name);
+                    let (updated, changes) = upsert_spec_and_detect_changes(
+                        &mut graph_state.cache,
+                        spec,
+                        &source,
+                        &file_str,
+                        v.is_valid,
+                    );
+                    if updated {
                         graph_state.dirty = true;
+                    }
+                    if let Some(c) = changes {
+                        all_changes.insert(spec.name.clone(), c);
                     }
                 }
             }

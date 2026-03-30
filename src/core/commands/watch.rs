@@ -326,11 +326,7 @@ fn validate_and_cache_spec(path: &Path, name: &str, dir: &Path, cache: &mut Grap
     let entry = match parse_and_validate(path, &source, dir) {
         Some((spec, valid)) => {
             let new_behaviors = graph::compute_behaviors(&spec);
-            let old_baseline = cache
-                .specs
-                .get(name)
-                .and_then(|e| e.baseline.clone())
-                .or_else(|| cache.specs.get(name).map(|e| e.behaviors.clone()));
+            let old_baseline = cache.resolve_baseline(name);
             CachedEntry {
                 content_hash: hash,
                 version: spec.version.clone(),

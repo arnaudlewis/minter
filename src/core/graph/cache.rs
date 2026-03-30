@@ -132,6 +132,14 @@ impl GraphCache {
         }
     }
 
+    /// Return the baseline to preserve when updating a cache entry.
+    /// Prefers the explicit baseline, falls back to current behaviors.
+    pub fn resolve_baseline(&self, name: &str) -> Option<HashMap<String, BehaviorSnapshot>> {
+        self.specs
+            .get(name)
+            .map(|e| e.baseline.clone().unwrap_or_else(|| e.behaviors.clone()))
+    }
+
     /// Check if an NFR file's content has changed compared to the cached hash.
     pub fn is_nfr_changed(&self, category: &str, current_hash: &str) -> bool {
         match self.nfrs.get(category) {
