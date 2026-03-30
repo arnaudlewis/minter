@@ -2,6 +2,7 @@ pub mod commands;
 pub mod config;
 pub mod content;
 pub mod deps;
+pub mod design;
 pub mod discover;
 pub mod graph;
 pub mod io;
