@@ -573,7 +573,6 @@ fn rebuild_v2_cache_to_v4() {
 // graph-cache: graph command preserves behavior tracking data
 // ═══════════════════════════════════════════════════════════════
 
-// @minter:e2e graph-command-preserves-behaviors
 #[test]
 fn graph_command_preserves_behaviors() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -620,7 +619,6 @@ fn graph_command_preserves_behaviors() {
     );
 }
 
-// @minter:e2e graph-command-preserves-baseline
 #[test]
 fn graph_command_preserves_baseline() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -690,7 +688,6 @@ fn graph_command_preserves_baseline() {
     );
 }
 
-// @minter:e2e graph-command-computes-new-behaviors
 #[test]
 fn graph_command_computes_new_behaviors() {
     let dir = tempfile::TempDir::new().unwrap();

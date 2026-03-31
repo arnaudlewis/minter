@@ -3234,7 +3234,6 @@ behavior login-fail [error_case]
     assert code == \"INVALID\"
 ";
 
-// @minter:e2e validate-changes-detected-on-spec-modification
 #[test]
 /// mcp-server: validate-changes-detected-on-spec-modification
 fn validate_changes_detected_on_spec_modification() {
@@ -3306,7 +3305,6 @@ fn validate_changes_detected_on_spec_modification() {
     );
 }
 
-// @minter:e2e validate-no-changes-on-unchanged-spec
 #[test]
 /// mcp-server: validate-no-changes-on-unchanged-spec
 fn validate_no_changes_on_unchanged_spec() {
