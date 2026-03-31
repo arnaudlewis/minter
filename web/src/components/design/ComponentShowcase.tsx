@@ -886,6 +886,523 @@ function FormElementsSection({ design }: { design: DesignSystem }) {
   )
 }
 
+// --- 10. Shadows & Elevation ---
+
+function ShadowsSection({ design }: { design: DesignSystem }) {
+  const { palette, type_scale, component_styles } = design
+
+  const elevations = [
+    {
+      level: 1,
+      label: "Elevation 1",
+      shadow: "0 1px 2px rgba(0,0,0,0.05)",
+      cssClass: "shadow-sm",
+    },
+    {
+      level: 2,
+      label: "Elevation 2",
+      shadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+      cssClass: "shadow",
+    },
+    {
+      level: 3,
+      label: "Elevation 3",
+      shadow: "0 4px 6px rgba(0,0,0,0.1)",
+      cssClass: "shadow-md",
+    },
+    {
+      level: 4,
+      label: "Elevation 4",
+      shadow: "0 10px 15px rgba(0,0,0,0.1)",
+      cssClass: "shadow-lg",
+    },
+  ]
+
+  return (
+    <ShowcaseSection title="Shadows & Elevation" testId="showcase-shadows" design={design}>
+      <div
+        style={{
+          backgroundColor: palette.shades[0] ?? "#f8fafc",
+          borderRadius: component_styles.card_border_radius + "px",
+          padding: "24px",
+        }}
+      >
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+          {elevations.map((elev) => (
+            <div
+              key={elev.level}
+              data-testid={`elevation-${elev.level}`}
+              style={{
+                flex: "1 1 200px",
+                backgroundColor: "#ffffff",
+                borderRadius: component_styles.card_border_radius + "px",
+                padding: "24px",
+                boxShadow: elev.shadow,
+                fontFamily: type_scale.font_family,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: palette.shades[9] ?? palette.neutral,
+                  marginBottom: "8px",
+                }}
+              >
+                {elev.label}
+              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontFamily: "monospace",
+                  color: palette.neutral,
+                  lineHeight: 1.5,
+                }}
+              >
+                {elev.cssClass}
+              </div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontFamily: "monospace",
+                  color: palette.neutral,
+                  marginTop: "4px",
+                  lineHeight: 1.5,
+                }}
+              >
+                {elev.shadow}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </ShowcaseSection>
+  )
+}
+
+// --- 11. Transitions & Animations ---
+
+function TransitionsSection({ design }: { design: DesignSystem }) {
+  const { palette, type_scale, component_styles } = design
+
+  const duration = "200ms"
+  const easing = "ease-out"
+
+  return (
+    <ShowcaseSection
+      title="Transitions & Animations"
+      testId="showcase-transitions"
+      design={design}
+    >
+      {/* Token display */}
+      <div
+        style={{
+          display: "flex",
+          gap: "24px",
+          marginBottom: "24px",
+          fontFamily: type_scale.font_family,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: palette.neutral,
+              marginBottom: "4px",
+            }}
+          >
+            Duration
+          </div>
+          <div
+            data-testid="transition-duration"
+            style={{
+              fontSize: "14px",
+              fontWeight: 500,
+              fontFamily: "monospace",
+              color: palette.shades[9] ?? palette.neutral,
+            }}
+          >
+            {duration}{" "}
+            <span style={{ fontSize: "11px", color: palette.neutral }}>(default)</span>
+          </div>
+        </div>
+        <div>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: palette.neutral,
+              marginBottom: "4px",
+            }}
+          >
+            Easing
+          </div>
+          <div
+            data-testid="transition-easing"
+            style={{
+              fontSize: "14px",
+              fontWeight: 500,
+              fontFamily: "monospace",
+              color: palette.shades[9] ?? palette.neutral,
+            }}
+          >
+            {easing}{" "}
+            <span style={{ fontSize: "11px", color: palette.neutral }}>(default)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive demos */}
+      <div
+        style={{
+          fontSize: "12px",
+          fontWeight: 500,
+          color: palette.neutral,
+          marginBottom: "12px",
+          fontFamily: type_scale.font_family,
+        }}
+      >
+        Hover to preview transitions
+      </div>
+      <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+        {/* Button hover */}
+        <button
+          type="button"
+          data-testid="transition-button"
+          style={{
+            fontFamily: type_scale.font_family,
+            fontSize: "13px",
+            fontWeight: 500,
+            padding: "10px 24px",
+            borderRadius: component_styles.button_border_radius + "px",
+            border: "none",
+            cursor: "pointer",
+            backgroundColor: palette.primary,
+            color: "#ffffff",
+            transition: `background-color ${duration} ${easing}`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = palette.shades[8] ?? palette.primary
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = palette.primary
+          }}
+        >
+          Hover me
+        </button>
+
+        {/* Card lift */}
+        <div
+          data-testid="transition-card"
+          style={{
+            flex: "1 1 200px",
+            maxWidth: 280,
+            backgroundColor: "#ffffff",
+            border: `1px solid ${hexToRgba(palette.neutral, 0.12)}`,
+            borderRadius: component_styles.card_border_radius + "px",
+            padding: "16px 20px",
+            fontFamily: type_scale.font_family,
+            cursor: "pointer",
+            transition: `box-shadow ${duration} ${easing}, transform ${duration} ${easing}`,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = "0 10px 15px rgba(0,0,0,0.1)"
+            e.currentTarget.style.transform = "translateY(-2px)"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)"
+            e.currentTarget.style.transform = "translateY(0)"
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              fontWeight: 600,
+              color: palette.shades[9] ?? palette.neutral,
+              marginBottom: "4px",
+            }}
+          >
+            Card Lift
+          </div>
+          <div style={{ fontSize: "12px", color: palette.neutral }}>
+            Hover to see shadow + translate
+          </div>
+        </div>
+
+        {/* Color fade */}
+        <div
+          data-testid="transition-fade"
+          style={{
+            flex: "1 1 200px",
+            maxWidth: 280,
+            backgroundColor: hexToRgba(palette.primary, 0.05),
+            border: `1px solid ${hexToRgba(palette.primary, 0.15)}`,
+            borderRadius: component_styles.card_border_radius + "px",
+            padding: "16px 20px",
+            fontFamily: type_scale.font_family,
+            cursor: "pointer",
+            transition: `background-color ${duration} ${easing}, border-color ${duration} ${easing}`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = hexToRgba(palette.primary, 0.12)
+            e.currentTarget.style.borderColor = hexToRgba(palette.primary, 0.3)
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = hexToRgba(palette.primary, 0.05)
+            e.currentTarget.style.borderColor = hexToRgba(palette.primary, 0.15)
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              fontWeight: 600,
+              color: palette.primary,
+              marginBottom: "4px",
+            }}
+          >
+            Color Fade
+          </div>
+          <div style={{ fontSize: "12px", color: palette.neutral }}>
+            Hover for background transition
+          </div>
+        </div>
+      </div>
+    </ShowcaseSection>
+  )
+}
+
+// --- 12. Dark Mode Preview ---
+
+function DarkModeSection({ design }: { design: DesignSystem }) {
+  const { palette, type_scale, component_styles, dark_mode } = design
+
+  if (!dark_mode) {
+    return (
+      <ShowcaseSection
+        title="Dark Mode Preview"
+        testId="showcase-dark-mode"
+        design={design}
+        isLast
+      >
+        <div
+          data-testid="dark-mode-unavailable"
+          style={{
+            fontSize: "13px",
+            color: palette.neutral,
+            fontFamily: type_scale.font_family,
+            fontStyle: "italic",
+          }}
+        >
+          Dark mode tokens not available
+        </div>
+      </ShowcaseSection>
+    )
+  }
+
+  return (
+    <ShowcaseSection
+      title="Dark Mode Preview"
+      testId="showcase-dark-mode"
+      design={design}
+      isLast
+    >
+      <div
+        data-testid="dark-mode-container"
+        style={{
+          backgroundColor: dark_mode.background,
+          borderRadius: component_styles.card_border_radius + "px",
+          border: `1px solid ${hexToRgba(palette.neutral, 0.15)}`,
+          padding: "28px",
+          fontFamily: type_scale.font_family,
+        }}
+      >
+        {/* Dark palette swatches */}
+        <div style={{ marginBottom: "24px" }}>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: hexToRgba(dark_mode.foreground, 0.5),
+              marginBottom: "12px",
+            }}
+          >
+            Palette
+          </div>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            {[
+              { label: "Background", color: dark_mode.background },
+              { label: "Foreground", color: dark_mode.foreground },
+              { label: "Primary", color: dark_mode.primary },
+            ].map((item) => (
+              <div key={item.label} style={{ flex: "1 1 120px" }}>
+                <div
+                  style={{
+                    height: 40,
+                    backgroundColor: item.color,
+                    borderRadius: 6,
+                    marginBottom: "6px",
+                    border:
+                      item.label === "Background"
+                        ? `1px solid ${hexToRgba(dark_mode.foreground, 0.15)}`
+                        : undefined,
+                  }}
+                />
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: dark_mode.foreground,
+                  }}
+                >
+                  {item.label}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontFamily: "monospace",
+                    color: hexToRgba(dark_mode.foreground, 0.5),
+                  }}
+                >
+                  {item.color}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Semantic colors in dark mode */}
+        <div style={{ marginBottom: "24px" }}>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: hexToRgba(dark_mode.foreground, 0.5),
+              marginBottom: "12px",
+            }}
+          >
+            Semantic
+          </div>
+          <div style={{ display: "flex", gap: "12px" }}>
+            {(
+              [
+                { label: "Success", color: dark_mode.semantic.success },
+                { label: "Warning", color: dark_mode.semantic.warning },
+                { label: "Error", color: dark_mode.semantic.error },
+                { label: "Info", color: dark_mode.semantic.info },
+              ] as const
+            ).map((item) => (
+              <div
+                key={item.label}
+                data-testid={`dark-semantic-${item.label.toLowerCase()}`}
+                style={{
+                  flex: 1,
+                  borderLeft: `3px solid ${item.color}`,
+                  backgroundColor: hexToRgba(item.color, 0.1),
+                  borderRadius: `0 6px 6px 0`,
+                  padding: "10px 12px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: item.color,
+                    marginBottom: "2px",
+                  }}
+                >
+                  {item.label}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontFamily: "monospace",
+                    color: hexToRgba(dark_mode.foreground, 0.5),
+                  }}
+                >
+                  {item.color}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mini card + button example */}
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            color: hexToRgba(dark_mode.foreground, 0.5),
+            marginBottom: "12px",
+          }}
+        >
+          Component Preview
+        </div>
+        <div
+          data-testid="dark-mode-card-example"
+          style={{
+            backgroundColor: dark_mode.shades[0] ?? hexToRgba(dark_mode.foreground, 0.05),
+            borderRadius: component_styles.card_border_radius + "px",
+            border: `1px solid ${hexToRgba(dark_mode.foreground, 0.08)}`,
+            padding: "20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: dark_mode.foreground,
+                marginBottom: "4px",
+              }}
+            >
+              Sample Card
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: hexToRgba(dark_mode.foreground, 0.5),
+              }}
+            >
+              Dark mode component preview
+            </div>
+          </div>
+          <button
+            type="button"
+            style={{
+              fontFamily: type_scale.font_family,
+              fontSize: "12px",
+              fontWeight: 500,
+              padding: "6px 16px",
+              borderRadius: component_styles.button_border_radius + "px",
+              border: "none",
+              cursor: "pointer",
+              backgroundColor: dark_mode.primary,
+              color: "#ffffff",
+            }}
+          >
+            Action
+          </button>
+        </div>
+      </div>
+    </ShowcaseSection>
+  )
+}
+
 // --- 9. Alerts & Badges ---
 
 function AlertsBadgesSection({ design }: { design: DesignSystem }) {
@@ -919,7 +1436,7 @@ function AlertsBadgesSection({ design }: { design: DesignSystem }) {
   ]
 
   return (
-    <ShowcaseSection title="Alerts & Badges" testId="showcase-alerts-badges" design={design} isLast>
+    <ShowcaseSection title="Alerts & Badges" testId="showcase-alerts-badges" design={design}>
       {/* Alerts */}
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "24px" }}>
         {alerts.map((alert) => (
@@ -1033,6 +1550,9 @@ export function ComponentShowcase({ design: rawDesign }: ComponentShowcaseProps)
         <ButtonsSection design={design} />
         <FormElementsSection design={design} />
         <AlertsBadgesSection design={design} />
+        <ShadowsSection design={design} />
+        <TransitionsSection design={design} />
+        <DarkModeSection design={design} />
       </div>
     </div>
   )

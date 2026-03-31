@@ -296,6 +296,126 @@ describe("ComponentShowcase", () => {
     })
   })
 
+  /// render-shadows-elevation: Renders shadow elevation cards at four levels
+  describe("render-shadows-elevation", () => {
+    it("renders the shadows section", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      expect(screen.getByTestId("showcase-shadows")).toBeInTheDocument()
+    })
+
+    it("renders four elevation levels", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      expect(screen.getByTestId("elevation-1")).toBeInTheDocument()
+      expect(screen.getByTestId("elevation-2")).toBeInTheDocument()
+      expect(screen.getByTestId("elevation-3")).toBeInTheDocument()
+      expect(screen.getByTestId("elevation-4")).toBeInTheDocument()
+    })
+
+    it("displays elevation labels", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      const section = screen.getByTestId("showcase-shadows")
+      expect(within(section).getByText("Elevation 1")).toBeInTheDocument()
+      expect(within(section).getByText("Elevation 4")).toBeInTheDocument()
+    })
+
+    it("displays shadow css class names", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      const section = screen.getByTestId("showcase-shadows")
+      expect(within(section).getByText("shadow-sm")).toBeInTheDocument()
+      expect(within(section).getByText("shadow-lg")).toBeInTheDocument()
+    })
+  })
+
+  /// render-transitions-animations: Renders interactive transition demos with token values
+  describe("render-transitions-animations", () => {
+    it("renders the transitions section", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      expect(screen.getByTestId("showcase-transitions")).toBeInTheDocument()
+    })
+
+    it("displays transition duration value", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      const el = screen.getByTestId("transition-duration")
+      expect(el.textContent).toContain("200ms")
+    })
+
+    it("displays transition easing value", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      const el = screen.getByTestId("transition-easing")
+      expect(el.textContent).toContain("ease-out")
+    })
+
+    it("renders interactive button demo", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      expect(screen.getByTestId("transition-button")).toBeInTheDocument()
+    })
+
+    it("renders interactive card lift demo", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      expect(screen.getByTestId("transition-card")).toBeInTheDocument()
+    })
+
+    it("renders interactive color fade demo", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      expect(screen.getByTestId("transition-fade")).toBeInTheDocument()
+    })
+
+    it("marks duration as default", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      const el = screen.getByTestId("transition-duration")
+      expect(el.textContent).toContain("(default)")
+    })
+  })
+
+  /// render-dark-mode-preview: Renders dark mode palette and component preview
+  describe("render-dark-mode-preview", () => {
+    it("renders the dark mode section", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      expect(screen.getByTestId("showcase-dark-mode")).toBeInTheDocument()
+    })
+
+    it("renders the dark mode container with dark background", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      const container = screen.getByTestId("dark-mode-container")
+      expect(container.style.backgroundColor).toBe("rgb(15, 23, 42)")
+    })
+
+    it("displays dark mode palette colors", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      const container = screen.getByTestId("dark-mode-container")
+      expect(within(container).getByText("Background")).toBeInTheDocument()
+      expect(within(container).getByText("Foreground")).toBeInTheDocument()
+      expect(within(container).getByText("#0f172a")).toBeInTheDocument()
+      expect(within(container).getByText("#f8fafc")).toBeInTheDocument()
+    })
+
+    it("displays dark mode semantic colors", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      expect(screen.getByTestId("dark-semantic-success")).toBeInTheDocument()
+      expect(screen.getByTestId("dark-semantic-warning")).toBeInTheDocument()
+      expect(screen.getByTestId("dark-semantic-error")).toBeInTheDocument()
+      expect(screen.getByTestId("dark-semantic-info")).toBeInTheDocument()
+    })
+
+    it("renders a mini card example in dark mode", () => {
+      render(<ComponentShowcase design={mockDesignSystem} />)
+      expect(screen.getByTestId("dark-mode-card-example")).toBeInTheDocument()
+      const card = screen.getByTestId("dark-mode-card-example")
+      expect(within(card).getByText("Sample Card")).toBeInTheDocument()
+      expect(within(card).getByText("Action")).toBeInTheDocument()
+    })
+
+    it("shows unavailable message when dark_mode is null", () => {
+      const noDarkMode = {
+        ...mockDesignSystem,
+        dark_mode: undefined as unknown as typeof mockDesignSystem.dark_mode,
+      }
+      render(<ComponentShowcase design={noDarkMode} />)
+      expect(screen.getByTestId("dark-mode-unavailable")).toBeInTheDocument()
+      expect(screen.getByText("Dark mode tokens not available")).toBeInTheDocument()
+    })
+  })
+
   /// empty-spec-metadata-fallback: Uses placeholder content when spec metadata is empty
   describe("empty-spec-metadata-fallback", () => {
     it("renders with fallback navigation items when no spec metadata", () => {
