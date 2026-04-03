@@ -327,6 +327,7 @@ fn validate_and_cache_spec(path: &Path, name: &str, dir: &Path, cache: &mut Grap
         Some((spec, valid)) => {
             let new_behaviors = graph::compute_behaviors(&spec);
             let old_baseline = cache.resolve_baseline(name);
+            let old_baseline_version = cache.resolve_baseline_version(name);
             CachedEntry {
                 content_hash: hash,
                 version: spec.version.clone(),
@@ -337,6 +338,7 @@ fn validate_and_cache_spec(path: &Path, name: &str, dir: &Path, cache: &mut Grap
                 nfr_categories: spec.all_nfr_categories(),
                 behaviors: new_behaviors,
                 baseline: old_baseline,
+                baseline_version: old_baseline_version,
             }
         }
         None => CachedEntry {
@@ -349,6 +351,7 @@ fn validate_and_cache_spec(path: &Path, name: &str, dir: &Path, cache: &mut Grap
             nfr_categories: vec![],
             behaviors: std::collections::HashMap::new(),
             baseline: cache.specs.get(name).and_then(|e| e.baseline.clone()),
+            baseline_version: cache.resolve_baseline_version(name),
         },
     };
     cache.upsert(name.to_string(), entry);

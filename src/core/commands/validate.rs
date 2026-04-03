@@ -356,6 +356,7 @@ fn update_graph_cache(
     if state.cache.is_changed(&parsed.spec.name, &hash) {
         let new_behaviors = graph::compute_behaviors(&parsed.spec);
         let old_baseline = state.cache.resolve_baseline(&parsed.spec.name);
+        let old_baseline_version = state.cache.resolve_baseline_version(&parsed.spec.name);
         state.cache.upsert(
             parsed.spec.name.clone(),
             CachedEntry {
@@ -368,6 +369,7 @@ fn update_graph_cache(
                 nfr_categories: parsed.spec.all_nfr_categories(),
                 behaviors: new_behaviors,
                 baseline: old_baseline,
+                baseline_version: old_baseline_version,
             },
         );
         state.dirty = true;
@@ -381,6 +383,7 @@ fn update_graph_cache(
             if state.cache.is_changed(dep_name, &dep_hash) {
                 let dep_behaviors = graph::compute_behaviors(&rd.spec);
                 let dep_baseline = state.cache.resolve_baseline(dep_name);
+                let dep_baseline_version = state.cache.resolve_baseline_version(dep_name);
                 state.cache.upsert(
                     dep_name.clone(),
                     CachedEntry {
@@ -393,6 +396,7 @@ fn update_graph_cache(
                         nfr_categories: rd.spec.all_nfr_categories(),
                         behaviors: dep_behaviors,
                         baseline: dep_baseline,
+                        baseline_version: dep_baseline_version,
                     },
                 );
                 state.dirty = true;
@@ -498,6 +502,7 @@ mod tests {
             nfr_categories: nfr_cats.into_iter().map(String::from).collect(),
             behaviors: std::collections::HashMap::new(),
             baseline: None,
+            baseline_version: None,
         }
     }
 

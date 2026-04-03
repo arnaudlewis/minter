@@ -38,11 +38,9 @@ fn compute_spec_changes(cached: &graph::CachedEntry) -> Option<response::SpecCha
             Some(current_snap) => {
                 if baseline_snap.hash != current_snap.hash {
                     let mut sections = Vec::new();
+                    sections.push("content".to_string());
                     if baseline_snap.category != current_snap.category {
                         sections.push("category".to_string());
-                    }
-                    if sections.is_empty() {
-                        sections.push("content".to_string());
                     }
                     modified.push(response::ModifiedBehavior {
                         name: name.clone(),
@@ -69,8 +67,17 @@ fn compute_spec_changes(cached: &graph::CachedEntry) -> Option<response::SpecCha
         return None;
     }
 
+    let version_change = cached
+        .baseline_version
+        .as_ref()
+        .filter(|old_v| old_v.as_str() != cached.version)
+        .map(|old_v| response::VersionChange {
+            from: old_v.clone(),
+            to: cached.version.clone(),
+        });
+
     Some(response::SpecChanges {
-        version_change: None,
+        version_change,
         added,
         removed,
         modified,
@@ -94,6 +101,7 @@ fn upsert_spec_and_detect_changes(
 
     let behaviors = graph::compute_behaviors(spec);
     let existing_baseline = cache.specs.get(&spec.name).and_then(|e| e.baseline.clone());
+    let existing_baseline_version = cache.resolve_baseline_version(&spec.name);
 
     cache.upsert(
         spec.name.clone(),
@@ -107,10 +115,14 @@ fn upsert_spec_and_detect_changes(
             nfr_categories: spec.all_nfr_categories(),
             behaviors,
             baseline: existing_baseline,
+            baseline_version: existing_baseline_version,
         },
     );
 
     let changes = cache.specs.get(&spec.name).and_then(compute_spec_changes);
+    // Acknowledge baseline after reporting changes. This is intentionally
+    // one-shot: the agent sees changes once, acts on them, and the next
+    // validate starts from a fresh baseline.
     cache.acknowledge_baseline(&spec.name);
     (true, changes)
 }
@@ -734,6 +746,7 @@ mod tests {
             nfr_categories: vec![],
             behaviors: HashMap::new(),
             baseline: None,
+            baseline_version: None,
         }
     }
 
@@ -862,6 +875,13 @@ mod tests {
         let changes = result.unwrap();
         assert_eq!(changes.modified.len(), 1);
         assert_eq!(changes.modified[0].name, "login-success");
+        // content is always reported when the hash differs
+        assert!(
+            changes.modified[0]
+                .sections
+                .contains(&"content".to_string())
+        );
+        // category is reported additionally when the category changed
         assert!(
             changes.modified[0]
                 .sections
@@ -907,9 +927,54 @@ mod tests {
     }
 
     #[test]
-    /// validate-changes: version_change_is_none_without_version_tracking
-    fn version_change_is_none_without_version_tracking() {
+    /// validate-changes: version_change_is_populated_when_version_changes
+    fn version_change_is_populated_when_version_changes() {
         let mut entry = make_cached_entry();
+        entry.version = "2.0.0".to_string();
+        entry.baseline_version = Some("1.0.0".to_string());
+
+        let mut baseline = HashMap::new();
+        baseline.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        entry.baseline = Some(baseline);
+
+        let mut current = HashMap::new();
+        current.insert("login-success".to_string(), snap("happy_path", "hash2"));
+        entry.behaviors = current;
+
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_some());
+        let changes = result.unwrap();
+        assert!(changes.version_change.is_some());
+        let vc = changes.version_change.unwrap();
+        assert_eq!(vc.from, "1.0.0");
+        assert_eq!(vc.to, "2.0.0");
+    }
+
+    #[test]
+    /// validate-changes: version_change_is_none_when_version_unchanged
+    fn version_change_is_none_when_version_unchanged() {
+        let mut entry = make_cached_entry();
+        // version stays at "1.0.0", baseline_version also "1.0.0"
+        entry.baseline_version = Some("1.0.0".to_string());
+
+        let mut baseline = HashMap::new();
+        baseline.insert("login-success".to_string(), snap("happy_path", "hash1"));
+        entry.baseline = Some(baseline);
+
+        let mut current = HashMap::new();
+        current.insert("login-success".to_string(), snap("happy_path", "hash2"));
+        entry.behaviors = current;
+
+        let result = compute_spec_changes(&entry);
+        assert!(result.is_some());
+        assert!(result.unwrap().version_change.is_none());
+    }
+
+    #[test]
+    /// validate-changes: version_change_is_none_without_baseline_version
+    fn version_change_is_none_without_baseline_version() {
+        let mut entry = make_cached_entry();
+        // baseline_version is None (no version tracking yet)
 
         let mut baseline = HashMap::new();
         baseline.insert("login-success".to_string(), snap("happy_path", "hash1"));

@@ -37,6 +37,8 @@ pub struct CachedEntry {
     pub behaviors: HashMap<String, BehaviorSnapshot>,
     #[serde(default)]
     pub baseline: Option<HashMap<String, BehaviorSnapshot>>,
+    #[serde(default)]
+    pub baseline_version: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -129,6 +131,7 @@ impl GraphCache {
     pub fn acknowledge_baseline(&mut self, name: &str) {
         if let Some(entry) = self.specs.get_mut(name) {
             entry.baseline = Some(entry.behaviors.clone());
+            entry.baseline_version = Some(entry.version.clone());
         }
     }
 
@@ -138,6 +141,13 @@ impl GraphCache {
         self.specs
             .get(name)
             .map(|e| e.baseline.clone().unwrap_or_else(|| e.behaviors.clone()))
+    }
+
+    /// Return the baseline version to preserve when updating a cache entry.
+    pub fn resolve_baseline_version(&self, name: &str) -> Option<String> {
+        self.specs
+            .get(name)
+            .and_then(|e| e.baseline_version.clone())
     }
 
     /// Check if an NFR file's content has changed compared to the cached hash.
@@ -162,20 +172,9 @@ fn category_str(cat: crate::model::BehaviorCategory) -> &'static str {
     }
 }
 
-/// Compute a deterministic SHA-256 hash of a behavior's structural content.
-pub fn behavior_hash(behavior: &crate::model::Behavior) -> String {
+fn hash_preconditions(buf: &mut String, preconditions: &[crate::model::Precondition]) {
     use std::fmt::Write;
-
-    let mut buf = String::new();
-
-    // Category
-    let _ = writeln!(buf, "cat:{}", category_str(behavior.category));
-
-    // Description
-    let _ = writeln!(buf, "desc:{}", behavior.description);
-
-    // Preconditions
-    for pre in &behavior.preconditions {
+    for pre in preconditions {
         match pre {
             crate::model::Precondition::Prose(text) => {
                 let _ = writeln!(buf, "pre:prose:{}", text);
@@ -193,10 +192,12 @@ pub fn behavior_hash(behavior: &crate::model::Behavior) -> String {
             }
         }
     }
+}
 
-    // Action
-    let _ = writeln!(buf, "action:{}", behavior.action.name);
-    for input in &behavior.action.inputs {
+fn hash_action(buf: &mut String, action: &crate::model::Action) {
+    use std::fmt::Write;
+    let _ = writeln!(buf, "action:{}", action.name);
+    for input in &action.inputs {
         match input {
             crate::model::ActionInput::Value { name, value } => {
                 let _ = writeln!(buf, "input:val:{}:{}", name, value);
@@ -206,9 +207,11 @@ pub fn behavior_hash(behavior: &crate::model::Behavior) -> String {
             }
         }
     }
+}
 
-    // Postconditions
-    for post in &behavior.postconditions {
+fn hash_postconditions(buf: &mut String, postconditions: &[crate::model::Postcondition]) {
+    use std::fmt::Write;
+    for post in postconditions {
         match &post.kind {
             crate::model::PostconditionKind::Returns(channel) => {
                 let _ = writeln!(buf, "post:returns:{}", channel);
@@ -253,9 +256,11 @@ pub fn behavior_hash(behavior: &crate::model::Behavior) -> String {
             }
         }
     }
+}
 
-    // NFR refs
-    for nfr in &behavior.nfr_refs {
+fn hash_behavior_nfr_refs(buf: &mut String, nfr_refs: &[crate::model::BehaviorNfrRef]) {
+    use std::fmt::Write;
+    for nfr in nfr_refs {
         let _ = write!(buf, "nfr:{}:{}", nfr.category, nfr.anchor);
         if let Some(op) = &nfr.override_operator {
             let _ = write!(buf, ":op:{}", op);
@@ -265,10 +270,19 @@ pub fn behavior_hash(behavior: &crate::model::Behavior) -> String {
         }
         buf.push('\n');
     }
+}
 
-    let mut hasher = Sha256::new();
-    hasher.update(buf.as_bytes());
-    format!("{:x}", hasher.finalize())
+/// Compute a deterministic SHA-256 hash of a behavior's structural content.
+pub fn behavior_hash(behavior: &crate::model::Behavior) -> String {
+    use std::fmt::Write;
+    let mut buf = String::new();
+    let _ = writeln!(buf, "cat:{}", category_str(behavior.category));
+    let _ = writeln!(buf, "desc:{}", behavior.description);
+    hash_preconditions(&mut buf, &behavior.preconditions);
+    hash_action(&mut buf, &behavior.action);
+    hash_postconditions(&mut buf, &behavior.postconditions);
+    hash_behavior_nfr_refs(&mut buf, &behavior.nfr_refs);
+    content_hash(&buf)
 }
 
 /// Build a behaviors map from a parsed Spec.
@@ -392,6 +406,7 @@ mod tests {
             nfr_categories: vec![],
             behaviors: HashMap::new(),
             baseline: None,
+            baseline_version: None,
         }
     }
 
