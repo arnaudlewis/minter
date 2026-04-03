@@ -1,6 +1,49 @@
 # Changelog
 
 All notable changes to minter will be documented in this file.
+## [Unreleased]
+
+### Added
+
+- **graph:** Behavior-level change detection in validate responses.
+  The graph cache (now schema v4) tracks individual behaviors with SHA-256
+  hashes and maintains a baseline snapshot. When `validate` is called via
+  MCP and behaviors have been added, removed, or modified since the last
+  validation, the response includes a `changes` section with the full diff.
+  This enables agents to detect orphaned tests and dead code after spec
+  iterations.
+- **graph:** `VersionChange` tracking — when a spec's version changes between
+  validations, the `changes` section includes `version_change` with `from`
+  and `to` values.
+- **guide:** New `refinement` topic (`minter guide refinement`) — documents the
+  spec iteration cleanup workflow: how to act on removed/modified behaviors,
+  trace dead code, and update stale tests.
+- **content:** `initialize_minter` and `guide workflow` updated with a 6th
+  principle ("Specs evolve") and an expanded Phase 5 covering cleanup after
+  spec changes.
+
+### Changed
+
+- **graph:** Cache schema upgraded from v3 to v4. Existing caches are rebuilt
+  automatically on first use. No manual action required.
+
+### Important: Spec Agent Update Required
+
+The shipped agent prompt (`docs/spec-agent.md`) has been updated. If you
+maintain a copy of this prompt in your own agent configuration, you must
+update it to include:
+
+- **Mode 4 (Refinement):** Now includes a "Handling validate changes"
+  subsection that instructs the agent to act on `changes` in validate
+  responses — identifying orphaned tests for removed behaviors and stale
+  tests for modified behaviors.
+- **Core Loop:** Adds a refinement path:
+  `validate → act on changes → cleanup tests/code → validate`
+- **Test Guidance:** Adds cleanup instructions for removed/modified behaviors.
+
+Without this update, your agent will receive the change detection data but
+won't know to act on it.
+
 ## [2.0.0] - 2026-03-28
 
 ### Added
