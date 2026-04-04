@@ -10,6 +10,12 @@ The deterministic validation gate for spec-driven development.
 
 Minter validates `.spec` and `.nfr` files — a structured DSL for defining behavioral contracts and non-functional requirements. It parses syntax, enforces semantics, resolves dependency graphs, cross-validates NFR references, and gives you an interactive dashboard and AI authoring assistant. One primitive: behaviors that depend on other behaviors. One discipline: spec first, then tests, then code.
 
+## What's New
+
+The latest release, [v2.0.0](CHANGELOG.md) (2026-03-28), ships the web dashboard with real-time spec monitoring — the headline feature for watching validation happen live as your specs change.
+
+See the [full changelog](CHANGELOG.md) for the release history and the rest of the v2.0.0 updates.
+
 ## Install
 
 ```bash
