@@ -1,0 +1,7 @@
+{
+  "fingerprint": "2bd29dbab7153b3e760c53208ea3cff8115fb7e2",
+  "dirtyCheck": "",
+  "source": "workflows",
+  "commands": ["cargo fmt --check", "cargo clippy -- -D warnings", "cargo test --all-targets"],
+  "discoveredAt": "2026-03-30T15:55:00Z"
+}

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Serialize;
 
 // ── Structured next step ───────────────────────────────
@@ -17,7 +19,39 @@ pub struct NextStep {
 pub struct ValidateResponse {
     pub results: Vec<ValidateResult>,
     pub summary: ValidateSummary,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub changes: Option<HashMap<String, SpecChanges>>,
     pub next_steps: Vec<NextStep>,
+}
+
+// ── Spec changes response types ──────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct SpecChanges {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version_change: Option<VersionChange>,
+    pub added: Vec<BehaviorChange>,
+    pub removed: Vec<BehaviorChange>,
+    pub modified: Vec<ModifiedBehavior>,
+    pub unchanged: usize,
+}
+
+#[derive(Debug, Serialize)]
+pub struct VersionChange {
+    pub from: String,
+    pub to: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BehaviorChange {
+    pub name: String,
+    pub category: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ModifiedBehavior {
+    pub name: String,
+    pub sections: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]

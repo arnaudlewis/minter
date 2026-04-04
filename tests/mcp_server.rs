@@ -3146,3 +3146,181 @@ fn next_steps_include_tool_references() {
         next_steps
     );
 }
+
+// ════════════════════════════════════════════════════════
+// Change detection tests
+// ════════════════════════════════════════════════════════
+
+const SPEC_V1_THREE_BEHAVIORS: &str = "\
+spec user-auth v1.0.0
+title \"User Authentication\"
+
+description
+  Handles user login.
+
+motivation
+  Users need access.
+
+behavior login-success [happy_path]
+  \"User logs in successfully\"
+
+  given
+    a registered user exists
+
+  when login
+    email = \"user@example.com\"
+
+  then returns result
+    assert status == \"ok\"
+
+behavior login-fail [error_case]
+  \"User is rejected with bad password\"
+
+  given
+    a registered user exists
+
+  when login
+    email = \"user@example.com\"
+
+  then returns error
+    assert code == \"INVALID\"
+
+behavior rate-limited [edge_case]
+  \"User is rate limited\"
+
+  given
+    a registered user exists
+
+  when login
+    email = \"user@example.com\"
+
+  then returns error
+    assert code == \"RATE_LIMITED\"
+";
+
+const SPEC_V2_MODIFIED: &str = "\
+spec user-auth v2.0.0
+title \"User Authentication\"
+
+description
+  Handles user login.
+
+motivation
+  Users need access.
+
+behavior login-success [happy_path]
+  \"User logs in successfully with MFA\"
+
+  given
+    a registered user exists
+    the user has MFA enabled
+
+  when login
+    email = \"user@example.com\"
+
+  then returns result
+    assert status == \"ok\"
+
+behavior login-fail [error_case]
+  \"User is rejected with bad password\"
+
+  given
+    a registered user exists
+
+  when login
+    email = \"user@example.com\"
+
+  then returns error
+    assert code == \"INVALID\"
+";
+
+#[test]
+/// mcp-server: validate-changes-detected-on-spec-modification
+fn validate_changes_detected_on_spec_modification() {
+    let mut client = McpClient::new();
+    let dir = TempDir::new().unwrap();
+    let path = write_spec(&dir, "user-auth", SPEC_V1_THREE_BEHAVIORS);
+
+    // Step 1: First validate — creates baseline
+    let result1 = client.call_tool("validate", json!({ "path": path.to_str().unwrap() }));
+    let data1 = json_content(&result1);
+    assert_eq!(data1["results"][0]["status"], "pass");
+    assert_eq!(data1["results"][0]["behavior_count"], 3);
+    // First validate should have no changes (no baseline yet)
+    assert!(
+        data1.get("changes").is_none() || data1["changes"].is_null(),
+        "first validate should have no changes"
+    );
+
+    // Step 2: Modify the spec — remove rate-limited, modify login-success
+    std::fs::write(&path, SPEC_V2_MODIFIED).expect("write modified spec");
+
+    // Step 3: Second validate — should detect changes
+    let result2 = client.call_tool("validate", json!({ "path": path.to_str().unwrap() }));
+    let data2 = json_content(&result2);
+    assert_eq!(data2["results"][0]["status"], "pass");
+    assert_eq!(data2["results"][0]["behavior_count"], 2);
+
+    // Changes should be present
+    let changes = &data2["changes"];
+    assert!(
+        changes.is_object(),
+        "second validate should have changes, got: {:?}",
+        changes
+    );
+
+    let spec_changes = &changes["user-auth"];
+    assert!(spec_changes.is_object(), "changes should contain user-auth");
+
+    // Removed: rate-limited
+    let removed = spec_changes["removed"].as_array().unwrap();
+    assert_eq!(removed.len(), 1);
+    assert_eq!(removed[0]["name"], "rate-limited");
+    assert_eq!(removed[0]["category"], "edge_case");
+
+    // Modified: login-success (description + given changed)
+    let modified = spec_changes["modified"].as_array().unwrap();
+    assert_eq!(modified.len(), 1);
+    assert_eq!(modified[0]["name"], "login-success");
+
+    // Unchanged: login-fail
+    assert_eq!(spec_changes["unchanged"], 1);
+
+    // Added: none
+    let added = spec_changes["added"].as_array().unwrap();
+    assert!(added.is_empty());
+
+    // Next steps should mention changes
+    let next_steps = data2["next_steps"].as_array().unwrap();
+    let has_changes_step = next_steps.iter().any(|s| {
+        s["action"]
+            .as_str()
+            .unwrap_or("")
+            .contains("Changes detected")
+    });
+    assert!(
+        has_changes_step,
+        "next_steps should mention changes, got: {:?}",
+        next_steps
+    );
+}
+
+#[test]
+/// mcp-server: validate-no-changes-on-unchanged-spec
+fn validate_no_changes_on_unchanged_spec() {
+    let mut client = McpClient::new();
+    let dir = TempDir::new().unwrap();
+    let path = write_spec(&dir, "user-auth", SPEC_V1_THREE_BEHAVIORS);
+
+    // First validate — creates baseline
+    client.call_tool("validate", json!({ "path": path.to_str().unwrap() }));
+
+    // Second validate — same content, no changes
+    let result2 = client.call_tool("validate", json!({ "path": path.to_str().unwrap() }));
+    let data2 = json_content(&result2);
+    assert_eq!(data2["results"][0]["status"], "pass");
+    assert!(
+        data2.get("changes").is_none() || data2["changes"].is_null(),
+        "unchanged spec should have no changes"
+    );
+}

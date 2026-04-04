@@ -16,6 +16,7 @@ pub fn run_guide_topic(topic: &str) -> Result<String, String> {
         "lock" => Ok(content::guide_lock().to_string()),
         "ci" => Ok(content::guide_ci().to_string()),
         "web" => Ok(content::guide_web().to_string()),
+        "refinement" => Ok(content::guide_refinement().to_string()),
         other => Err(format!(
             "Unknown topic '{}'. Valid topics: {}",
             other,
@@ -39,6 +40,7 @@ pub fn list_topics() -> i32 {
     println!("  lock          Lock file: integrity snapshots, drift detection, regeneration");
     println!("  ci            CI verification: six integrity checks and exit codes");
     println!("  web           Web dashboard: live spec/NFR monitoring and coverage view");
+    println!("  refinement    Spec iteration: change detection and cleanup workflow");
     println!();
     println!("Usage: minter guide <topic>");
     0

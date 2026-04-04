@@ -324,15 +324,23 @@ fn validate_and_cache_spec(path: &Path, name: &str, dir: &Path, cache: &mut Grap
     }
 
     let entry = match parse_and_validate(path, &source, dir) {
-        Some((spec, valid)) => CachedEntry {
-            content_hash: hash,
-            version: spec.version.clone(),
-            behavior_count: spec.behaviors.len(),
-            valid,
-            dependencies: spec.dep_names(),
-            path: path.display().to_string(),
-            nfr_categories: spec.all_nfr_categories(),
-        },
+        Some((spec, valid)) => {
+            let new_behaviors = graph::compute_behaviors(&spec);
+            let old_baseline = cache.resolve_baseline(name);
+            let old_baseline_version = cache.resolve_baseline_version(name);
+            CachedEntry {
+                content_hash: hash,
+                version: spec.version.clone(),
+                behavior_count: spec.behaviors.len(),
+                valid,
+                dependencies: spec.dep_names(),
+                path: path.display().to_string(),
+                nfr_categories: spec.all_nfr_categories(),
+                behaviors: new_behaviors,
+                baseline: old_baseline,
+                baseline_version: old_baseline_version,
+            }
+        }
         None => CachedEntry {
             content_hash: hash,
             version: String::new(),
@@ -341,6 +349,9 @@ fn validate_and_cache_spec(path: &Path, name: &str, dir: &Path, cache: &mut Grap
             dependencies: vec![],
             path: path.display().to_string(),
             nfr_categories: vec![],
+            behaviors: std::collections::HashMap::new(),
+            baseline: cache.specs.get(name).and_then(|e| e.baseline.clone()),
+            baseline_version: cache.resolve_baseline_version(name),
         },
     };
     cache.upsert(name.to_string(), entry);

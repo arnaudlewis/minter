@@ -52,6 +52,9 @@ pub fn run_graph(dir: &Path, impacted: Option<&str>) -> i32 {
 
         let hash = graph::content_hash(&source);
         if graph_state.cache.is_changed(&spec.name, &hash) {
+            let new_behaviors = graph::compute_behaviors(&spec);
+            let old_baseline = graph_state.cache.resolve_baseline(&spec.name);
+            let old_baseline_version = graph_state.cache.resolve_baseline_version(&spec.name);
             graph_state.cache.upsert(
                 spec.name.clone(),
                 CachedEntry {
@@ -62,6 +65,9 @@ pub fn run_graph(dir: &Path, impacted: Option<&str>) -> i32 {
                     dependencies: dep_names.clone(),
                     path: path.display().to_string(),
                     nfr_categories: nfr_cats,
+                    behaviors: new_behaviors,
+                    baseline: old_baseline,
+                    baseline_version: old_baseline_version,
                 },
             );
             graph_state.dirty = true;

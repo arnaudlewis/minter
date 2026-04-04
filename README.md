@@ -12,9 +12,9 @@ Minter validates `.spec` and `.nfr` files — a structured DSL for defining beha
 
 ## What's New
 
-The latest release, [v2.0.0](CHANGELOG.md) (2026-03-28), ships the web dashboard with real-time spec monitoring — the headline feature for watching validation happen live as your specs change.
+`validate` now detects behavior changes automatically — when you remove, modify, or add behaviors, the response includes a `changes` section showing exactly what changed since the last validation. Your agent sees which tests are orphaned and which need updating. No more dead code left behind after spec iterations. Pair with `minter guide refinement` for the full cleanup workflow. **Requires an updated [spec agent prompt](docs/spec-agent.md)** to act on the changes.
 
-See the [full changelog](CHANGELOG.md) for the release history and the rest of the v2.0.0 updates.
+See the [full changelog](CHANGELOG.md) for the release history.
 
 ## Install
 

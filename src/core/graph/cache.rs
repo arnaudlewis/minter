@@ -6,7 +6,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-const SCHEMA_VERSION: u32 = 3;
+const SCHEMA_VERSION: u32 = 4;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GraphCache {
@@ -14,6 +14,12 @@ pub struct GraphCache {
     pub specs: HashMap<String, CachedEntry>,
     #[serde(default)]
     pub nfrs: HashMap<String, NfrCachedEntry>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct BehaviorSnapshot {
+    pub category: String,
+    pub hash: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -27,6 +33,12 @@ pub struct CachedEntry {
     pub path: String,
     #[serde(default)]
     pub nfr_categories: Vec<String>,
+    #[serde(default)]
+    pub behaviors: HashMap<String, BehaviorSnapshot>,
+    #[serde(default)]
+    pub baseline: Option<HashMap<String, BehaviorSnapshot>>,
+    #[serde(default)]
+    pub baseline_version: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -115,6 +127,29 @@ impl GraphCache {
         }
     }
 
+    /// Snapshot current behaviors as baseline for a named spec.
+    pub fn acknowledge_baseline(&mut self, name: &str) {
+        if let Some(entry) = self.specs.get_mut(name) {
+            entry.baseline = Some(entry.behaviors.clone());
+            entry.baseline_version = Some(entry.version.clone());
+        }
+    }
+
+    /// Return the baseline to preserve when updating a cache entry.
+    /// Prefers the explicit baseline, falls back to current behaviors.
+    pub fn resolve_baseline(&self, name: &str) -> Option<HashMap<String, BehaviorSnapshot>> {
+        self.specs
+            .get(name)
+            .map(|e| e.baseline.clone().unwrap_or_else(|| e.behaviors.clone()))
+    }
+
+    /// Return the baseline version to preserve when updating a cache entry.
+    pub fn resolve_baseline_version(&self, name: &str) -> Option<String> {
+        self.specs
+            .get(name)
+            .and_then(|e| e.baseline_version.clone())
+    }
+
     /// Check if an NFR file's content has changed compared to the cached hash.
     pub fn is_nfr_changed(&self, category: &str, current_hash: &str) -> bool {
         match self.nfrs.get(category) {
@@ -127,6 +162,143 @@ impl GraphCache {
     pub fn upsert_nfr(&mut self, category: String, entry: NfrCachedEntry) {
         self.nfrs.insert(category, entry);
     }
+}
+
+fn category_str(cat: crate::model::BehaviorCategory) -> &'static str {
+    match cat {
+        crate::model::BehaviorCategory::HappyPath => "happy_path",
+        crate::model::BehaviorCategory::ErrorCase => "error_case",
+        crate::model::BehaviorCategory::EdgeCase => "edge_case",
+    }
+}
+
+fn hash_preconditions(buf: &mut String, preconditions: &[crate::model::Precondition]) {
+    use std::fmt::Write;
+    for pre in preconditions {
+        match pre {
+            crate::model::Precondition::Prose(text) => {
+                let _ = writeln!(buf, "pre:prose:{}", text);
+            }
+            crate::model::Precondition::Alias {
+                name,
+                entity,
+                properties,
+            } => {
+                let _ = write!(buf, "pre:alias:{}:{}:", name, entity);
+                for (k, v) in properties {
+                    let _ = write!(buf, "{}={},", k, v);
+                }
+                buf.push('\n');
+            }
+        }
+    }
+}
+
+fn hash_action(buf: &mut String, action: &crate::model::Action) {
+    use std::fmt::Write;
+    let _ = writeln!(buf, "action:{}", action.name);
+    for input in &action.inputs {
+        match input {
+            crate::model::ActionInput::Value { name, value } => {
+                let _ = writeln!(buf, "input:val:{}:{}", name, value);
+            }
+            crate::model::ActionInput::AliasRef { name, alias, field } => {
+                let _ = writeln!(buf, "input:ref:{}:{}:{}", name, alias, field);
+            }
+        }
+    }
+}
+
+fn hash_postconditions(buf: &mut String, postconditions: &[crate::model::Postcondition]) {
+    use std::fmt::Write;
+    for post in postconditions {
+        match &post.kind {
+            crate::model::PostconditionKind::Returns(channel) => {
+                let _ = writeln!(buf, "post:returns:{}", channel);
+            }
+            crate::model::PostconditionKind::Emits(channel) => {
+                let _ = writeln!(buf, "post:emits:{}", channel);
+            }
+            crate::model::PostconditionKind::SideEffect => {
+                buf.push_str("post:side_effect\n");
+            }
+        }
+        for assertion in &post.assertions {
+            match assertion {
+                crate::model::Assertion::Equals { field, value } => {
+                    let _ = writeln!(buf, "assert:eq:{}:{}", field, value);
+                }
+                crate::model::Assertion::EqualsRef {
+                    field,
+                    alias,
+                    alias_field,
+                } => {
+                    let _ = writeln!(buf, "assert:eqref:{}:{}:{}", field, alias, alias_field);
+                }
+                crate::model::Assertion::IsPresent { field } => {
+                    let _ = writeln!(buf, "assert:present:{}", field);
+                }
+                crate::model::Assertion::Contains { field, value } => {
+                    let _ = writeln!(buf, "assert:contains:{}:{}", field, value);
+                }
+                crate::model::Assertion::InRange { field, min, max } => {
+                    let _ = writeln!(buf, "assert:range:{}:{}:{}", field, min, max);
+                }
+                crate::model::Assertion::MatchesPattern { field, pattern } => {
+                    let _ = writeln!(buf, "assert:pattern:{}:{}", field, pattern);
+                }
+                crate::model::Assertion::GreaterOrEqual { field, value } => {
+                    let _ = writeln!(buf, "assert:gte:{}:{}", field, value);
+                }
+                crate::model::Assertion::Prose(text) => {
+                    let _ = writeln!(buf, "assert:prose:{}", text);
+                }
+            }
+        }
+    }
+}
+
+fn hash_behavior_nfr_refs(buf: &mut String, nfr_refs: &[crate::model::BehaviorNfrRef]) {
+    use std::fmt::Write;
+    for nfr in nfr_refs {
+        let _ = write!(buf, "nfr:{}:{}", nfr.category, nfr.anchor);
+        if let Some(op) = &nfr.override_operator {
+            let _ = write!(buf, ":op:{}", op);
+        }
+        if let Some(val) = &nfr.override_value {
+            let _ = write!(buf, ":val:{}", val);
+        }
+        buf.push('\n');
+    }
+}
+
+/// Compute a deterministic SHA-256 hash of a behavior's structural content.
+pub fn behavior_hash(behavior: &crate::model::Behavior) -> String {
+    use std::fmt::Write;
+    let mut buf = String::new();
+    let _ = writeln!(buf, "cat:{}", category_str(behavior.category));
+    let _ = writeln!(buf, "desc:{}", behavior.description);
+    hash_preconditions(&mut buf, &behavior.preconditions);
+    hash_action(&mut buf, &behavior.action);
+    hash_postconditions(&mut buf, &behavior.postconditions);
+    hash_behavior_nfr_refs(&mut buf, &behavior.nfr_refs);
+    content_hash(&buf)
+}
+
+/// Build a behaviors map from a parsed Spec.
+pub fn compute_behaviors(spec: &crate::model::Spec) -> HashMap<String, BehaviorSnapshot> {
+    spec.behaviors
+        .iter()
+        .map(|b| {
+            (
+                b.name.clone(),
+                BehaviorSnapshot {
+                    category: category_str(b.category).to_string(),
+                    hash: behavior_hash(b),
+                },
+            )
+        })
+        .collect()
 }
 
 /// Compute SHA-256 hex digest of source content.
@@ -232,6 +404,9 @@ mod tests {
             dependencies: vec![],
             path: "test.spec".to_string(),
             nfr_categories: vec![],
+            behaviors: HashMap::new(),
+            baseline: None,
+            baseline_version: None,
         }
     }
 
@@ -249,7 +424,7 @@ mod tests {
     /// cache: new_cache_has_correct_schema
     fn new_cache_has_correct_schema() {
         let cache = GraphCache::new();
-        assert_eq!(cache.schema_version, 3);
+        assert_eq!(cache.schema_version, 4);
     }
 
     #[test]
@@ -347,7 +522,7 @@ mod tests {
         cache.save(&path).unwrap();
 
         let loaded = GraphCache::load(&path).unwrap();
-        assert_eq!(loaded.schema_version, 3);
+        assert_eq!(loaded.schema_version, 4);
         assert!(loaded.specs.contains_key("auth"));
         assert_eq!(loaded.specs["auth"].content_hash, "abc123");
         assert_eq!(loaded.specs["auth"].version, "1.0.0");
@@ -396,5 +571,266 @@ mod tests {
         let h1 = content_hash("spec auth\nversion 1.0.0\n");
         let h2 = content_hash("spec auth\nversion 2.0.0\n");
         assert_ne!(h1, h2);
+    }
+
+    // ── save/load round-trip with behaviors ─────────────
+
+    #[test]
+    /// cache: save_load_round_trip_with_behaviors
+    fn save_load_round_trip_with_behaviors() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("graph.json");
+
+        let mut cache = GraphCache::new();
+        let mut behaviors = HashMap::new();
+        behaviors.insert(
+            "login-success".to_string(),
+            BehaviorSnapshot {
+                category: "happy_path".to_string(),
+                hash: "abc123".to_string(),
+            },
+        );
+        let mut entry = make_cached_entry("hash1");
+        entry.behaviors = behaviors.clone();
+        entry.baseline = Some(behaviors.clone());
+        cache.upsert("auth".to_string(), entry);
+        cache.save(&path).unwrap();
+
+        let loaded = GraphCache::load(&path).unwrap();
+        let loaded_entry = &loaded.specs["auth"];
+        assert_eq!(loaded_entry.behaviors.len(), 1);
+        assert_eq!(
+            loaded_entry.behaviors["login-success"],
+            BehaviorSnapshot {
+                category: "happy_path".to_string(),
+                hash: "abc123".to_string(),
+            }
+        );
+        assert!(loaded_entry.baseline.is_some());
+        assert_eq!(loaded_entry.baseline.as_ref().unwrap().len(), 1);
+    }
+
+    // ── behavior_hash tests ─────────────────────────────
+
+    fn make_test_behavior() -> crate::model::Behavior {
+        crate::model::Behavior {
+            name: "login-success".to_string(),
+            category: crate::model::BehaviorCategory::HappyPath,
+            description: "User logs in successfully".to_string(),
+            nfr_refs: vec![],
+            preconditions: vec![crate::model::Precondition::Prose("user exists".to_string())],
+            action: crate::model::Action {
+                name: "login".to_string(),
+                inputs: vec![crate::model::ActionInput::Value {
+                    name: "email".to_string(),
+                    value: "test@example.com".to_string(),
+                }],
+            },
+            postconditions: vec![crate::model::Postcondition {
+                kind: crate::model::PostconditionKind::Returns("session".to_string()),
+                assertions: vec![crate::model::Assertion::IsPresent {
+                    field: "token".to_string(),
+                }],
+            }],
+        }
+    }
+
+    #[test]
+    /// cache: behavior_hash_deterministic
+    fn behavior_hash_deterministic() {
+        let b = make_test_behavior();
+        let h1 = behavior_hash(&b);
+        let h2 = behavior_hash(&b);
+        assert_eq!(h1, h2);
+        assert!(!h1.is_empty());
+    }
+
+    #[test]
+    /// cache: behavior_hash_changes_on_given
+    fn behavior_hash_changes_on_given() {
+        let b1 = make_test_behavior();
+        let mut b2 = make_test_behavior();
+        b2.preconditions = vec![crate::model::Precondition::Prose(
+            "user is admin".to_string(),
+        )];
+        let h1 = behavior_hash(&b1);
+        let h2 = behavior_hash(&b2);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    /// cache: behavior_hash_changes_on_description
+    fn behavior_hash_changes_on_description() {
+        let b1 = make_test_behavior();
+        let mut b2 = make_test_behavior();
+        b2.description = "Different description".to_string();
+        assert_ne!(behavior_hash(&b1), behavior_hash(&b2));
+    }
+
+    #[test]
+    /// cache: behavior_hash_changes_on_action
+    fn behavior_hash_changes_on_action() {
+        let b1 = make_test_behavior();
+        let mut b2 = make_test_behavior();
+        b2.action.name = "logout".to_string();
+        assert_ne!(behavior_hash(&b1), behavior_hash(&b2));
+    }
+
+    #[test]
+    /// cache: behavior_hash_changes_on_postcondition
+    fn behavior_hash_changes_on_postcondition() {
+        let b1 = make_test_behavior();
+        let mut b2 = make_test_behavior();
+        b2.postconditions = vec![crate::model::Postcondition {
+            kind: crate::model::PostconditionKind::Emits("event".to_string()),
+            assertions: vec![],
+        }];
+        assert_ne!(behavior_hash(&b1), behavior_hash(&b2));
+    }
+
+    #[test]
+    /// cache: behavior_hash_changes_on_nfr_refs
+    fn behavior_hash_changes_on_nfr_refs() {
+        let b1 = make_test_behavior();
+        let mut b2 = make_test_behavior();
+        b2.nfr_refs = vec![crate::model::BehaviorNfrRef {
+            category: "performance".to_string(),
+            anchor: "api-response-time".to_string(),
+            override_operator: None,
+            override_value: None,
+        }];
+        assert_ne!(behavior_hash(&b1), behavior_hash(&b2));
+    }
+
+    // ── compute_behaviors tests ─────────────────────────
+
+    #[test]
+    /// cache: compute_behaviors_maps_all
+    fn compute_behaviors_maps_all() {
+        let spec = crate::model::Spec {
+            name: "auth".to_string(),
+            version: "1.0.0".to_string(),
+            title: "Auth".to_string(),
+            description: "".to_string(),
+            motivation: "".to_string(),
+            nfr_refs: vec![],
+            behaviors: vec![
+                {
+                    let mut b = make_test_behavior();
+                    b.name = "login-success".to_string();
+                    b.category = crate::model::BehaviorCategory::HappyPath;
+                    b
+                },
+                {
+                    let mut b = make_test_behavior();
+                    b.name = "login-failure".to_string();
+                    b.category = crate::model::BehaviorCategory::ErrorCase;
+                    b
+                },
+                {
+                    let mut b = make_test_behavior();
+                    b.name = "empty-email".to_string();
+                    b.category = crate::model::BehaviorCategory::EdgeCase;
+                    b
+                },
+            ],
+            dependencies: vec![],
+        };
+
+        let behaviors = compute_behaviors(&spec);
+        assert_eq!(behaviors.len(), 3);
+        assert!(behaviors.contains_key("login-success"));
+        assert!(behaviors.contains_key("login-failure"));
+        assert!(behaviors.contains_key("empty-email"));
+        assert_eq!(behaviors["login-success"].category, "happy_path");
+        assert_eq!(behaviors["login-failure"].category, "error_case");
+        assert_eq!(behaviors["empty-email"].category, "edge_case");
+        // Each hash should be non-empty
+        assert!(!behaviors["login-success"].hash.is_empty());
+    }
+
+    // ── acknowledge_baseline tests ──────────────────────
+
+    #[test]
+    /// cache: acknowledge_baseline_sets_baseline
+    fn acknowledge_baseline_sets_baseline() {
+        let mut cache = GraphCache::new();
+        let mut behaviors = HashMap::new();
+        behaviors.insert(
+            "login-success".to_string(),
+            BehaviorSnapshot {
+                category: "happy_path".to_string(),
+                hash: "abc123".to_string(),
+            },
+        );
+        let mut entry = make_cached_entry("hash1");
+        entry.behaviors = behaviors.clone();
+        cache.upsert("auth".to_string(), entry);
+
+        assert!(cache.specs["auth"].baseline.is_none());
+        cache.acknowledge_baseline("auth");
+        assert_eq!(cache.specs["auth"].baseline, Some(behaviors));
+    }
+
+    #[test]
+    /// cache: acknowledge_baseline_noop_on_unknown
+    fn acknowledge_baseline_noop_on_unknown() {
+        let mut cache = GraphCache::new();
+        cache.acknowledge_baseline("nonexistent");
+        assert!(!cache.specs.contains_key("nonexistent"));
+    }
+
+    // ── baseline preserved on upsert ────────────────────
+
+    #[test]
+    /// cache: baseline_preserved_on_upsert
+    fn baseline_preserved_on_upsert() {
+        let mut cache = GraphCache::new();
+        let mut behaviors = HashMap::new();
+        behaviors.insert(
+            "login-success".to_string(),
+            BehaviorSnapshot {
+                category: "happy_path".to_string(),
+                hash: "abc123".to_string(),
+            },
+        );
+        let baseline = behaviors.clone();
+        let mut entry = make_cached_entry("hash1");
+        entry.behaviors = behaviors;
+        entry.baseline = Some(baseline.clone());
+        cache.upsert("auth".to_string(), entry);
+
+        // Upsert with new behaviors but same baseline
+        let mut new_behaviors = HashMap::new();
+        new_behaviors.insert(
+            "login-success".to_string(),
+            BehaviorSnapshot {
+                category: "happy_path".to_string(),
+                hash: "def456".to_string(),
+            },
+        );
+        let mut new_entry = make_cached_entry("hash2");
+        new_entry.behaviors = new_behaviors.clone();
+        new_entry.baseline = Some(baseline.clone());
+        cache.upsert("auth".to_string(), new_entry);
+
+        // Baseline should be preserved (set by caller)
+        assert_eq!(cache.specs["auth"].baseline, Some(baseline));
+        assert_eq!(cache.specs["auth"].behaviors, new_behaviors);
+    }
+
+    // ── schema v3 triggers rebuild ──────────────────────
+
+    #[test]
+    /// cache: schema_v3_triggers_rebuild
+    fn schema_v3_triggers_rebuild() {
+        let tmp = NamedTempFile::new().unwrap();
+        let path = tmp.path();
+
+        let json = r#"{"schema_version": 3, "specs": {}}"#;
+        fs::write(path, json).unwrap();
+
+        let result = GraphCache::load(path);
+        assert!(matches!(result, Err(GraphError::SchemaMismatch)));
     }
 }

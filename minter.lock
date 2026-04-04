@@ -981,7 +981,7 @@
             "rebuild-on-schema-mismatch",
             "validate-without-deep-ignores-graph"
           ],
-          "hash": "a83bbb18bcc78f563eb3f49fadc17eab28a6d0176d7ad54b63cd3ee430919f6f"
+          "hash": "d0c0f2cd8d4a68dc963adf42337caf59ebc3fda185e3ab2f07e462432d0c5ca7"
         },
         "tests/incremental_validation.rs": {
           "covers": [
@@ -1334,7 +1334,7 @@
             "next-steps-include-tool-references",
             "tool-descriptions-guide-workflow"
           ],
-          "hash": "566b9deec1925383ad4fdadf8472fa6dbe7672733ccbf4964d94e4af4d96e7a7"
+          "hash": "5dea145903eb71b5002a9a7a234a35f8e118cfad9e9604e6acaa69e19c8172d8"
         }
       }
     },
@@ -1393,7 +1393,7 @@
             "validate-pass-result-fields",
             "validate-summary-fields"
           ],
-          "hash": "566b9deec1925383ad4fdadf8472fa6dbe7672733ccbf4964d94e4af4d96e7a7"
+          "hash": "5dea145903eb71b5002a9a7a234a35f8e118cfad9e9604e6acaa69e19c8172d8"
         }
       }
     },
@@ -1529,7 +1529,7 @@
             "validate-reject-unreadable-file",
             "validate-require-path-or-content"
           ],
-          "hash": "566b9deec1925383ad4fdadf8472fa6dbe7672733ccbf4964d94e4af4d96e7a7"
+          "hash": "5dea145903eb71b5002a9a7a234a35f8e118cfad9e9604e6acaa69e19c8172d8"
         }
       }
     },

@@ -2,7 +2,9 @@ mod common;
 
 use std::fs;
 
-use common::{minter, read_graph_json, temp_dir_with_specs, valid_spec, write_graph_json};
+use common::{
+    minter, read_graph_json, spec_one_behavior, temp_dir_with_specs, valid_spec, write_graph_json,
+};
 use predicates::prelude::*;
 
 // ═══════════════════════════════════════════════════════════════
@@ -542,7 +544,7 @@ fn cache_prunes_deleted_nfr_files() {
 
 // @minter:e2e rebuild-on-schema-mismatch
 #[test]
-fn rebuild_v2_cache_to_v3() {
+fn rebuild_v2_cache_to_v4() {
     let dir = tempfile::TempDir::new().unwrap();
     fs::write(dir.path().join("a.spec"), valid_spec("a", "1.0.0", None)).unwrap();
 
@@ -558,11 +560,160 @@ fn rebuild_v2_cache_to_v3() {
         .success()
         .stderr(predicate::str::contains("incompatible").or(predicate::str::contains("format")));
 
-    // graph.json should now be v3 with nfrs field
+    // graph.json should now be v4 with behaviors field
     let graph = read_graph_json(dir.path());
     assert_eq!(
         graph["schema_version"].as_u64().unwrap(),
-        3,
-        "rebuilt graph should have schema_version 3"
+        4,
+        "rebuilt graph should have schema_version 4"
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// graph-cache: graph command preserves behavior tracking data
+// ═══════════════════════════════════════════════════════════════
+
+#[test]
+fn graph_command_preserves_behaviors() {
+    let dir = tempfile::TempDir::new().unwrap();
+    fs::write(
+        dir.path().join("a.spec"),
+        spec_one_behavior("a", "1.0.0", "do-thing"),
+    )
+    .unwrap();
+
+    // First: validate --deep to populate the cache with behaviors
+    minter()
+        .current_dir(dir.path())
+        .arg("validate")
+        .arg("--deep")
+        .arg(dir.path())
+        .assert()
+        .success();
+
+    let graph1 = read_graph_json(dir.path());
+    let behaviors1 = &graph1["specs"]["a"]["behaviors"];
+    assert!(
+        behaviors1.is_object() && !behaviors1.as_object().unwrap().is_empty(),
+        "validate --deep should populate behaviors in the cache"
+    );
+
+    // Now run the graph command -- it should NOT wipe behaviors
+    minter()
+        .current_dir(dir.path())
+        .arg("graph")
+        .arg(dir.path())
+        .assert()
+        .success();
+
+    let graph2 = read_graph_json(dir.path());
+    let behaviors2 = &graph2["specs"]["a"]["behaviors"];
+    assert!(
+        behaviors2.is_object() && !behaviors2.as_object().unwrap().is_empty(),
+        "graph command should preserve behaviors from the cache, got: {}",
+        behaviors2,
+    );
+    assert_eq!(
+        behaviors1, behaviors2,
+        "behaviors should be identical before and after graph command"
+    );
+}
+
+#[test]
+fn graph_command_preserves_baseline() {
+    let dir = tempfile::TempDir::new().unwrap();
+    fs::write(
+        dir.path().join("a.spec"),
+        spec_one_behavior("a", "1.0.0", "do-thing"),
+    )
+    .unwrap();
+
+    // Validate to populate the cache
+    minter()
+        .current_dir(dir.path())
+        .arg("validate")
+        .arg("--deep")
+        .arg(dir.path())
+        .assert()
+        .success();
+
+    // Now modify the spec to create a new version (this changes the hash)
+    fs::write(
+        dir.path().join("a.spec"),
+        spec_one_behavior("a", "1.1.0", "do-thing"),
+    )
+    .unwrap();
+
+    // Validate again -- this sets the baseline (previous behaviors snapshot)
+    minter()
+        .current_dir(dir.path())
+        .arg("validate")
+        .arg("--deep")
+        .arg(dir.path())
+        .assert()
+        .success();
+
+    let graph1 = read_graph_json(dir.path());
+    let _baseline1 = &graph1["specs"]["a"]["baseline"];
+
+    // Modify spec again to make graph command see a changed spec
+    fs::write(
+        dir.path().join("a.spec"),
+        spec_one_behavior("a", "2.0.0", "do-thing"),
+    )
+    .unwrap();
+
+    // Run graph command on the changed spec
+    minter()
+        .current_dir(dir.path())
+        .arg("graph")
+        .arg(dir.path())
+        .assert()
+        .success();
+
+    let graph2 = read_graph_json(dir.path());
+    let baseline2 = &graph2["specs"]["a"]["baseline"];
+
+    // The graph command should preserve existing baseline, not set it to null
+    // (It should use the old_baseline pattern like validate/watch do)
+    assert!(
+        !baseline2.is_null(),
+        "graph command should preserve existing baseline, got null"
+    );
+    // baseline should be the previous behaviors (from before the graph command update)
+    assert!(
+        baseline2.is_object() && !baseline2.as_object().unwrap().is_empty(),
+        "baseline should be preserved with behavior data, got: {}",
+        baseline2,
+    );
+}
+
+#[test]
+fn graph_command_computes_new_behaviors() {
+    let dir = tempfile::TempDir::new().unwrap();
+    fs::write(
+        dir.path().join("a.spec"),
+        spec_one_behavior("a", "1.0.0", "do-thing"),
+    )
+    .unwrap();
+
+    // Run graph command directly (no prior validate)
+    minter()
+        .current_dir(dir.path())
+        .arg("graph")
+        .arg(dir.path())
+        .assert()
+        .success();
+
+    let graph = read_graph_json(dir.path());
+    let behaviors = &graph["specs"]["a"]["behaviors"];
+    assert!(
+        behaviors.is_object() && !behaviors.as_object().unwrap().is_empty(),
+        "graph command should compute behaviors from the parsed spec, got: {}",
+        behaviors,
+    );
+    assert!(
+        behaviors["do-thing"].is_object(),
+        "behaviors should contain 'do-thing'"
     );
 }
