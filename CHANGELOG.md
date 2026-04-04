@@ -1,6 +1,21 @@
 # Changelog
 
 All notable changes to minter will be documented in this file.
+## [2.1.0] - 2026-04-04
+
+### Added
+
+- **graph:** Add behavior-level change detection to validate (#16)
+
+### Documentation
+
+- Add spec engineering agent prompt
+- **readme:** Highlight latest release (#17)
+
+### Maintenance
+
+- Enrich examples with config and lock, add minter ci to pipelines (#13)
+
 ## [2.0.0] - 2026-03-28
 
 ### Added
@@ -23,6 +38,7 @@ All notable changes to minter will be documented in this file.
 ### Maintenance
 
 - Add frontend test script, deduplicate helpers, improve docs navigation
+- Release v2.0.0
 
 ## [1.1.1] - 2026-03-24
 
