@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to minter will be documented in this file.
+## [2.2.0] - 2026-04-09
+
+### Added
+
+- **config:** User-level config fallback (~/.minter/config.json) (#18)
+
 ## [2.1.0] - 2026-04-04
 
 ### Added
@@ -15,6 +21,7 @@ All notable changes to minter will be documented in this file.
 ### Maintenance
 
 - Enrich examples with config and lock, add minter ci to pipelines (#13)
+- Release v2.1.0
 
 ## [2.0.0] - 2026-03-28
 
