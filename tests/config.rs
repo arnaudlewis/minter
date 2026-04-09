@@ -571,6 +571,79 @@ fn reject_unknown_fields_coverage() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Global config fallback
+// ═══════════════════════════════════════════════════════════════
+
+/// config: global-config-fallback
+// @minter:e2e global-config-fallback
+#[test]
+fn global_config_fallback_validate() {
+    let spec = valid_spec("feat", "1.0.0", None);
+
+    // Create a fake HOME with ~/.minter/config.json
+    let fake_home = TempDir::new().unwrap();
+    let minter_dir = fake_home.path().join(".minter");
+    fs::create_dir(&minter_dir).unwrap();
+    fs::write(
+        minter_dir.join("config.json"),
+        r#"{ "specs": "my-specs/" }"#,
+    )
+    .unwrap();
+
+    // Create a project dir with NO local config, but with my-specs/
+    let project = TempDir::new().unwrap();
+    let specs_dir = project.path().join("my-specs");
+    fs::create_dir(&specs_dir).unwrap();
+    fs::write(specs_dir.join("feat.spec"), &spec).unwrap();
+
+    // Set HOME to fake_home so global config is found
+    minter()
+        .arg("validate")
+        .current_dir(project.path())
+        .env("HOME", fake_home.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("feat"));
+}
+
+/// config: local-config-overrides-global
+// @minter:e2e local-config-overrides-global
+#[test]
+fn local_config_overrides_global() {
+    let spec = valid_spec("feat", "1.0.0", None);
+
+    // Global config points to global-specs/
+    let fake_home = TempDir::new().unwrap();
+    let minter_dir = fake_home.path().join(".minter");
+    fs::create_dir(&minter_dir).unwrap();
+    fs::write(
+        minter_dir.join("config.json"),
+        r#"{ "specs": "global-specs/" }"#,
+    )
+    .unwrap();
+
+    // Local config points to local-specs/
+    let project = TempDir::new().unwrap();
+    fs::write(
+        project.path().join("minter.config.json"),
+        r#"{ "specs": "local-specs/" }"#,
+    )
+    .unwrap();
+    let local_dir = project.path().join("local-specs");
+    fs::create_dir(&local_dir).unwrap();
+    fs::write(local_dir.join("feat.spec"), &spec).unwrap();
+
+    // Local config should win — validate finds spec in local-specs/, not global-specs/
+    minter()
+        .arg("validate")
+        .current_dir(project.path())
+        .env("HOME", fake_home.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("feat"));
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Edge cases
 // ═══════════════════════════════════════════════════════════════
 
