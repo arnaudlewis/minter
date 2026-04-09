@@ -247,3 +247,33 @@ behavior no-default-dirs-without-config [edge_case]
 
   then emits process_exit
     assert code == 1
+
+
+# Global config fallback
+
+behavior global-config-fallback [happy_path]
+  "Fall back to ~/.minter/config.json when no local config exists"
+
+  given
+    No minter.config.json exists at the project root
+    ~/.minter/config.json exists with: { "specs": "my-specs/" }
+    A my-specs/ directory contains valid .spec files
+
+  when any command that reads config is invoked without explicit paths
+
+  then
+    assert specs are discovered from my-specs/
+
+
+behavior local-config-overrides-global [happy_path]
+  "Local minter.config.json takes precedence over ~/.minter/config.json"
+
+  given
+    minter.config.json at project root contains: { "specs": "local-specs/" }
+    ~/.minter/config.json contains: { "specs": "global-specs/" }
+    A local-specs/ directory contains valid .spec files
+
+  when any command that reads config is invoked without explicit paths
+
+  then
+    assert specs are discovered from local-specs/, not global-specs/
