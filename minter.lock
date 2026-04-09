@@ -888,10 +888,12 @@
         "reject-nonexistent-tests-dir",
         "reject-unknown-fields",
         "empty-config-uses-defaults",
-        "no-default-dirs-without-config"
+        "no-default-dirs-without-config",
+        "global-config-fallback",
+        "local-config-overrides-global"
       ],
       "dependencies": [],
-      "hash": "6da18c966bf6f9ff26b69b49d39f034224a2081a32b04e1256829609a39872b9",
+      "hash": "e0e9d47fa7fc15ba252cc27b8288aa5dbfa1b819552c445c949d27f571847512",
       "nfrs": [
         "operability#zero-config",
         "reliability#error-completeness"
@@ -905,8 +907,10 @@
             "config-tests-array",
             "config-tests-single-string",
             "empty-config-uses-defaults",
+            "global-config-fallback",
             "load-config-file",
             "load-default-conventions",
+            "local-config-overrides-global",
             "no-default-dirs-without-config",
             "reject-invalid-json",
             "reject-invalid-specs-type",
@@ -915,7 +919,7 @@
             "reject-nonexistent-tests-dir",
             "reject-unknown-fields"
           ],
-          "hash": "59e71528b76819803686df1a35b9ce1c560f184990244c909af538a5e647a0ac"
+          "hash": "69963ed566b0f27fc12c3d374fff6a0a98de088dbbc759741d27d2232f991f77"
         }
       }
     },

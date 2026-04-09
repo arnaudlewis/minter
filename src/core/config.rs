@@ -25,23 +25,36 @@ pub struct ProjectConfig {
 /// Load and resolve project configuration from the working directory.
 ///
 /// Resolution:
-/// 1. If `minter.config.json` exists, parse it, validate explicitly-set directory
-///    paths exist on disk, and fill in defaults for missing fields.
-/// 2. If no config file exists, use conventions (`specs/` and `tests/`).
+/// 1. If `minter.config.json` exists in `working_dir`, parse it.
+/// 2. If not, fall back to `~/.minter/config.json` (user-level config).
+/// 3. If neither exists, use conventions (`specs/` and `tests/`).
+///
+/// In all cases, relative paths in the config are resolved against `working_dir`.
 ///
 /// Default paths are NOT validated at load time — they are only validated by
 /// the command that actually uses them. This allows `minter validate` (which
 /// only needs specs) to succeed even when `tests/` doesn't exist.
 pub fn load_config(working_dir: &Path) -> Result<ProjectConfig, String> {
-    let config_path = working_dir.join(CONFIG_FILE_NAME);
-
-    if !config_path.exists() {
-        // No config file: use conventions, no validation at this stage
+    let local_config = working_dir.join(CONFIG_FILE_NAME);
+    let config_path = if local_config.exists() {
+        local_config
+    } else if let Some(global) = global_config_path() {
+        if global.exists() {
+            global
+        } else {
+            // No config file anywhere: use conventions
+            return Ok(ProjectConfig {
+                specs: working_dir.join(DEFAULT_SPECS_DIR),
+                tests: vec![working_dir.join(DEFAULT_TESTS_DIR)],
+            });
+        }
+    } else {
+        // No home dir available: use conventions
         return Ok(ProjectConfig {
             specs: working_dir.join(DEFAULT_SPECS_DIR),
             tests: vec![working_dir.join(DEFAULT_TESTS_DIR)],
         });
-    }
+    };
 
     let content = std::fs::read_to_string(&config_path)
         .map_err(|e| format!("cannot read {}: {}", CONFIG_FILE_NAME, e))?;
@@ -196,4 +209,14 @@ impl<'de> Deserialize<'de> for RawConfigWithPresence {
 
         deserializer.deserialize_map(ConfigVisitor)
     }
+}
+
+// ── User-level config fallback ─────────────────────────────
+
+/// Return the path to the user-level config file (`~/.minter/config.json`),
+/// or `None` if the home directory cannot be determined.
+fn global_config_path() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .map(|home| home.join(".minter").join("config.json"))
 }
